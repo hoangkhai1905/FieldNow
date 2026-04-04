@@ -1,1 +1,89 @@
-// Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  password     String
+  full_name    String?
+  phone_number String?
+  role         Role       @default(USER)
+  created_at   DateTime   @default(now()) @db.Timestamptz
+
+  fields       Field[]
+  bookings     Booking[]
+}
+
+model Field {
+  id             String      @id @default(uuid()) @db.Uuid
+  owner_id       String      @db.Uuid
+  name           String
+  location       String
+  description    String?
+  images         String[]
+  price_per_hour Decimal     @db.Decimal
+  is_active      Boolean     @default(false)
+  
+  owner          User        @relation(fields: [owner_id], references: [id])
+  slots          FieldSlot[]
+}
+
+model FieldSlot {
+  id             String    @id @default(uuid()) @db.Uuid
+  field_id       String    @db.Uuid
+  start_time     String    // Using string for HH:mm or DateTime
+  end_time       String
+  date           DateTime  @db.Date
+  price_override Decimal?  @db.Decimal
+  is_locked      Boolean   @default(false)
+  
+  field          Field     @relation(fields: [field_id], references: [id])
+  bookings       Booking[]
+}
+
+model Booking {
+  id         String        @id @default(uuid()) @db.Uuid
+  user_id    String        @db.Uuid
+  slot_id    String        @db.Uuid
+  status     BookingStatus @default(PENDING)
+  created_at DateTime      @default(now()) @db.Timestamptz
+  expires_at DateTime      @db.Timestamptz
+
+  user       User          @relation(fields: [user_id], references: [id])
+  slot       FieldSlot     @relation(fields: [slot_id], references: [id])
+  payments   Payment[]
+}
+
+model Payment {
+  id         String        @id @default(uuid()) @db.Uuid
+  booking_id String        @db.Uuid
+  amount     Decimal       @db.Decimal
+  provider   String
+  status     PaymentStatus @default(PENDING)
+
+  booking    Booking       @relation(fields: [booking_id], references: [id])
+}
+
+enum Role {
+  USER
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}

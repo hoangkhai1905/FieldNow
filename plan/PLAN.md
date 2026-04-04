@@ -230,29 +230,29 @@ axiosClient.interceptors.request.use((config) => {
 
 ---
 
-## 5. Timeline & Checklist (4 Weeks - 3 Members)
+## 5. Timeline & Checklist (Implementation Phases - 3 Members)
 
-### Week 1: Foundation & Auth
+### Phase 1: Foundation & Auth
 *   [Backend] Initialize Project, Express Setup, Database Connection.
 *   [Backend] Implement JWT Auth (Login/Register) & RBAC Middlewares.
 *   [Frontend] Initialize Vite project, Tailwind Install, Router Setup.
 *   [Frontend] Build Login/Register Pages & AuthContext.
 *   [DB] Design & Apply Supabase Schema (Users, Fields).
 
-### Week 2: Core Features (Fields & Slots)
+### Phase 2: Core Features (Fields & Slots)
 *   [Backend] CRUD APIs for Field Management (Owner side).
 *   [Backend] Logic to generate TimeSlots for a field.
 *   [Frontend] Owner Dashboard: Create Field, Add Slots.
 *   [Frontend] Public Page: Search Fields, Filter by location/type.
 
-### Week 3: Booking System (The Hard Part)
+### Phase 3: Booking System (The Hard Part)
 *   [Infra] Setup Redis & BullMQ.
 *   [Backend] Implement `createBooking` with Redis Distributed Lock.
 *   [Backend] Setup Cron/Delayed Job for 15m expiration.
 *   [Frontend] Booking UI: Select Slot -> Confirm -> Payment Mock.
 *   [Frontend] User Dashboard: "My History".
 
-### Week 4: Payments, Polish & Deploy
+### Phase 4: Payments, Polish & Deploy
 *   [Backend] Fake Payment Integration (Update status -> Confirmed).
 *   [Frontend] Admin Dashboard (Approve Fields, View Users).
 *   [Both] Integration Testing (Test double booking race conditions).
