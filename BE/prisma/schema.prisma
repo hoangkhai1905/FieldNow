@@ -29,22 +29,31 @@ model Field {
   images         String[]
   price_per_hour Decimal     @db.Decimal
   is_active      Boolean     @default(false)
-  
+  created_at     DateTime    @default(now()) @db.Timestamptz
+  updated_at     DateTime    @updatedAt
+
   owner          User        @relation(fields: [owner_id], references: [id])
   slots          FieldSlot[]
+
+  @@index([owner_id])
+  @@index([location, is_active])
 }
 
 model FieldSlot {
   id             String    @id @default(uuid()) @db.Uuid
   field_id       String    @db.Uuid
-  start_time     String    // Using string for HH:mm or DateTime
+  start_time     String    // Using string for HH:mm format
   end_time       String
   date           DateTime  @db.Date
   price_override Decimal?  @db.Decimal
   is_locked      Boolean   @default(false)
-  
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
   field          Field     @relation(fields: [field_id], references: [id])
   bookings       Booking[]
+
+  @@unique([field_id, date, start_time, end_time])
+  @@index([field_id, date])
 }
 
 model Booking {
@@ -58,6 +67,9 @@ model Booking {
   user       User          @relation(fields: [user_id], references: [id])
   slot       FieldSlot     @relation(fields: [slot_id], references: [id])
   payments   Payment[]
+
+  @@index([user_id, created_at])
+  @@index([slot_id, status])
 }
 
 model Payment {
@@ -66,8 +78,11 @@ model Payment {
   amount     Decimal       @db.Decimal
   provider   String
   status     PaymentStatus @default(PENDING)
+  created_at DateTime      @default(now()) @db.Timestamptz
 
   booking    Booking       @relation(fields: [booking_id], references: [id])
+
+  @@index([booking_id])
 }
 
 enum Role {
