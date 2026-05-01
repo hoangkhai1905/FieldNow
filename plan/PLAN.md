@@ -1,259 +1,349 @@
-# Football Field Booking System - Implementation Plan
+# Football Field Booking System - Detailed Execution Plan
 
-## Role: Senior Fullstack Architect & Lead Developer
-**Context:** University Project - Systems Architecture Course.
-**Goal:** Build a scalable, layered architecture web application for booking football fields.
+## Context
+- Repo already has Phase 1 baseline implemented on backend (Express app, auth routes, JWT middleware, Prisma schema).
+- Remaining phases need deeper backend and infrastructure planning for reliable delivery.
+- Frontend scope is kept lightweight in this document because FE is handled by another team member.
 
----
+## Current Backend Baseline (Verified)
+- Express app bootstrapped with CORS, JSON middleware, health endpoint, auth routes.
+- Prisma schema already defines core entities: users, fields, field_slots, bookings, payments.
+- Auth implemented: register, login, me endpoint.
+- JWT middleware and role middleware exist.
+- Placeholders still empty: booking controller/service, payment service, repositories, Redis/BullMQ setup, workers.
 
-## 1. Database Schema (ERD) & Supabase Setup
+### Resolved Blockers (from review 2026-04-24)
+- [x] @prisma/client added to runtime dependencies.
+- [x] Indexes and constraints from schema.md applied to schema.prisma.
+- [x] Test framework installed: jest + supertest.
+- [x] Standardized error response format defined and implemented.
+- [x] JWT fallback secret removed; centralized config enforces required env vars.
+- [x] Input validation added via Zod; ADMIN role blocked on self-registration.
+- [x] App/server split for testability (app.js + server.js).
+- [x] created_at/updated_at added to Field, FieldSlot models.
+- [x] created_at added to Payment model.
 
-### Overview
-We will use Supabase (PostgreSQL) as the primary data store **and Prisma ORM for database modeling, migrations, and type-safe queries.** Redis will be used for caching and distributed locking (concurrency control).
+### Open Items (Phase 1 — must close before Phase 2)
+- [ ] Implement user.repository.js (findByEmail, create, findById) — currently placeholder.
+- [ ] Refactor auth.service.js to use user.repository instead of direct Prisma calls.
+- [ ] Create and run first Prisma migration (20260424_phase1_initial_schema).
+- [ ] Create seed script (prisma/seed.js) for baseline users.
+- [ ] Add updated_at to Booking and Payment models in schema.prisma.
+- [ ] Configure CORS with environment-aware origin whitelist (currently hardcoded allow-all).
+- [ ] Update .env.example with CORS_ORIGIN, JWT_EXPIRES_IN.
+- [ ] Write unit tests for auth service and middleware.
+- [ ] Document auth API contracts with request/response examples.
 
-### Table Definitions
+## Delivery Principles (All Phases)
+- Keep strict layered architecture: route -> controller -> service -> repository -> infrastructure.
+- Add validation and error contracts before expanding feature set.
+- Every phase must close with API contract updates and test coverage for changed modules.
+- Prefer idempotent APIs and explicit status transitions for booking/payment flows.
 
-#### `users`
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | UUID | PK, Default: uuid_generate_v4() | Unique User ID |
-| `email` | TEXT | Unique, Not Null | User Email |
-| `password` | TEXT | Not Null | Hashed Password |
-| `full_name` | TEXT | Nullable | Display Name |
-| `phone_number` | TEXT | Nullable | Contact Number |
-| `role` | ENUM | 'USER', 'OWNER', 'ADMIN' | Role-Based Access Control |
-| `created_at` | TIMESTAMPTZ | Default: NOW() | |
+## Architecture Targets (Backend + Infrastructure)
 
-#### `fields`
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | UUID | PK | Unique Field ID |
-| `owner_id` | UUID | FK -> users.id | The Owner of the field |
-| `name` | TEXT | Not Null | Name of the football field complex |
-| `location` | TEXT | Not Null | Address/Map coordinates |
-| `description` | TEXT | Nullable | Detail description |
-| `images` | TEXT[] | Nullable | Array of image URLs |
-| `price_per_hour` | DECIMAL | Not Null | Base price |
-| `is_active` | BOOLEAN | Default: false | Admin approval status |
+### Backend Core
+- Runtime: Node.js + Express.
+- Data access: Prisma + PostgreSQL (Supabase-hosted or managed Postgres).
+- Auth: JWT access token with role claims.
+- Validation library: Zod (used for request payload validation in all phases).
+- Queue and jobs: BullMQ + Redis (Redis serves dual purpose: queue backend and distributed locking).
+- Logging: pino + pino-http (structured JSON logs with auto request logging).
+- Security headers: helmet (XSS, clickjacking, MIME sniffing protection).
+- Rate limiting: express-rate-limit (Redis-backed in production).
+- File upload: multer (local parse) + Cloudinary or Supabase Storage (cloud storage).
+- Email: nodemailer (Ethereal for dev, Resend or SendGrid for production).
+- API docs: swagger-jsdoc + swagger-ui-express (served at /api-docs in dev).
+- Test framework: Jest + Supertest.
+- Delayed jobs: BullMQ native delayed jobs for booking expiration (15 min delay).
+- Scheduled consistency cleanup: cron fallback for missed delayed jobs.
 
-#### `field_slots` (Inventory)
-*Note: To manage concurrency easier, we pre-generate slots or define rules. For this plan, we assume explicit slots.*
+### Operational Baseline
+- Environment profiles: local, staging, production.
+- CORS policy: restrict origins per environment (allow-all only in local dev).
+- App-level observability: pino structured request logs, job logs, error logs, health checks.
+- HTTP compression: compression middleware for response payloads.
+- Basic resilience: BullMQ retries with exponential backoff, dead-letter strategy, connection recovery.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | UUID | PK | Unique Slot ID |
-| `field_id` | UUID | FK -> fields.id | Reference to Field |
-| `start_time` | TIME | Not Null | e.g., 17:00 |
-| `end_time` | TIME | Not Null | e.g., 18:30 |
-| `date` | DATE | Not Null | Specific date for the slot |
-| `price_override`| DECIMAL | Nullable | Special pricing for peak hours |
-| `is_locked` | BOOLEAN | Default: false | Temporary lock during booking process |
+### Error Response Contract (All Endpoints)
+All API responses follow a consistent envelope:
+- Success: `{ "success": true, "data": { ... } }`
+- Error: `{ "success": false, "error": { "code": "ERROR_CODE", "message": "...", "details": [...] } }`
 
-#### `bookings`
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | UUID | PK | Unique Booking ID |
-| `user_id` | UUID | FK -> users.id | Who booked it |
-| `slot_id` | UUID | FK -> field_slots.id | Which slot |
-| `status` | ENUM | 'PENDING', 'CONFIRMED', 'CANCELLED' | Booking State |
-| `created_at` | TIMESTAMPTZ | Default: NOW() | |
-| `expires_at` | TIMESTAMPTZ | Not Null | Expiration time for payment (15m) |
+Error codes are defined in schema.md section 6.
 
-#### `payments`
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | UUID | PK | Unique Payment ID |
-| `booking_id` | UUID | FK -> bookings.id | Reference to booking |
-| `amount` | DECIMAL | Not Null | Total amount paid |
-| `provider` | TEXT | e.g., 'Stripe', 'MoMo' | |
-| `status` | ENUM | 'PENDING', 'COMPLETED', 'FAILED' | |
+### API Versioning
+All API routes use the `/api/v1/` prefix to support future breaking changes:
+- Auth: `/api/v1/auth/...`
+- Owner: `/api/v1/owner/...`
+- Public: `/api/v1/fields/...`
+- Booking: `/api/v1/bookings/...`
+- Payment: `/api/v1/payments/...`
+- Admin: `/api/v1/admin/...`
 
----
+### Migration Naming Convention
+All Prisma migrations must follow this format:
+- `YYYYMMDD_phaseN_description`
+- Example: `20260424_phase1_initial_schema`
+- Example: `20260501_phase2_add_field_indexes`
 
-## 2. Backend Implementation (Layered Architecture)
+### Image Upload Strategy
+- Field images are stored as URL strings in the database (`images: String[]`).
+- Upload flow: FE uploads to cloud storage (Cloudinary or Supabase Storage), receives URL, sends URL to BE.
+- BE validates URL format only; does not handle file upload directly.
+- Cloud provider choice: Cloudinary (free tier: 25 credits/month) or Supabase Storage (integrated with existing DB host).
+- Max images per field: 10. Max file size: 5MB. Accepted formats: JPEG, PNG, WebP.
 
-### Folder Structure
-The backend follows a strict separation of concerns.
+### Email Provider Strategy
+- Development: nodemailer + Ethereal (fake SMTP — emails viewable at ethereal.email).
+- Production: Resend (generous free tier, simple API) or SendGrid.
+- Config: `EMAIL_PROVIDER` env var (values: `ethereal`, `resend`, `sendgrid`).
+- Templates: simple string interpolation for MVP; migrate to handlebars if needed.
 
-```
-BE/
-├── prisma/             # Prisma Schema
-│   └── schema.prisma
-├── src/
-│   ├── config/             # Configuration (Redis, Supabase, Env vars)
-│   ├── infrastructure/     # Database connections, 3rd party clients
-│   │   ├── prisma.js       # Prisma Client Instance
-│   │   ├── redis.js        # Redis Client
-│   │   └── queue.js        # BullMQ Setup
-│   ├── controllers/        # HTTP Request Handlers (Req -> Res)
-│   │   ├── auth.controller.js
-│   │   └── booking.controller.js
-│   ├── services/           # Business Logic (The Core)
-│   │   ├── auth.service.js
-│   │   ├── booking.service.js  # Locking logic lives here
-│   │   └── payment.service.js
-│   ├── repositories/       # Data Access Layer (Prisma queries)
-│   │   ├── user.repository.js
-│   │   └── booking.repository.js
-│   ├── middlewares/        # Express Middlewares
-│   │   ├── auth.middleware.js # JWT Verify
-│   │   └── role.middleware.js # RBAC
-│   ├── jobs/               # Background Jobs
-│   │   ├── email.worker.js
-│   │   └── cleanup.cron.js
-│   ├── utils/
-│   └── app.js              # Entry point
-└── package.json
-```
-
-### Key Components
-
-#### 1. Middleware Strategy
-**`authMiddleware`**:
-- Extract `Bearer Token` from headers.
-- Verify JWT using `jsonwebtoken`.
-- Attach `user` payload to `req.user`.
-
-**`roleMiddleware`**:
-- Accepting an array of allowed roles: `roleMiddleware(['ADMIN', 'OWNER'])`.
-- Checks if `req.user.role` is in the allowed list.
-
-#### 2. Advanced Booking Flow (The Race Condition Handler)
-
-**Goal:** Prevent double booking for the same slot.
-
-**Step-by-Step Logic in `BookingService.createBooking`**:
-1.  **Input**: `userId`, `slotId`.
-2.  **Redis Lock**: Attempt to acquire a distributed lock key: `lock:slot:{slotId}` using logic (SETNX with TTL 5 seconds).
-    *   *If failed:* Return Error "Slot is currently being processed by another user".
-3.  **Validation**: Check DB if `slotId` is already `CONFIRMED` in `bookings` table.
-    *   *If booked:* Release Lock & Return Error "Slot already taken".
-4.  **Transaction**:
-    *   Create `Booking` record with status `PENDING`.
-    *   Calculate `expires_at` = Now + 15 minutes.
-5.  **Release Redis Lock**.
-6.  **Queue Job**: Add job to `booking-queue` (BullMQ) -> "Send Confirmation Email".
-7.  **Return**: Booking Details + Payment Link.
+### Payment Provider Strategy
+- Phase 4 implements VNPay integration using their sandbox environment for testing.
+- The provider simulates real-world flows: initiate payment → VNPay gateway → callback (IPN/Return URL) → confirm/fail.
+- Provider interface is abstracted so other real providers can be plugged in later if needed.
+- Config: `PAYMENT_PROVIDER=vnpay`. VNPay requires `VNP_TMNCODE`, `VNP_HASHSECRET`, and `VNP_URL` in `.env`.
 
 ---
 
-## 3. Frontend Implementation
+## Phase Breakdown
 
-### Folder Structure
-Organized by features/domains rather than just file types.
+### Phase 1 - Foundation and Auth Hardening (Retrofit + Complete)
+Goal: keep existing implementation, then harden and complete missing production fundamentals.
 
-```
-FE/
-├── src/
-│   ├── api/                # Axios instances & Service calls
-│   │   ├── axiosClient.js  # Interceptors setup
-│   │   └── endpoints.js
-│   ├── assets/
-│   ├── components/         # Shared UI Components
-│   │   ├── common/         # Button, Input, Modal
-│   │   └── layout/         # Navbar, Sidebar, Footer
-│   ├── context/            # Global State (AuthContext, CartContext)
-│   ├── hooks/              # Custom Hooks (useAuth, useSlots)
-│   ├── layouts/            # Page Layouts
-│   │   ├── MainLayout.jsx
-│   │   ├── AdminLayout.jsx
-│   │   └── OwnerLayout.jsx
-│   ├── pages/
-│   │   ├── auth/           # Login, Register
-│   │   ├── public/         # Home, FieldDetail, Search
-│   │   ├── user/           # MyBookings, Profile
-│   │   ├── owner/          # Dashboard, FieldManagement
-│   │   └── admin/          # UserManagement, Approvals
-│   ├── routes/
-│   │   ├── AppRoutes.jsx   # Main Router Config
-│   │   └── ProtectedRoute.jsx
-│   └── main.jsx
-```
+Primary backend tasks:
+1. Configuration and startup hardening
+- Implement centralized config loader in src/config/index.js with validation for required env vars.
+- Split app construction from server start to improve testability.
+- Add consistent error response format middleware.
 
-### Key Frontend Logic
+2. Prisma and database readiness
+- Add Prisma Client runtime dependency and generation workflow.
+- Create and run first migration from current schema.prisma.
+- Add seed script for roles/test users.
 
-#### 1. Protected Routes
-Wrapper component to handle RBAC on client side.
+3. Auth module hardening
+- Add input validation for register/login payloads.
+- Enforce role whitelist on registration (default USER; OWNER only via controlled path if needed).
+- Replace fallback JWT secret with required env variable.
+- Add token expiration strategy and standard auth error codes.
 
-```jsx
-// src/routes/ProtectedRoute.jsx
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, isAuthenticated } = useAuth();
+4. Repository layer completion
+- Implement user.repository.js methods:
+  - findByEmail
+  - createUser
+  - findById
+- Refactor auth.service.js to use repository instead of direct Prisma calls.
 
-  if (!isAuthenticated) return <Navigate to="/login" />;
-  if (!allowedRoles.includes(user.role)) return <Navigate to="/unauthorized" />;
+5. API contract and docs
+- Define auth endpoint contracts:
+  - POST /api/v1/auth/register
+  - POST /api/v1/auth/login
+  - GET /api/v1/auth/me
+- Add request/response examples and common error payloads.
 
-  return children;
-};
-```
+6. Tests for Phase 1 closure
+- Unit tests: auth service success/failure cases.
+- Middleware tests: missing token, invalid token, forbidden role.
+- Smoke test: health endpoint + auth route registration.
 
-#### 2. Axios Interceptor
-Automatically inject token into every request.
+Phase 1 Done Criteria:
+- No placeholder file in auth path.
+- Auth works with validated input and strict env config.
+- Migration and seed commands documented and repeatable.
+- Test suite exists and passes for auth and middleware baseline.
 
-```javascript
-// src/api/axiosClient.js
-const axiosClient = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+### Phase 2 - Field and Slot Domain (Owner + Public Query)
+Goal: implement complete field inventory lifecycle and slot generation with clean ownership rules.
 
-axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-```
+Primary backend tasks:
+1. Data model refinements
+- Add indexes for field search and slot lookup.
+- Add unique constraints for duplicate slot prevention:
+  - (field_id, date, start_time, end_time)
+- Prepare soft-delete strategy if required (active flag or deleted_at).
+
+2. Field repository and service
+- Implement field repository methods:
+  - createField
+  - updateField
+  - listOwnerFields
+  - getFieldById
+  - setFieldActiveStatus
+- Implement business rules:
+  - Owner can mutate only own fields.
+  - Admin controls approval state if moderation is enabled.
+
+3. Slot generation and management
+- Implement slot generation strategies:
+  - manual batch create
+  - recurring generator for date range
+- Validate slot overlaps before insert.
+- Expose slot CRUD for owner-managed windows.
+
+4. Public search APIs
+- GET /api/v1/fields with pagination and filters:
+  - location
+  - price range
+  - active only
+- GET /api/v1/fields/:id with field detail and upcoming slots.
+
+5. Security and role controls
+- Owner endpoints protected by auth + role middleware.
+- Public endpoints read-only and rate-limited.
+
+6. Test coverage
+- Service tests for ownership and slot overlap.
+- API integration tests for filters and pagination.
+
+Phase 2 Done Criteria:
+- Owner can fully manage fields and slots without violating ownership.
+- Public can discover active fields with predictable query performance.
+- Duplicate/overlapping slot creation is blocked.
+
+Frontend scope (minimal):
+- Owner field form and slot management pages consume stable APIs.
+- Public field list/detail pages support core filters and pagination only.
+
+### Phase 3 - Booking Concurrency Engine and Job Processing
+Goal: build safe booking flow under concurrency with expiration and async notifications.
+
+Primary infrastructure tasks:
+1. Redis setup
+- Implement infrastructure/redis.js with connection lifecycle and retry policy.
+- Redis serves dual purpose: BullMQ queue backend + distributed locking (SET NX PX).
+- Define key naming strategy:
+  - lock:slot:{slotId}
+  - rate:booking:{userId}
+
+2. BullMQ setup
+- Implement infrastructure/queue.js with named queues:
+  - booking-events
+  - booking-expiration
+  - notification-email
+- Configure worker concurrency, retries, and exponential backoff.
+- Use BullMQ native delayed jobs for booking expiration (15 min delay).
+
+3. Worker and scheduler implementation
+- Implement email.worker.js for booking-created notifications.
+- Implement delayed expiration worker:
+  - cancel pending booking when expires_at reached
+  - idempotency check before state update
+- Keep cleanup cron as fallback sweeper for missed expiration jobs.
+
+Primary backend tasks:
+4. Booking repository and transactional service
+- Implement booking repository methods:
+  - findConfirmedBySlot
+  - createPendingBooking
+  - confirmBooking
+  - cancelExpiredBooking
+  - listBookingsByUser
+- Implement createBooking flow:
+  - acquire Redis lock (SET NX PX)
+  - verify slot availability
+  - create booking in transaction
+  - enqueue delayed expiration job
+  - release lock safely (token-based unlock)
+
+5. Booking API endpoints
+- POST /api/v1/bookings
+- GET /api/v1/bookings/me
+- GET /api/v1/bookings/:id
+- DELETE /api/v1/bookings/:id (cancel if policy allows)
+
+6. Concurrency and reliability tests
+- Simulate parallel booking requests on same slot.
+- Verify only one booking wins and others fail with deterministic code.
+- Validate job retry and idempotent re-processing.
+
+Phase 3 Done Criteria:
+- Double-booking prevention is validated under concurrent requests.
+- Pending bookings auto-expire after 15 minutes.
+- Jobs are observable and retry-safe.
+
+Frontend scope (minimal):
+- Booking button/flow integrated with status feedback.
+- My Bookings page shows pending/confirmed/cancelled states.
+
+### Phase 4 - Payment, Admin Operations, Quality Gate, Deployment
+Goal: complete payment state machine, admin controls, production hardening, and release.
+
+Primary backend tasks:
+1. Payment domain implementation
+- Implement payment.service.js with state transitions:
+  - PENDING -> COMPLETED
+  - PENDING -> FAILED
+- Protect against duplicate payment confirmation.
+- Link payment completion to booking confirmation transactionally.
+
+2. Payment endpoints
+- POST /api/v1/payments/initiate
+- POST /api/v1/payments/confirm (mock provider callback)
+- POST /api/v1/payments/fail
+- GET /api/v1/payments/:bookingId
+
+3. Admin APIs
+- Approve/reject fields.
+- List users with role/status filters.
+- Optional role update endpoint with audit logging.
+
+4. Observability and operations
+- Add pino structured logs with requestId/jobId correlation.
+- Add readiness and dependency checks (db, redis, queue).
+- Add graceful shutdown for HTTP server and workers.
+
+5. Testing and release readiness
+- End-to-end flow tests:
+  - register -> login -> create field -> create slot -> book -> pay -> confirm
+- Non-functional test checklist:
+  - concurrent booking load test
+  - expired booking sweep correctness
+  - payment idempotency
+
+6. Deployment and runbook
+- Dockerfiles and environment templates for BE workers and API.
+- Deploy API + worker as separate processes.
+- Document rollback steps and post-deploy verification checklist.
+
+Phase 4 Done Criteria:
+- End-to-end happy path and critical failure paths are tested.
+- Admin operations and payment states are stable.
+- Production deployment includes worker process and operational runbook.
+
+Frontend scope (minimal):
+- Admin pages consume stable moderation and user APIs.
+- Payment UI can trigger mock initiate/confirm/fail actions.
 
 ---
 
-## 4. Advanced Integration & Background Tasks
+## Suggested Execution Order Inside Backend Team
+1. Complete Phase 1 hardening before new domain features.
+2. Build Phase 2 repositories/services first, then controllers/routes.
+3. In Phase 3, finish Redis + queue infrastructure before booking API.
+4. In Phase 4, lock payment state machine and idempotency before admin extras.
 
-### 1. Redis & BullMQ Setup
-**Infrastructure**:
-- Use Docker Compose to spin up Redis.
-- **BullMQ**:
-    - **Producer**: In `BookingService`, push an event `{ type: 'SEND_EMAIL', email: ..., bookingId: ... }`.
-    - **Consumer (Worker)**: Listens to the queue, generates HTML email, sends via Nodemailer/SendGrid.
+## Artifacts to Maintain Per Phase
+- Updated API contract document.
+- Migration scripts and rollback notes.
+- Test report (unit/integration/load where relevant).
+- Operational checklist (health checks, queue status, known risks).
 
-### 2. Auto-Cancellation (Cron Job vs. Delayed Job)
-*Strategy: Delayed Job is better for per-booking precision, but Cron is good for cleanup.*
+## Cross-Phase Conventions
+- API versioning: all routes prefixed with `/api/v1/`.
+- Validation: all request payloads validated via Zod schemas in src/validators/ before reaching controllers.
+- Error handling: services throw AppError instances (from src/utils/errors.js); global error middleware handles formatting.
+- Response format: all endpoints return { success: true/false, data/error } envelope.
+- Logging: pino for structured JSON logs; pino-http for automatic request logging with requestId.
+- Security: helmet for HTTP headers; CORS environment-aware origin whitelist.
+- Migration naming: YYYYMMDD_phaseN_description.
+- Testing: jest for unit tests, supertest for integration/API tests.
 
-**Approach: BullMQ Delayed Job**
-- When Booking is created (Pending), add a job to `expiration-queue` with `delay: 15 * 60 * 1000` (15 mins).
-- **Worker Logic**:
-    1. Check `Booking` status in DB.
-    2. If still `PENDING` (User didn't pay), update status to `CANCELLED`.
-    3. Release any soft-locks on the slot.
-
-**Alternative: Node-Cron (Backup)**
-- Runs every minute: `* * * * *`.
-- Query: `UPDATE bookings SET status='CANCELLED' WHERE status='PENDING' AND expires_at < NOW()`.
-
----
-
-## 5. Timeline & Checklist (Implementation Phases - 3 Members)
-
-### Phase 1: Foundation & Auth
-*   [Backend] Initialize Project, Express Setup, Database Connection.
-*   [Backend] Implement JWT Auth (Login/Register) & RBAC Middlewares.
-*   [Frontend] Initialize Vite project, Tailwind Install, Router Setup.
-*   [Frontend] Build Login/Register Pages & AuthContext.
-*   [DB] Design & Apply Supabase Schema (Users, Fields).
-
-### Phase 2: Core Features (Fields & Slots)
-*   [Backend] CRUD APIs for Field Management (Owner side).
-*   [Backend] Logic to generate TimeSlots for a field.
-*   [Frontend] Owner Dashboard: Create Field, Add Slots.
-*   [Frontend] Public Page: Search Fields, Filter by location/type.
-
-### Phase 3: Booking System (The Hard Part)
-*   [Infra] Setup Redis & BullMQ.
-*   [Backend] Implement `createBooking` with Redis Distributed Lock.
-*   [Backend] Setup Cron/Delayed Job for 15m expiration.
-*   [Frontend] Booking UI: Select Slot -> Confirm -> Payment Mock.
-*   [Frontend] User Dashboard: "My History".
-
-### Phase 4: Payments, Polish & Deploy
-*   [Backend] Fake Payment Integration (Update status -> Confirmed).
-*   [Frontend] Admin Dashboard (Approve Fields, View Users).
-*   [Both] Integration Testing (Test double booking race conditions).
-*   [Both] Deployment (Vercel for FE, Render/Fly for BE).
+## Frontend Integration Notes
+- FE stack: React 19 + Vite + TailwindCSS v4 + React Router v7.
+- HTTP client: axios with centralized instance (base URL, auth interceptor, error transform).
+- Token storage: localStorage or httpOnly cookie (to be decided in Phase 1).
+- FE–BE contract: FE must parse the `{ success, data, error }` envelope consistently.
+- Detailed FE plan maintained separately by FE team member; see plan/frontend.md.

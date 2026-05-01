@@ -14,6 +14,7 @@ model User {
   full_name    String?
   phone_number String?
   role         Role       @default(USER)
+  is_active    Boolean    @default(true)
   created_at   DateTime   @default(now()) @db.Timestamptz
 
   fields       Field[]
@@ -62,6 +63,7 @@ model Booking {
   slot_id    String        @db.Uuid
   status     BookingStatus @default(PENDING)
   created_at DateTime      @default(now()) @db.Timestamptz
+  updated_at DateTime      @updatedAt
   expires_at DateTime      @db.Timestamptz
 
   user       User          @relation(fields: [user_id], references: [id])
@@ -79,6 +81,7 @@ model Payment {
   provider   String
   status     PaymentStatus @default(PENDING)
   created_at DateTime      @default(now()) @db.Timestamptz
+  updated_at DateTime      @updatedAt
 
   booking    Booking       @relation(fields: [booking_id], references: [id])
 
