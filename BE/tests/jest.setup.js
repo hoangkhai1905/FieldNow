@@ -9,21 +9,22 @@ jest.mock('bullmq', () => ({
   })),
 }));
 
+let globalLocks = {}; // Global simple in-memory lock for testing
+
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => {
-    let locks = {}; // Simple in-memory lock for testing
     return {
       on: jest.fn(),
       set: jest.fn((key, value, mode, px, ttl) => {
-        if (mode === 'NX' && !locks[key]) {
-          locks[key] = value;
+        if (mode === 'NX' && !globalLocks[key]) {
+          globalLocks[key] = value;
           return Promise.resolve('OK');
         }
         return Promise.resolve(null);
       }),
       eval: jest.fn((script, numKeys, key, value) => {
-        if (locks[key] === value) {
-          delete locks[key];
+        if (globalLocks[key] === value) {
+          delete globalLocks[key];
           return Promise.resolve(1);
         }
         return Promise.resolve(0);

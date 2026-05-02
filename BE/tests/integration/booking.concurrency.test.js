@@ -1,14 +1,3 @@
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      on: jest.fn(),
-      set: jest.fn().mockResolvedValue('OK'), // Mock acquireLock success
-      eval: jest.fn().mockResolvedValue(1),   // Mock releaseLock success
-      quit: jest.fn(),
-    };
-  });
-});
-
 const request = require('supertest');
 const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
@@ -46,8 +35,6 @@ describe('Booking Concurrency', () => {
     // Clean up
     await prisma.booking.deleteMany({ where: { slot_id: slotId } });
     await prisma.user.delete({ where: { email: 'concurrent@fieldnow.dev' } });
-    await redisClient.quit();
-    
     // Disconnect queues to allow Jest to exit
     await bookingEventsQueue.close();
     await bookingExpirationQueue.close();

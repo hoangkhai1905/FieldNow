@@ -309,9 +309,9 @@ Example log output:
 
 | Phase | Status | Scope |
 |-------|--------|-------|
-| Phase 1 — Auth & Foundation | ✅ Done | Auth, config, middleware, migration, seed, Swagger |
-| Phase 2 — Field & Slot Domain | ✅ Done | CRUD fields/slots, public search, rate limiting |
-| Phase 3 — Booking Engine | ✅ Done | Redis locking, BullMQ jobs, booking flow, expiration |
-| Phase 4 — Payment & Admin | 🔲 Next | Payment state machine, admin APIs, deployment |
+| Phase 1 | Foundation & Auth (Express, PostgreSQL, Prisma, JWT) | ✅ Completed |
+| Phase 2 | Entities & REST API (Fields, Slots, Admin) | ✅ Completed |
+| Phase 3 | Scheduling & High Concurrency (Redis Lock, BullMQ Jobs) | ✅ Completed |
+| Phase 4 | Payments, Admin & Deployment (VNPay Sandbox, Docker) | ✅ Completed |
 
 See [`../plan/`](../plan/) for detailed phase documentation and effort estimates.

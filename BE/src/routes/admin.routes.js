@@ -61,5 +61,53 @@ router.patch('/fields/:id/approve', fieldController.approveField);
  *         description: Field not found
  */
 router.patch('/fields/:id/reject', fieldController.rejectField);
+const adminController = require('../controllers/admin.controller');
+
+/**
+ * @swagger
+ * /admin/users:
+ *   get:
+ *     summary: List all users
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ */
+router.get('/users', adminController.getUsers);
+
+/**
+ * @swagger
+ * /admin/users/{id}/role:
+ *   patch:
+ *     summary: Update a user's role
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [USER, OWNER, ADMIN]
+ *     responses:
+ *       200:
+ *         description: User role updated
+ */
+router.patch('/users/:id/role', adminController.updateUserRole);
 
 module.exports = router;

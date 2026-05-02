@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fieldnow-db
+    restart: always
+    environment:
+      POSTGRES_USER: fieldnow
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: fieldnow
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fieldnow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: fieldnow-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: 
+      context: ./BE
+      dockerfile: Dockerfile
+    container_name: fieldnow-api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DATABASE_URL=postgresql://fieldnow:password123@db:5432/fieldnow?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=supersecretjwtkeyforlocaldev
+      - JWT_EXPIRES_IN=1d
+      - EMAIL_PROVIDER=ethereal
+      - PAYMENT_PROVIDER=vnpay
+      - VNP_TMNCODE=TEST1234
+      - VNP_HASHSECRET=TESTSECRET1234567890
+      - VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      - VNP_RETURN_URL=http://localhost:5000/api/v1/payments/vnpay-return
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             npx prisma db seed &&
+             npm run dev"
+    volumes:
+      - ./BE:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
+  redisdata:
