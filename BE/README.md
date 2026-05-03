@@ -184,6 +184,23 @@ Features:
 | `GET`  | `/api/v1/bookings/me` | Bearer | Get user's booking history |
 | `GET`  | `/api/v1/bookings/:id` | Bearer | Get details of a specific booking |
 | `DELETE` | `/api/v1/bookings/:id`| Bearer | Cancel a pending booking |
+| `GET` | `/api/v1/bookings/:id/status` | Bearer | Polling booking status |
+
+#### Payments (Phase 4)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/payments/initiate` | Bearer | Generate VNPay payment URL for a booking |
+| `GET`  | `/api/v1/payments/:bookingId` | Bearer | Get payment status of a booking |
+| `GET`  | `/api/v1/payments/vnpay-return`| — | VNPay callback redirect (Frontend) |
+| `GET`  | `/api/v1/payments/vnpay-ipn` | — | VNPay Server-to-Server callback |
+
+#### Admin (Phase 4)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `PATCH`| `/api/v1/admin/fields/:id/approve` | Admin | Approve field for public display |
+| `PATCH`| `/api/v1/admin/fields/:id/reject`  | Admin | Reject/Suspend field |
+| `GET`  | `/api/v1/admin/users` | Admin | List all registered users |
+| `PATCH`| `/api/v1/admin/users/:id/role` | Admin | Change user role (USER/OWNER/ADMIN) |
 
 #### Utility
 | Method | Path | Auth | Description |

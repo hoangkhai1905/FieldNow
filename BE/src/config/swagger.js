@@ -212,6 +212,46 @@ const options = {
             updated_at: { type: 'string', format: 'date-time' },
           },
         },
+        // --- Payment schemas ---
+        InitiatePaymentRequest: {
+          type: 'object',
+          required: ['bookingId'],
+          properties: {
+            bookingId: { type: 'string', format: 'uuid', example: '123e4567-e89b-12d3-a456-426614174000' },
+          },
+        },
+        Payment: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            booking_id: { type: 'string', format: 'uuid' },
+            amount: { type: 'number', example: 500000 },
+            provider: { type: 'string', example: 'vnpay' },
+            status: { type: 'string', enum: ['PENDING', 'COMPLETED', 'FAILED'] },
+            provider_ref: { type: 'string', nullable: true },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        // --- Admin schemas ---
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            email: { type: 'string', format: 'email' },
+            full_name: { type: 'string', nullable: true },
+            role: { type: 'string', enum: ['USER', 'OWNER', 'ADMIN'] },
+            phone: { type: 'string', nullable: true },
+            created_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        UpdateUserRoleRequest: {
+          type: 'object',
+          required: ['role'],
+          properties: {
+            role: { type: 'string', enum: ['USER', 'OWNER', 'ADMIN'] },
+          },
+        },
       },
     },
   },
