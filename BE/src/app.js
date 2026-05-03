@@ -13,6 +13,7 @@ const publicRoutes = require('./routes/public.routes');
 const adminRoutes = require('./routes/admin.routes');
 const bookingRoutes = require('./routes/booking.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const uploadRoutes = require('./routes/upload.routes');
 const { errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -76,6 +77,7 @@ app.use('/api/v1', publicRoutes); // Public fields routes
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // --- Health check ---
 app.get('/health', (_req, res) => {

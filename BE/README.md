@@ -202,6 +202,12 @@ Features:
 | `GET`  | `/api/v1/admin/users` | Admin | List all registered users |
 | `PATCH`| `/api/v1/admin/users/:id/role` | Admin | Change user role (USER/OWNER/ADMIN) |
 
+#### Upload (Phase 4 Extension)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/v1/upload/images` | Owner/Admin | Upload images to Supabase Storage (Multipart) |
+| `DELETE`| `/api/v1/upload/images` | Owner/Admin | Delete an image from storage by URL |
+
 #### Utility
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|

@@ -252,6 +252,22 @@ const options = {
             role: { type: 'string', enum: ['USER', 'OWNER', 'ADMIN'] },
           },
         },
+        UploadResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                urls: {
+                  type: 'array',
+                  items: { type: 'string', format: 'uri' },
+                  example: ['https://project.supabase.co/storage/v1/object/public/field-images/fields/1/123.jpg'],
+                },
+              },
+            },
+          },
+        },
       },
     },
   },
