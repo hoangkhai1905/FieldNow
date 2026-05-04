@@ -1,59 +1,94 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
+import { loginRequest } from '../../api/endpoints';
+import '../public/UserFacing.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        login(data.token, data.user);
-        navigate('/');
+      const data = await loginRequest({ email, password });
+      login(data.token, data.user);
+
+      if (data.user?.role === 'OWNER') {
+        navigate('/owner');
+      } else if (data.user?.role === 'ADMIN') {
+        navigate('/admin');
       } else {
-        alert(data.error);
+        navigate('/');
       }
     } catch (error) {
-      console.error(error);
+      setError(error.message || 'Đăng nhập thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full px-4 py-2 border rounded-md"
-            required
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full px-4 py-2 border rounded-md"
-            required
-          />
-          <button type="submit" className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-            Login
+    <div className="auth-screen">
+      <section className="auth-card auth-card-split">
+        <div className="auth-brand-panel">
+          <p className="eyebrow">FieldNow</p>
+          <h1>Đăng nhập để sẵn sàng ra sân cùng đội bạn.</h1>
+          <p>
+            Một tài khoản, nhiều tiện ích: tìm sân, đặt lịch, giữ chỗ và thanh toán nhanh.
+          </p>
+          <div className="auth-highlights">
+            <span>Tìm sân</span>
+            <span>Đặt lịch</span>
+            <span>Giữ chỗ</span>
+            <span>Thanh toán</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <h2>Đăng nhập</h2>
+          <p className="muted">Dùng tài khoản bạn đã đăng ký để bắt đầu đặt sân.</p>
+
+          {error && <div className="notice notice-error">{error}</div>}
+
+          <label className="form-field">
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Mật khẩu</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </label>
+
+          <button type="submit" className="primary-button" disabled={loading}>
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
+
+          <p className="auth-footnote">
+            Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+          </p>
         </form>
-      </div>
+      </section>
     </div>
   );
 };

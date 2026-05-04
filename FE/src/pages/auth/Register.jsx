@@ -1,77 +1,103 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { registerRequest } from '../../api/endpoints';
+import '../public/UserFacing.css';
 
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('USER');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullName, role })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        navigate('/login');
-      } else {
-        alert(data.error);
-      }
+      await registerRequest({ email, password, fullName, role });
+      navigate('/login');
     } catch (error) {
-      console.error(error);
+      setError(error.message || 'Đăng ký thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Full Name"
-            className="w-full px-4 py-2 border rounded-md"
-            required
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full px-4 py-2 border rounded-md"
-            required
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full px-4 py-2 border rounded-md"
-            required
-          />
-          <select 
-            value={role} 
-            onChange={(e) => setRole(e.target.value)}
-            className="w-full px-4 py-2 border rounded-md bg-white"
-          >
-            <option value="USER">User</option>
-            <option value="OWNER">Owner</option>
-          </select>
-          <button type="submit" className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-            Register
+    <div className="auth-screen">
+      <section className="auth-card auth-card-split">
+        <div className="auth-brand-panel auth-brand-panel-alt">
+          <p className="eyebrow">FieldNow</p>
+          <h1>Tạo tài khoản để bắt đầu đặt sân hoặc quản lý sân.</h1>
+          <p>
+            Chọn vai trò phù hợp. Chủ sân dùng trang quản lý lịch, người chơi dùng luồng đặt sân.
+          </p>
+          <div className="auth-highlights">
+            <span>Người chơi</span>
+            <span>Chủ sân</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <h2>Đăng ký</h2>
+          <p className="muted">Chọn vai trò phù hợp để bắt đầu.</p>
+
+          {error && <div className="notice notice-error">{error}</div>}
+
+          <label className="form-field">
+            <span>Họ và tên</span>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Nguyễn Văn A"
+              required
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Mật khẩu</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Tối thiểu 8 ký tự"
+              required
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Vai trò</span>
+            <select value={role} onChange={(event) => setRole(event.target.value)}>
+              <option value="USER">Người chơi</option>
+              <option value="OWNER">Chủ sân</option>
+            </select>
+          </label>
+
+          <button type="submit" className="primary-button" disabled={loading}>
+            {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
           </button>
+
+          <p className="auth-footnote">
+            Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+          </p>
         </form>
-        <p className="mt-4 text-center text-sm">
-          Already have an account? <Link to="/login" className="text-blue-500">Login</Link>
-        </p>
-      </div>
+      </section>
     </div>
   );
 };
