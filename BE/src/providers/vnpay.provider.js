@@ -15,7 +15,7 @@ const sortObject = (obj) => {
   }
   str.sort();
   for (key = 0; key < str.length; key++) {
-    sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, "+");
+    sorted[str[key]] = obj[str[key]]; // Don't encode here yet, let stringifier handle it
   }
   return sorted;
 };
@@ -78,12 +78,14 @@ class VNPayProvider {
 
     vnp_Params = sortObject(vnp_Params);
 
-    const signData = querystring.stringify(vnp_Params, { encode: false });
+    const signData = querystring.stringify(vnp_Params, '&', '=', {
+      encodeURIComponent: (s) => encodeURIComponent(s).replace(/%20/g, "+")
+    });
+    
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex'); 
-    vnp_Params['vnp_SecureHash'] = signed;
-
-    vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
+    
+    vnpUrl += '?' + signData + '&vnp_SecureHash=' + signed;
 
     return vnpUrl;
   }
@@ -97,7 +99,9 @@ class VNPayProvider {
     delete vnp_Params['vnp_SecureHashType'];
 
     vnp_Params = sortObject(vnp_Params);
-    const signData = querystring.stringify(vnp_Params, { encode: false });
+    const signData = querystring.stringify(vnp_Params, '&', '=', {
+      encodeURIComponent: (s) => encodeURIComponent(s).replace(/%20/g, "+")
+    });
     
     const hmac = crypto.createHmac('sha512', this.hashSecret);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');     
