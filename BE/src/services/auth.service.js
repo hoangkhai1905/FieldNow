@@ -33,6 +33,11 @@ const login = async (email, password) => {
     throw errors.unauthorized('Invalid email or password');
   }
 
+  // Check if email is verified
+  if (!user.is_email_verified) {
+    throw errors.unauthorized('Email not verified. Please verify your email first.');
+  }
+
   const token = jwt.sign(
     { userId: user.id, role: user.role, email: user.email },
     config.jwtSecret,
