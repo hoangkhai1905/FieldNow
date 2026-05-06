@@ -14,15 +14,21 @@ model User {
   password          String
   full_name         String?
   phone_number      String?
+  avatar_url        String?
   role              Role       @default(USER)
   is_active         Boolean    @default(true)
+  deactivated_at    DateTime?  @db.Timestamptz
   is_email_verified Boolean    @default(false)
   otp_code          String?
   otp_expires_at    DateTime?
+  otp_attempts      Int        @default(0)
+  otp_last_sent_at  DateTime?  @db.Timestamptz
+  otp_resend_available_at DateTime? @db.Timestamptz
   created_at        DateTime   @default(now()) @db.Timestamptz
 
   fields            Field[]
   bookings          Booking[]
+  refresh_tokens    RefreshToken[]
 
   @@index([otp_code])
 }
@@ -35,6 +41,7 @@ model Field {
   description    String?
   images         String[]
   price_per_hour Decimal     @db.Decimal
+  type           FieldType   @default(FUTSAL)
   is_active      Boolean     @default(false)
   created_at     DateTime    @default(now()) @db.Timestamptz
   updated_at     DateTime    @updatedAt
@@ -49,8 +56,8 @@ model Field {
 model FieldSlot {
   id             String    @id @default(uuid()) @db.Uuid
   field_id       String    @db.Uuid
-  start_time     String    // Using string for HH:mm format
-  end_time       String
+  start_time     DateTime  @db.Time
+  end_time       DateTime  @db.Time
   date           DateTime  @db.Date
   price_override Decimal?  @db.Decimal
   is_locked      Boolean   @default(false)
@@ -94,10 +101,32 @@ model Payment {
   @@index([booking_id])
 }
 
+model RefreshToken {
+  id            String   @id @default(uuid()) @db.Uuid
+  user_id       String   @db.Uuid
+  token_hash    String   @unique
+  expires_at    DateTime @db.Timestamptz
+  revoked_at    DateTime? @db.Timestamptz
+  last_used_at  DateTime? @db.Timestamptz
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  user          User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, expires_at])
+}
+
 enum Role {
   USER
   OWNER
   ADMIN
+}
+
+enum FieldType {
+  FUTSAL
+  BADMINTON
+  BASKETBALL
+  VOLLEYBALL
+  TENNIS
 }
 
 enum BookingStatus {

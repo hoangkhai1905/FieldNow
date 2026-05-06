@@ -37,6 +37,7 @@ const createFieldSchema = z.object({
   pricePerHour: z
     .number({ required_error: 'Price per hour is required' })
     .positive('Price must be positive'),
+  type: z.enum(['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS']).optional(),
 });
 
 const updateFieldSchema = z.object({
@@ -61,6 +62,7 @@ const updateFieldSchema = z.object({
     .max(10, 'Maximum 10 images allowed')
     .optional(),
   pricePerHour: z.number().positive('Price must be positive').optional(),
+  type: z.enum(['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS']).optional(),
 });
 
 module.exports = { createFieldSchema, updateFieldSchema };

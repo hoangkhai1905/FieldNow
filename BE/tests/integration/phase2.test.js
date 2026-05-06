@@ -8,11 +8,22 @@ describe('Phase 2 Integration Tests', () => {
   let userToken, ownerToken, adminToken;
   let ownerId, fieldId;
 
+  const ensureUser = async (email, role) => {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return existing;
+    return prisma.user.create({
+      data: {
+        email,
+        password: 'password123',
+        role,
+      },
+    });
+  };
+
   beforeAll(async () => {
-    // We assume seed data is present (from prisma:seed)
-    const owner = await prisma.user.findUnique({ where: { email: 'owner@fieldnow.dev' } });
-    const user = await prisma.user.findUnique({ where: { email: 'user@fieldnow.dev' } });
-    const admin = await prisma.user.findUnique({ where: { email: 'admin@fieldnow.dev' } });
+    const owner = await ensureUser('owner@fieldnow.dev', 'OWNER');
+    const user = await ensureUser('user@fieldnow.dev', 'USER');
+    const admin = await ensureUser('admin@fieldnow.dev', 'ADMIN');
 
     ownerId = owner.id;
 
@@ -21,7 +32,20 @@ describe('Phase 2 Integration Tests', () => {
     adminToken = jwt.sign({ userId: admin.id, role: admin.role, email: admin.email }, config.jwtSecret, { expiresIn: '1h' });
 
     const field = await prisma.field.findFirst({ where: { owner_id: ownerId } });
-    fieldId = field.id;
+    if (field) {
+      fieldId = field.id;
+    } else {
+      const createdField = await prisma.field.create({
+        data: {
+          owner_id: ownerId,
+          name: 'Seed Field',
+          location: 'Ho Chi Minh',
+          price_per_hour: 100000,
+          is_active: true,
+        },
+      });
+      fieldId = createdField.id;
+    }
   });
 
   describe('Authorization Boundaries', () => {

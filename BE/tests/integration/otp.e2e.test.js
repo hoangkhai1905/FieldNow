@@ -6,8 +6,7 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
-const authService = require('../../src/services/auth.service');
-const otpRepository = require('../../src/repositories/otp.repository');
+const { emailQueue } = require('../../src/infrastructure/queue');
 
 // Test data
 const testUser = {
@@ -17,10 +16,32 @@ const testUser = {
   role: 'USER',
 };
 
+const getLastOtpForEmail = (email, jobName = 'email.otp_sent') => {
+  const calls = emailQueue.add.mock.calls
+    .filter(([name, payload]) => name === jobName && payload.email === email);
+  if (calls.length === 0) return null;
+  return calls[calls.length - 1][1].otpCode;
+};
+
+const allowResend = async (email) => {
+  await prisma.user.update({
+    where: { email },
+    data: {
+      otp_attempts: 0,
+      otp_last_sent_at: new Date(Date.now() - 1000),
+      otp_resend_available_at: new Date(Date.now() - 1000),
+    },
+  });
+};
+
 describe('OTP Integration Tests', () => {
   // Cleanup after all tests
   afterAll(async () => {
     try {
+      const user = await prisma.user.findUnique({ where: { email: testUser.email } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
       await prisma.user.delete({ where: { email: testUser.email } });
     } catch (err) {
       // User might not exist if test failed during registration
@@ -78,14 +99,8 @@ describe('OTP Integration Tests', () => {
     });
 
     it('should generate new OTP on subsequent sends', async () => {
-      // Get first OTP
-      const user1 = await prisma.user.findUnique({
-        where: { email: testUser.email },
-      });
-      const firstOTP = user1.otp_code;
-
-      // Wait a bit to ensure different timestamps
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      const firstOTP = getLastOtpForEmail(testUser.email);
+      await allowResend(testUser.email);
 
       // Send OTP again
       await request(app)
@@ -94,10 +109,7 @@ describe('OTP Integration Tests', () => {
         .expect(200);
 
       // Get second OTP
-      const user2 = await prisma.user.findUnique({
-        where: { email: testUser.email },
-      });
-      const secondOTP = user2.otp_code;
+      const secondOTP = getLastOtpForEmail(testUser.email);
 
       // OTPs should be different (statistically very unlikely to be the same)
       expect(firstOTP).not.toBe(secondOTP);
@@ -109,16 +121,13 @@ describe('OTP Integration Tests', () => {
 
     beforeAll(async () => {
       // Send OTP to get a valid code
+      await allowResend(testUser.email);
       await request(app)
         .post('/api/v1/otp/send')
         .send({ email: testUser.email })
         .expect(200);
 
-      // Retrieve OTP from database
-      const user = await prisma.user.findUnique({
-        where: { email: testUser.email },
-      });
-      validOTP = user.otp_code;
+      validOTP = getLastOtpForEmail(testUser.email);
     });
 
     it('should verify OTP and mark email as verified', async () => {
@@ -201,11 +210,7 @@ describe('OTP Integration Tests', () => {
         .send({ email: newEmail })
         .expect(200);
 
-      // Get OTP and manually expire it
-      const user = await prisma.user.findUnique({
-        where: { email: newEmail },
-      });
-      const otpCode = user.otp_code;
+      const otpCode = getLastOtpForEmail(newEmail);
 
       // Set expiration to past
       await prisma.user.update({
@@ -242,6 +247,8 @@ describe('OTP Integration Tests', () => {
         .send({ email: newEmail })
         .expect(200);
 
+      await allowResend(newEmail);
+
       // Resend OTP
       const res = await request(app)
         .post('/api/v1/otp/resend')
@@ -256,13 +263,37 @@ describe('OTP Integration Tests', () => {
     });
 
     it('should fail if trying to resend to already verified user', async () => {
+      const verifiedEmail = `otp-verified-${Date.now()}@example.com`;
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({ ...testUser, email: verifiedEmail })
+        .expect(201);
+
+      await request(app)
+        .post('/api/v1/otp/send')
+        .send({ email: verifiedEmail })
+        .expect(200);
+
+      const otpCode = getLastOtpForEmail(verifiedEmail);
+      await request(app)
+        .post('/api/v1/otp/verify')
+        .send({ email: verifiedEmail, otp_code: otpCode })
+        .expect(200);
+
+      await allowResend(verifiedEmail);
       const res = await request(app)
         .post('/api/v1/otp/resend')
-        .send({ email: testUser.email }) // This user is already verified
+        .send({ email: verifiedEmail })
         .expect(409);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.message).toContain('Email already verified');
+
+      const user = await prisma.user.findUnique({ where: { email: verifiedEmail } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
+      await prisma.user.delete({ where: { email: verifiedEmail } });
     });
 
     it('should fail if user does not exist', async () => {
@@ -356,10 +387,7 @@ describe('OTP Integration Tests', () => {
       expect(sendOtpRes.body.data.message).toContain('OTP sent');
 
       // Step 4: Get OTP from database
-      const userWithOtp = await prisma.user.findUnique({
-        where: { email: flowEmail },
-      });
-      const otp = userWithOtp.otp_code;
+      const otp = getLastOtpForEmail(flowEmail);
 
       // Step 5: Verify OTP
       const verifyRes = await request(app)
@@ -387,6 +415,10 @@ describe('OTP Integration Tests', () => {
       expect(meRes.body.data.user.email).toBe(flowEmail);
 
       // Cleanup
+      const user = await prisma.user.findUnique({ where: { email: flowEmail } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
       await prisma.user.delete({ where: { email: flowEmail } });
     });
   });

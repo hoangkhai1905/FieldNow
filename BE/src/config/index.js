@@ -22,6 +22,8 @@ const config = {
   databaseUrl: process.env.DATABASE_URL,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+  refreshTokenTtlDays: parseInt(process.env.REFRESH_TOKEN_TTL_DAYS, 10) || 30,
+  refreshTokenMaxPerUser: parseInt(process.env.REFRESH_TOKEN_MAX_PER_USER, 10) || 5,
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   nodeEnv: process.env.NODE_ENV || 'development',
   corsOrigin: process.env.CORS_ORIGIN || null, // null = allow all in dev

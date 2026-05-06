@@ -6,6 +6,25 @@ const { errors } = require('../utils/errors');
  * Slot service — business logic for slot management.
  */
 
+const toMinutes = (value) => {
+  if (value instanceof Date) {
+    return value.getUTCHours() * 60 + value.getUTCMinutes();
+  }
+
+  if (typeof value === 'string') {
+    const [hours, minutes] = value.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  return NaN;
+};
+
+const toTimeDate = (value) => {
+  if (value instanceof Date) return value;
+  const [hours, minutes] = String(value).split(':').map(Number);
+  return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+};
+
 /**
  * Verify that the requesting user owns the field.
  */
@@ -24,9 +43,14 @@ const verifyFieldOwnership = async (fieldId, ownerId) => {
  * Check if a new slot overlaps with existing slots on the same field+date.
  */
 const checkOverlap = (existingSlots, startTime, endTime) => {
+  const startMinutes = toMinutes(startTime);
+  const endMinutes = toMinutes(endTime);
+
   return existingSlots.some((slot) => {
+    const slotStart = toMinutes(slot.start_time);
+    const slotEnd = toMinutes(slot.end_time);
     // Overlap: new start < existing end AND new end > existing start
-    return startTime < slot.end_time && endTime > slot.start_time;
+    return startMinutes < slotEnd && endMinutes > slotStart;
   });
 };
 
@@ -42,8 +66,8 @@ const createSlot = async (fieldId, ownerId, data) => {
   return slotRepository.create({
     field_id: fieldId,
     date: new Date(data.date),
-    start_time: data.startTime,
-    end_time: data.endTime,
+    start_time: toTimeDate(data.startTime),
+    end_time: toTimeDate(data.endTime),
     price_override: data.priceOverride || null,
   });
 };
@@ -72,15 +96,18 @@ const batchCreateSlots = async (fieldId, ownerId, slots) => {
         );
       }
       // Add the valid new slot to the pool to check subsequent batched slots against it
-      allSlotsForDate.push({ start_time: slot.startTime, end_time: slot.endTime });
+      allSlotsForDate.push({
+        start_time: toTimeDate(slot.startTime),
+        end_time: toTimeDate(slot.endTime),
+      });
     }
   }
 
   const data = slots.map((slot) => ({
     field_id: fieldId,
     date: new Date(slot.date),
-    start_time: slot.startTime,
-    end_time: slot.endTime,
+    start_time: toTimeDate(slot.startTime),
+    end_time: toTimeDate(slot.endTime),
     price_override: slot.priceOverride || null,
   }));
 
@@ -96,8 +123,8 @@ const updateSlot = async (slotId, ownerId, data) => {
   await verifyFieldOwnership(slot.field_id, ownerId);
 
   const updateData = {};
-  if (data.startTime !== undefined) updateData.start_time = data.startTime;
-  if (data.endTime !== undefined) updateData.end_time = data.endTime;
+  if (data.startTime !== undefined) updateData.start_time = toTimeDate(data.startTime);
+  if (data.endTime !== undefined) updateData.end_time = toTimeDate(data.endTime);
   if (data.priceOverride !== undefined) updateData.price_override = data.priceOverride;
   if (data.isLocked !== undefined) updateData.is_locked = data.isLocked;
 

@@ -1,8 +1,8 @@
 const express = require('express');
-const { register, login, me } = require('../controllers/auth.controller');
+const { register, login, refresh, logout, me } = require('../controllers/auth.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { validate } = require('../middlewares/validate.middleware');
-const { registerSchema, loginSchema } = require('../validators/auth.validator');
+const { registerSchema, loginSchema, refreshSchema, logoutSchema } = require('../validators/auth.validator');
 
 const router = express.Router();
 
@@ -67,6 +67,44 @@ router.post('/register', validate(registerSchema), register);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/login', validate(loginSchema), login);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Rotate refresh token and issue a new access token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: New access token and refresh token issued
+ *       401:
+ *         description: Invalid refresh token
+ */
+router.post('/refresh', validate(refreshSchema), refresh);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Revoke refresh token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: Refresh token revoked
+ */
+router.post('/logout', validate(logoutSchema), logout);
 
 /**
  * @swagger
