@@ -8,33 +8,86 @@ const { bookingEventsQueue, bookingExpirationQueue, emailQueue } = require('../.
 describe('Booking Concurrency', () => {
   let user1Token, user2Token;
   let slotId;
+  let ownerId;
+  let fieldId;
+
+  const timeAt = (hours, minutes) => new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
 
   beforeAll(async () => {
     // Generate two distinct users for testing concurrency
-    const [user1, user2] = await Promise.all([
-      prisma.user.findFirst({ where: { role: 'USER' } }),
-      prisma.user.create({
-        data: {
-          email: 'concurrent@fieldnow.dev',
-          password: 'password123',
-          full_name: 'Concurrent User',
-          role: 'USER',
-        }
-      })
-    ]);
+    const existingUser = await prisma.user.findFirst({ where: { role: 'USER' } });
+    const user1 = existingUser || await prisma.user.create({
+      data: {
+        email: `concurrent-user1-${Date.now()}@fieldnow.dev`,
+        password: 'password123',
+        full_name: 'Concurrent User 1',
+        role: 'USER',
+      },
+    });
+
+    const user2 = await prisma.user.create({
+      data: {
+        email: `concurrent@fieldnow.dev`,
+        password: 'password123',
+        full_name: 'Concurrent User',
+        role: 'USER',
+      },
+    });
 
     user1Token = jwt.sign({ userId: user1.id, role: user1.role, email: user1.email }, config.jwtSecret, { expiresIn: '1h' });
     user2Token = jwt.sign({ userId: user2.id, role: user2.role, email: user2.email }, config.jwtSecret, { expiresIn: '1h' });
 
-    // Pick a slot to book
+    // Pick a slot to book or create one
     const slot = await prisma.fieldSlot.findFirst({ where: { is_locked: false } });
-    slotId = slot.id;
+    if (slot) {
+      slotId = slot.id;
+    } else {
+      const owner = await prisma.user.create({
+        data: {
+          email: `concurrent-owner-${Date.now()}@fieldnow.dev`,
+          password: 'password123',
+          role: 'OWNER',
+        },
+      });
+      ownerId = owner.id;
+
+      const field = await prisma.field.create({
+        data: {
+          owner_id: owner.id,
+          name: 'Concurrency Field',
+          location: 'Test',
+          price_per_hour: 100000,
+          is_active: true,
+        },
+      });
+      fieldId = field.id;
+
+      const newSlot = await prisma.fieldSlot.create({
+        data: {
+          field_id: field.id,
+          date: new Date(Date.now() + 86400000),
+          start_time: timeAt(9, 0),
+          end_time: timeAt(10, 0),
+          is_locked: false,
+        },
+      });
+      slotId = newSlot.id;
+    }
   });
 
   afterAll(async () => {
     // Clean up
     await prisma.booking.deleteMany({ where: { slot_id: slotId } });
-    await prisma.user.delete({ where: { email: 'concurrent@fieldnow.dev' } });
+    await prisma.user.deleteMany({ where: { email: { in: ['concurrent@fieldnow.dev'] } } });
+    if (slotId) {
+      await prisma.fieldSlot.deleteMany({ where: { id: slotId } });
+    }
+    if (fieldId) {
+      await prisma.field.deleteMany({ where: { id: fieldId } });
+    }
+    if (ownerId) {
+      await prisma.user.deleteMany({ where: { id: ownerId } });
+    }
     // Disconnect queues to allow Jest to exit
     await bookingEventsQueue.close();
     await bookingExpirationQueue.close();

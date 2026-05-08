@@ -5,6 +5,7 @@
 const request = require('supertest');
 const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
+const { emailQueue } = require('../../src/infrastructure/queue');
 
 // Test data
 const testUser = {
@@ -12,6 +13,42 @@ const testUser = {
   password: 'oldPassword123',
   fullName: 'Password Test User',
   role: 'USER',
+};
+
+const getLastOtpForEmail = (email, jobName) => {
+  const calls = emailQueue.add.mock.calls
+    .filter(([name, payload]) => name === jobName && payload.email === email);
+  if (calls.length === 0) return null;
+  return calls[calls.length - 1][1].otpCode;
+};
+
+const allowResend = async (email) => {
+  await prisma.user.update({
+    where: { email },
+    data: {
+      otp_attempts: 0,
+      otp_last_sent_at: new Date(Date.now() - 1000),
+      otp_resend_available_at: new Date(Date.now() - 1000),
+    },
+  });
+};
+
+const createVerifiedUser = async (email, password) => {
+  await request(app)
+    .post('/api/v1/auth/register')
+    .send({ email, password, fullName: 'Test User', role: 'USER' })
+    .expect(201);
+
+  await request(app)
+    .post('/api/v1/otp/send')
+    .send({ email })
+    .expect(200);
+
+  const otpCode = getLastOtpForEmail(email, 'email.otp_sent');
+  await request(app)
+    .post('/api/v1/otp/verify')
+    .send({ email, otp_code: otpCode })
+    .expect(200);
 };
 
 describe('Password Reset and Change Password Tests', () => {
@@ -32,13 +69,9 @@ describe('Password Reset and Change Password Tests', () => {
       .send({ email: testUser.email })
       .expect(200);
 
-    const userWithOtp = await prisma.user.findUnique({
-      where: { email: testUser.email },
-    });
-
     await request(app)
       .post('/api/v1/otp/verify')
-      .send({ email: testUser.email, otp_code: userWithOtp.otp_code })
+      .send({ email: testUser.email, otp_code: getLastOtpForEmail(testUser.email, 'email.otp_sent') })
       .expect(200);
 
     // Login to get JWT token
@@ -56,6 +89,10 @@ describe('Password Reset and Change Password Tests', () => {
   // Cleanup
   afterAll(async () => {
     try {
+      const user = await prisma.user.findUnique({ where: { email: testUser.email } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
       await prisma.user.delete({ where: { email: testUser.email } });
     } catch (err) {
       // User might not exist
@@ -111,17 +148,14 @@ describe('Password Reset and Change Password Tests', () => {
     let resetOtpCode;
 
     beforeAll(async () => {
+      await allowResend(testUser.email);
       // Send password reset request
       await request(app)
         .post('/api/v1/password/forgot')
         .send({ email: testUser.email })
         .expect(200);
 
-      // Get OTP from database
-      const user = await prisma.user.findUnique({
-        where: { email: testUser.email },
-      });
-      resetOtpCode = user.otp_code;
+      resetOtpCode = getLastOtpForEmail(testUser.email, 'email.password_reset_otp');
     });
 
     it('should reset password with valid OTP', async () => {
@@ -152,10 +186,18 @@ describe('Password Reset and Change Password Tests', () => {
     });
 
     it('should fail with invalid OTP', async () => {
+      const invalidEmail = `password-invalid-${Date.now()}@example.com`;
+      await createVerifiedUser(invalidEmail, 'tempPassword123');
+      await allowResend(invalidEmail);
+      await request(app)
+        .post('/api/v1/password/forgot')
+        .send({ email: invalidEmail })
+        .expect(200);
+
       const res = await request(app)
         .post('/api/v1/password/reset')
         .send({
-          email: testUser.email,
+          email: invalidEmail,
           otp_code: '000000',
           new_password: 'anotherPassword123',
         })
@@ -163,30 +205,35 @@ describe('Password Reset and Change Password Tests', () => {
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.message).toContain('Invalid OTP');
+
+      const user = await prisma.user.findUnique({ where: { email: invalidEmail } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
+      await prisma.user.delete({ where: { email: invalidEmail } });
     });
 
     it('should fail with expired OTP', async () => {
-      // Send new reset request
+      const expiredEmail = `password-expired-${Date.now()}@example.com`;
+      await createVerifiedUser(expiredEmail, 'tempPassword123');
+      await allowResend(expiredEmail);
       await request(app)
         .post('/api/v1/password/forgot')
-        .send({ email: testUser.email })
+        .send({ email: expiredEmail })
         .expect(200);
 
-      const user = await prisma.user.findUnique({
-        where: { email: testUser.email },
-      });
-      const otpCode = user.otp_code;
+      const otpCode = getLastOtpForEmail(expiredEmail, 'email.password_reset_otp');
 
       // Expire the OTP
       await prisma.user.update({
-        where: { email: testUser.email },
+        where: { email: expiredEmail },
         data: { otp_expires_at: new Date(Date.now() - 1000) },
       });
 
       const res = await request(app)
         .post('/api/v1/password/reset')
         .send({
-          email: testUser.email,
+          email: expiredEmail,
           otp_code: otpCode,
           new_password: 'anotherPassword123',
         })
@@ -194,20 +241,42 @@ describe('Password Reset and Change Password Tests', () => {
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.message).toContain('OTP has expired');
+
+      const user = await prisma.user.findUnique({ where: { email: expiredEmail } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
+      await prisma.user.delete({ where: { email: expiredEmail } });
     });
 
     it('should fail if new password is too short', async () => {
+      const shortEmail = `password-short-${Date.now()}@example.com`;
+      await createVerifiedUser(shortEmail, 'tempPassword123');
+      await allowResend(shortEmail);
+      await request(app)
+        .post('/api/v1/password/forgot')
+        .send({ email: shortEmail })
+        .expect(200);
+
+      const otpCode = getLastOtpForEmail(shortEmail, 'email.password_reset_otp');
+
       const res = await request(app)
         .post('/api/v1/password/reset')
         .send({
-          email: testUser.email,
-          otp_code: '123456',
+          email: shortEmail,
+          otp_code: otpCode,
           new_password: 'short',
         })
         .expect(400);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
+
+      const user = await prisma.user.findUnique({ where: { email: shortEmail } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
+      await prisma.user.delete({ where: { email: shortEmail } });
     });
 
     it('should fail if user does not exist', async () => {
@@ -227,13 +296,14 @@ describe('Password Reset and Change Password Tests', () => {
 
   describe('POST /api/v1/password/change-request', () => {
     it('should request password change for authenticated user', async () => {
+      await allowResend(testUser.email);
       const res = await request(app)
         .post('/api/v1/password/change-request')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.message).toContain('OTP sent');
+      expect(res.body.data.message).toContain('OTP');
       expect(res.body.data.expiresIn).toBe(10 * 60 * 1000);
     });
 
@@ -261,17 +331,14 @@ describe('Password Reset and Change Password Tests', () => {
     let changePasswordOtpCode;
 
     beforeAll(async () => {
+      await allowResend(testUser.email);
       // Request change password
       await request(app)
         .post('/api/v1/password/change-request')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(200);
 
-      // Get OTP from database
-      const user = await prisma.user.findUnique({
-        where: { email: testUser.email },
-      });
-      changePasswordOtpCode = user.otp_code;
+      changePasswordOtpCode = getLastOtpForEmail(testUser.email, 'email.change_password_otp');
     });
 
     it('should change password with valid OTP', async () => {
@@ -302,6 +369,12 @@ describe('Password Reset and Change Password Tests', () => {
     });
 
     it('should fail with invalid OTP', async () => {
+      await allowResend(testUser.email);
+      await request(app)
+        .post('/api/v1/password/change-request')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+
       const res = await request(app)
         .post('/api/v1/password/change')
         .set('Authorization', `Bearer ${jwtToken}`)
@@ -329,17 +402,40 @@ describe('Password Reset and Change Password Tests', () => {
     });
 
     it('should fail if new password is too short', async () => {
+      const shortChangeEmail = `password-change-short-${Date.now()}@example.com`;
+      const shortChangePassword = 'tempPassword123';
+      await createVerifiedUser(shortChangeEmail, shortChangePassword);
+
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: shortChangeEmail, password: shortChangePassword })
+        .expect(200);
+
+      const tempToken = loginRes.body.data.token;
+      await allowResend(shortChangeEmail);
+      await request(app)
+        .post('/api/v1/password/change-request')
+        .set('Authorization', `Bearer ${tempToken}`)
+        .expect(200);
+
+      const otpCode = getLastOtpForEmail(shortChangeEmail, 'email.change_password_otp');
       const res = await request(app)
         .post('/api/v1/password/change')
-        .set('Authorization', `Bearer ${jwtToken}`)
+        .set('Authorization', `Bearer ${tempToken}`)
         .send({
-          otp_code: '123456',
+          otp_code: otpCode,
           new_password: 'short',
         })
         .expect(400);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
+
+      const user = await prisma.user.findUnique({ where: { email: shortChangeEmail } });
+      if (user) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
+      }
+      await prisma.user.delete({ where: { email: shortChangeEmail } });
     });
   });
 
@@ -369,10 +465,11 @@ describe('Password Reset and Change Password Tests', () => {
       let user = await prisma.user.findUnique({ where: { email: flowEmail } });
       await request(app)
         .post('/api/v1/otp/verify')
-        .send({ email: flowEmail, otp_code: user.otp_code })
+        .send({ email: flowEmail, otp_code: getLastOtpForEmail(flowEmail, 'email.otp_sent') })
         .expect(200);
 
       // Step 3: Request password reset
+      await allowResend(flowEmail);
       const forgotRes = await request(app)
         .post('/api/v1/password/forgot')
         .send({ email: flowEmail })
@@ -382,7 +479,7 @@ describe('Password Reset and Change Password Tests', () => {
 
       // Step 4: Get reset OTP
       user = await prisma.user.findUnique({ where: { email: flowEmail } });
-      const resetOtp = user.otp_code;
+      const resetOtp = getLastOtpForEmail(flowEmail, 'email.password_reset_otp');
 
       // Step 5: Reset password
       const resetRes = await request(app)
@@ -405,6 +502,10 @@ describe('Password Reset and Change Password Tests', () => {
       expect(loginRes.body.data).toHaveProperty('token');
 
       // Cleanup
+      const cleanupUser = await prisma.user.findUnique({ where: { email: flowEmail } });
+      if (cleanupUser) {
+        await prisma.refreshToken.deleteMany({ where: { user_id: cleanupUser.id } });
+      }
       await prisma.user.delete({ where: { email: flowEmail } });
     });
   });

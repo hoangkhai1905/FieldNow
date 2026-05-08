@@ -1,10 +1,12 @@
 const authService = require('../../src/services/auth.service');
 const userRepository = require('../../src/repositories/user.repository');
+const refreshTokenRepository = require('../../src/repositories/refresh-token.repository');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Mock the repository layer
 jest.mock('../../src/repositories/user.repository');
+jest.mock('../../src/repositories/refresh-token.repository');
 
 describe('Auth Service', () => {
   beforeEach(() => {
@@ -91,6 +93,8 @@ describe('Auth Service', () => {
       password: bcrypt.hashSync('correctpassword', 10),
       role: 'USER',
       full_name: 'Test User',
+      is_active: true,
+      is_email_verified: true,
     };
 
     it('should return token and user on valid credentials', async () => {
@@ -99,6 +103,7 @@ describe('Auth Service', () => {
       const result = await authService.login('user@example.com', 'correctpassword');
 
       expect(result).toHaveProperty('token');
+      expect(result).toHaveProperty('refreshToken');
       expect(result.user).toEqual({
         id: 'uuid-456',
         email: 'user@example.com',

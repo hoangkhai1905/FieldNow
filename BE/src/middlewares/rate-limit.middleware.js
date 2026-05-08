@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 
 /**
  * Rate limiting middleware for public search endpoints.
@@ -17,6 +18,60 @@ const publicSearchLimiter = rateLimit({
   },
 });
 
+const createEmailLimiter = ({ windowMs, max, message }) => {
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      if (req.user && req.user.userId) return `user:${req.user.userId}`;
+      if (req.body && req.body.email) return `email:${String(req.body.email).toLowerCase()}`;
+      return ipKeyGenerator(req);
+    },
+    message,
+  });
+};
+
+const otpLimiter = createEmailLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many OTP requests. Please try again later.',
+    },
+  },
+});
+
+const passwordResetLimiter = createEmailLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many password reset requests. Please try again later.',
+    },
+  },
+});
+
+const passwordChangeLimiter = createEmailLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many password change requests. Please try again later.',
+    },
+  },
+});
+
 module.exports = {
   publicSearchLimiter,
+  otpLimiter,
+  passwordResetLimiter,
+  passwordChangeLimiter,
 };

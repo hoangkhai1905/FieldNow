@@ -4,6 +4,10 @@ const { emailQueue } = require('../infrastructure/queue');
 const { logger } = require('../infrastructure/logger');
 const { errors } = require('../utils/errors');
 
+const OTP_EXPIRES_MS = 10 * 60 * 1000;
+const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
+
 /**
  * OTP Service — handles OTP generation, sending, and verification
  */
@@ -15,8 +19,15 @@ const sendOTP = async (email) => {
     throw errors.notFound('User not found');
   }
 
+  if (user.otp_resend_available_at && user.otp_resend_available_at > new Date()) {
+    throw errors.conflict('OTP resend is on cooldown. Please try again shortly.');
+  }
+
   // Generate and save OTP
-  const { otpCode, otpExpiresAt } = await otpRepository.generateAndSaveOTP(email);
+  const { otpCode, otpExpiresAt } = await otpRepository.generateAndSaveOTP(email, {
+    expiresInMs: OTP_EXPIRES_MS,
+    resendCooldownMs: OTP_RESEND_COOLDOWN_MS,
+  });
 
   logger.info(`[OTP Service] OTP generated for ${email}: ${otpCode} (expires at ${otpExpiresAt})`);
 
@@ -38,7 +49,9 @@ const sendOTP = async (email) => {
 
 const verifyOTP = async (email, otpCode) => {
   // Verify OTP
-  const result = await otpRepository.verifyOTP(email, otpCode);
+  const result = await otpRepository.verifyOTP(email, otpCode, {
+    maxAttempts: OTP_MAX_ATTEMPTS,
+  });
 
   if (!result.success) {
     throw errors.unauthorized(result.message);
@@ -69,6 +82,10 @@ const resendOTP = async (email) => {
   // Don't resend if already verified
   if (user.is_email_verified) {
     throw errors.conflict('Email already verified');
+  }
+
+  if (user.otp_resend_available_at && user.otp_resend_available_at > new Date()) {
+    throw errors.conflict('OTP resend is on cooldown. Please try again shortly.');
   }
 
   // Resend OTP (same logic as sendOTP)

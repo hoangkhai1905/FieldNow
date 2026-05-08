@@ -107,6 +107,7 @@ const options = {
               type: 'object',
               properties: {
                 token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIs...' },
+                refreshToken: { type: 'string', example: 'b1f2e6c3...' },
                 user: {
                   type: 'object',
                   properties: {
@@ -141,6 +142,21 @@ const options = {
             },
           },
         },
+        RefreshTokenRequest: {
+          type: 'object',
+          required: ['refreshToken'],
+          properties: {
+            refreshToken: { type: 'string', example: 'b1f2e6c3...' },
+          },
+        },
+        UpdateProfileRequest: {
+          type: 'object',
+          properties: {
+            fullName: { type: 'string', example: 'John Doe' },
+            phoneNumber: { type: 'string', example: '+84901234567' },
+            avatarUrl: { type: 'string', format: 'uri', example: 'https://example.com/avatar.jpg' },
+          },
+        },
         // --- Field & Slot schemas ---
         CreateFieldRequest: {
           type: 'object',
@@ -151,6 +167,7 @@ const options = {
             description: { type: 'string', example: 'Premium 7-a-side football field' },
             images: { type: 'array', items: { type: 'string', format: 'uri' }, example: ['https://example.com/field1.jpg'] },
             pricePerHour: { type: 'number', example: 500000 },
+            type: { type: 'string', enum: ['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS'] },
           },
         },
         UpdateFieldRequest: {
@@ -161,6 +178,7 @@ const options = {
             description: { type: 'string', example: 'Updated description' },
             images: { type: 'array', items: { type: 'string', format: 'uri' } },
             pricePerHour: { type: 'number', example: 550000 },
+            type: { type: 'string', enum: ['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS'] },
           },
         },
         CreateSlotRequest: {

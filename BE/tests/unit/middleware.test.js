@@ -4,6 +4,9 @@ const { authMiddleware } = require('../../src/middlewares/auth.middleware');
 const { roleMiddleware } = require('../../src/middlewares/role.middleware');
 const { validate } = require('../../src/middlewares/validate.middleware');
 const { registerSchema } = require('../../src/validators/auth.validator');
+const userRepository = require('../../src/repositories/user.repository');
+
+jest.mock('../../src/repositories/user.repository');
 
 // Helper to create mock req/res/next
 const mockReqResNext = (overrides = {}) => {
@@ -28,12 +31,14 @@ describe('Auth Middleware', () => {
     { expiresIn: '1h' }
   );
 
-  it('should pass and set req.user with valid token', () => {
+  it('should pass and set req.user with valid token', async () => {
     const { req, res, next } = mockReqResNext({
       headers: { authorization: `Bearer ${validToken}` },
     });
 
-    authMiddleware(req, res, next);
+    userRepository.findById.mockResolvedValue({ id: 'uuid-1', is_active: true });
+
+    await authMiddleware(req, res, next);
 
     expect(next).toHaveBeenCalled();
     expect(req.user).toMatchObject({

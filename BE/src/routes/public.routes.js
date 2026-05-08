@@ -48,6 +48,18 @@ router.get('/fields', publicSearchLimiter, fieldController.searchFields);
 
 /**
  * @swagger
+ * /field-types:
+ *   get:
+ *     summary: List available field types
+ *     tags: [Public]
+ *     responses:
+ *       200:
+ *         description: Field type list
+ */
+router.get('/field-types', fieldController.getFieldTypes);
+
+/**
+ * @swagger
  * /fields/{id}:
  *   get:
  *     summary: Get field details with optional slots

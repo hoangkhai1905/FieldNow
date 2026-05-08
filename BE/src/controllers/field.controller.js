@@ -75,12 +75,22 @@ const rejectField = async (req, res, next) => {
   }
 };
 
+const getFieldTypes = async (_req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      types: ['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS'],
+    },
+  });
+};
+
 module.exports = {
   createField,
   updateField,
   getOwnerFields,
   searchFields,
   getFieldDetail,
+  getFieldTypes,
   approveField,
   rejectField,
 };

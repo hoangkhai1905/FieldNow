@@ -10,6 +10,7 @@ const swaggerUi = require('swagger-ui-express');
 const authRoutes = require('./routes/auth.routes');
 const otpRoutes = require('./routes/otp.routes');
 const passwordRoutes = require('./routes/password.routes');
+const userRoutes = require('./routes/user.routes');
 const ownerRoutes = require('./routes/owner.routes');
 const publicRoutes = require('./routes/public.routes');
 const adminRoutes = require('./routes/admin.routes');
@@ -76,6 +77,7 @@ if (config.nodeEnv !== 'production') {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/otp', otpRoutes);
 app.use('/api/v1/password', passwordRoutes);
+app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/owner', ownerRoutes);
 app.use('/api/v1', publicRoutes); // Public fields routes
 app.use('/api/v1/admin', adminRoutes);

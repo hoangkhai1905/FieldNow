@@ -22,6 +22,8 @@ jest.mock('bullmq', () => ({
 jest.spyOn(vnpayProvider, 'verifySignature').mockImplementation(() => true);
 jest.spyOn(vnpayProvider, 'isSuccess').mockImplementation((params) => params['vnp_ResponseCode'] === '00');
 
+const timeAt = (hours, minutes) => new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+
 describe('Payment E2E Flow', () => {
   let userToken, userId, fieldId, slotId, bookingId;
 
@@ -63,8 +65,8 @@ describe('Payment E2E Flow', () => {
       data: {
         field_id: fieldId,
         date: new Date(Date.now() + 86400000), // tomorrow
-        start_time: '18:00',
-        end_time: '19:00',
+        start_time: timeAt(18, 0),
+        end_time: timeAt(19, 0),
         is_locked: false,
       },
     });
@@ -143,8 +145,8 @@ describe('Payment E2E Flow', () => {
       data: {
         field_id: fieldId,
         date: new Date(Date.now() + 86400000), // tomorrow
-        start_time: '20:00',
-        end_time: '21:00',
+        start_time: timeAt(20, 0),
+        end_time: timeAt(21, 0),
         is_locked: false,
       },
     });

@@ -13,6 +13,7 @@ const createField = async (ownerId, data) => {
     description: data.description || null,
     images: data.images || [],
     price_per_hour: data.pricePerHour,
+    type: data.type,
     is_active: false, // Fields require admin approval
   });
 
@@ -34,6 +35,7 @@ const updateField = async (fieldId, ownerId, data) => {
   if (data.description !== undefined) updateData.description = data.description;
   if (data.images !== undefined) updateData.images = data.images;
   if (data.pricePerHour !== undefined) updateData.price_per_hour = data.pricePerHour;
+  if (data.type !== undefined) updateData.type = data.type;
 
   return fieldRepository.update(fieldId, updateData);
 };
