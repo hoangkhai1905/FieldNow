@@ -53,10 +53,27 @@ const handleSepayIpn = async (headers, body) => {
     throw errors.forbidden('Invalid SePay IPN secret key');
   }
 
+  logger.info('--- Received IPN Body ---');
+  console.log(JSON.stringify(body, null, 2));
+
+  // If this is a test notification from SePay dashboard, respond success early
+  if (body?.notification_type === 'TEST' || body?.order?.order_invoice_number === 'test') {
+    logger.info('[SePay IPN] Received TEST notification from SePay dashboard');
+    return { success: true };
+  }
+
   // 2. Extract booking ID and check success
   const bookingId = sepayProvider.extractBookingId(body);
   if (!bookingId) {
     throw errors.validation('Missing order_invoice_number in IPN payload');
+  }
+
+  // Validate if bookingId is a valid UUID (Prisma crashes if it's not)
+  // The SePay simulator sends things like "DH046183932" which are not UUIDs
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  if (!uuidRegex.test(bookingId)) {
+    logger.warn(`[SePay IPN] Ignoring webhook: extracted bookingId '${bookingId}' is not a valid UUID (likely a test)`);
+    return { success: true };
   }
 
   const isSuccess = sepayProvider.isSuccess(body);

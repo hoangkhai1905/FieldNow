@@ -57,35 +57,74 @@ class SePayProvider {
    * @returns {boolean}
    */
   verifyIpn(headers) {
-    const receivedKey = headers['x-secret-key'];
+    logger.info('--- Received IPN Headers ---');
+    console.log(JSON.stringify(headers, null, 2));
+
+    let receivedKey = headers['x-secret-key'];
+
+    // If x-secret-key is not present, check Authorization: Apikey <key> or Bearer <key>
+    if (!receivedKey && headers['authorization']) {
+      const parts = headers['authorization'].split(' ');
+      if (parts.length === 2 && (parts[0].toLowerCase() === 'apikey' || parts[0].toLowerCase() === 'bearer')) {
+        receivedKey = parts[1];
+      }
+    }
+
     if (!receivedKey) {
-      logger.warn('[SePay IPN] Missing X-Secret-Key header');
+      logger.warn('[SePay IPN] Missing verification key in headers');
       return false;
     }
+
     return receivedKey === this.secretKey;
   }
 
   /**
    * Check whether the IPN payload signals a successful payment.
+   * Supports both Payment Gateway IPN and Bank Webhook formats.
    * @param {object} body - Parsed IPN JSON body
    * @returns {boolean}
    */
   isSuccess(body) {
-    return (
-      body?.notification_type === 'ORDER_PAID' &&
-      body?.order?.order_status === 'CAPTURED' &&
-      body?.transaction?.transaction_status === 'APPROVED'
-    );
+    // 1. Payment Gateway IPN Schema
+    if (body?.notification_type === 'ORDER_PAID') {
+      return body?.order?.order_status === 'CAPTURED' && body?.transaction?.transaction_status === 'APPROVED';
+    }
+    
+    // 2. Bank Transaction Webhook Schema (from "Mô phỏng giao dịch")
+    if (body?.transferType === 'in') {
+      return true;
+    }
+
+    return false;
   }
 
   /**
    * Extract the booking ID from an IPN payload.
-   * We store the bookingId in order_invoice_number when creating the checkout.
+   * Supports both Payment Gateway IPN and Bank Webhook formats.
    * @param {object} body
    * @returns {string}
    */
   extractBookingId(body) {
-    return body?.order?.order_invoice_number;
+    // 1. Payment Gateway IPN Schema
+    if (body?.order?.order_invoice_number) {
+      return body.order.order_invoice_number;
+    }
+    
+    // 2. Bank Transaction Webhook Schema (from "Mô phỏng giao dịch")
+    if (body?.code) {
+      const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+      if (uuidRegex.test(body.code)) return body.code;
+    }
+
+    // Fallback: search raw content for UUID (useful for testing when pasting UUID in memo)
+    if (body?.content) {
+      const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+      const match = body.content.match(uuidRegex);
+      if (match) return match[0];
+    }
+    
+    // Return original code if no UUID found to let it fail properly later
+    return body?.code || null;
   }
 }
 
