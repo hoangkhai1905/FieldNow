@@ -1,12 +1,12 @@
 const prisma = require('../infrastructure/prisma');
 const paymentRepository = require('../repositories/payment.repository');
 const bookingRepository = require('../repositories/booking.repository');
-const vnpayProvider = require('../providers/vnpay.provider');
+const sepayProvider = require('../providers/sepay.provider');
 const { errors } = require('../utils/errors');
 const { logger } = require('../infrastructure/logger');
 const { emailQueue } = require('../infrastructure/queue');
 
-const initiatePayment = async (bookingId, userId, ipAddr) => {
+const initiatePayment = async (bookingId, userId) => {
   // 1. Get booking
   const booking = await bookingRepository.findById(bookingId);
   if (!booking) {
@@ -21,62 +21,63 @@ const initiatePayment = async (bookingId, userId, ipAddr) => {
 
   // 2. Check if a pending payment already exists
   let payment = await paymentRepository.findByBookingId(bookingId);
-  
+
   // Calculate amount from slot priceOverride or field price
   const amount = booking.slot.price_override || booking.slot.field.price_per_hour;
 
   if (!payment) {
     // 3. Create payment record
-    payment = await paymentRepository.createPayment(bookingId, amount, 'vnpay');
+    payment = await paymentRepository.createPayment(bookingId, amount, 'sepay');
   } else if (payment.status !== 'PENDING') {
     throw errors.conflict(`Payment is already ${payment.status}`);
   }
 
-  // 4. Generate URL
-  const paymentUrl = vnpayProvider.createPaymentUrl(bookingId, amount, ipAddr, `Payment for booking ${bookingId}`);
+  // 4. Generate SePay checkout URL + signed form fields
+  const { checkoutUrl, formFields } = sepayProvider.createCheckoutFields(
+    bookingId,
+    amount,
+    `Payment for booking ${bookingId}`,
+  );
 
-  return { paymentUrl, paymentId: payment.id };
+  return { checkoutUrl, formFields, paymentId: payment.id };
 };
 
-const handleVNPayReturn = async (vnpParams) => {
-  const isValidSignature = vnpayProvider.verifySignature(Object.assign({}, vnpParams));
-  if (!isValidSignature) {
-    throw errors.validation('Invalid VNPay signature');
+/**
+ * Handle IPN (Instant Payment Notification) callback from SePay.
+ * SePay POSTs JSON to this endpoint after every transaction.
+ */
+const handleSepayIpn = async (headers, body) => {
+  // 1. Verify secret key
+  const isValidKey = sepayProvider.verifyIpn(headers);
+  if (!isValidKey) {
+    throw errors.forbidden('Invalid SePay IPN secret key');
   }
 
-  const bookingId = vnpParams['vnp_TxnRef'];
-  const isSuccess = vnpayProvider.isSuccess(vnpParams);
-
-  await processPaymentCallback(bookingId, isSuccess, 'vnpay');
-
-  return { bookingId, isSuccess };
-};
-
-const handleVNPayIpn = async (vnpParams) => {
-  const isValidSignature = vnpayProvider.verifySignature(Object.assign({}, vnpParams));
-  if (!isValidSignature) {
-    throw new Error('Invalid signature'); // For IPN, we just throw standard error
+  // 2. Extract booking ID and check success
+  const bookingId = sepayProvider.extractBookingId(body);
+  if (!bookingId) {
+    throw errors.validation('Missing order_invoice_number in IPN payload');
   }
 
-  const bookingId = vnpParams['vnp_TxnRef'];
-  const isSuccess = vnpayProvider.isSuccess(vnpParams);
+  const isSuccess = sepayProvider.isSuccess(body);
+  logger.info(`[SePay IPN] bookingId=${bookingId} success=${isSuccess} type=${body?.notification_type}`);
 
   try {
-    await processPaymentCallback(bookingId, isSuccess, 'vnpay');
-    return { RspCode: '00', Message: 'Confirm Success' };
+    await processPaymentCallback(bookingId, isSuccess, 'sepay');
+    return { success: true };
   } catch (error) {
     if (error.code === 'CONFLICT' && error.message.includes('already')) {
-      // Idempotent success response for VNPay if already processed
-      return { RspCode: '02', Message: 'Order already confirmed' }; 
+      // Idempotent: payment already processed, still respond 200
+      logger.warn(`[SePay IPN] Payment already processed for booking ${bookingId}`);
+      return { success: true };
     }
-    logger.error(`[VNPay IPN] Error processing: ${error.message}`);
-    return { RspCode: '99', Message: 'Unknown error' };
+    logger.error(`[SePay IPN] Error processing bookingId=${bookingId}: ${error.message}`);
+    throw error;
   }
 };
 
 const processPaymentCallback = async (bookingId, isSuccess, provider) => {
   await prisma.$transaction(async (tx) => {
-    // Lock row (Optional, but using standard find for now. Prisma handles basic isolation)
     const booking = await bookingRepository.findById(bookingId, tx);
     if (!booking) {
       throw errors.notFound('Booking');
@@ -93,18 +94,17 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
     }
 
     if (isSuccess) {
-      // Confirm Payment & Booking
       await paymentRepository.updateStatus(payment.id, 'COMPLETED', tx);
       await bookingRepository.updateStatus(bookingId, 'CONFIRMED', tx);
-      
+
       logger.info(`[Payment] Booking ${bookingId} confirmed successfully via ${provider}`);
-      
+
       await emailQueue.add('email.booking_confirmed', {
         userId: booking.user_id,
         bookingId: bookingId,
       });
     } else {
-      // Fail Payment (Booking remains PENDING or can be CANCELLED based on product rules, we keep it PENDING to allow retry until expiration)
+      // Keep booking PENDING so user can retry until expiration
       await paymentRepository.updateStatus(payment.id, 'FAILED', tx);
       logger.info(`[Payment] Booking ${bookingId} payment failed via ${provider}`);
     }
@@ -130,7 +130,6 @@ const getPaymentByBookingId = async (bookingId, userId) => {
 
 module.exports = {
   initiatePayment,
-  handleVNPayReturn,
-  handleVNPayIpn,
+  handleSepayIpn,
   getPaymentByBookingId,
 };

@@ -10,29 +10,36 @@ const initiatePaymentSchema = z.object({
   bookingId: z.string().uuid('Invalid booking ID format'),
 });
 
-/**
- * @swagger
- * /payments/vnpay-ipn:
- *   get:
- *     summary: VNPay IPN Webhook
- *     tags: [Payment]
- *     responses:
- *       200:
- *         description: IPN Response
- */
-router.get('/vnpay-ipn', paymentController.handleVNPayIpn);
+// --- Public Routes (no auth) ---
 
 /**
  * @swagger
- * /payments/vnpay-return:
- *   get:
- *     summary: VNPay Return URL (Redirect from VNPay)
+ * /payments/sepay-ipn:
+ *   post:
+ *     summary: SePay IPN Webhook (server-to-server callback)
+ *     description: >
+ *       Called by SePay after each transaction. Verifies the X-Secret-Key header
+ *       and updates the booking/payment status. Always returns HTTP 200.
  *     tags: [Payment]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               notification_type:
+ *                 type: string
+ *                 example: ORDER_PAID
+ *               order:
+ *                 type: object
+ *               transaction:
+ *                 type: object
  *     responses:
  *       200:
- *         description: Return URL Response
+ *         description: IPN acknowledged
  */
-router.get('/vnpay-return', paymentController.handleVNPayReturn);
+router.post('/sepay-ipn', paymentController.handleSepayIpn);
 
 // --- Protected Routes ---
 router.use(authMiddleware);
@@ -42,6 +49,10 @@ router.use(authMiddleware);
  * /payments/initiate:
  *   post:
  *     summary: Initiate payment for a booking
+ *     description: >
+ *       Creates a SePay checkout. Returns `checkoutUrl` and `formFields`.
+ *       The frontend should build a hidden-field HTML form, POST it to `checkoutUrl`
+ *       to redirect the user to the SePay payment page.
  *     tags: [Payment]
  *     security:
  *       - bearerAuth: []
@@ -59,7 +70,23 @@ router.use(authMiddleware);
  *                 format: uuid
  *     responses:
  *       200:
- *         description: Payment URL generated
+ *         description: SePay checkout URL and signed form fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     checkoutUrl:
+ *                       type: string
+ *                     formFields:
+ *                       type: object
+ *                     paymentId:
+ *                       type: string
  */
 router.post('/initiate', validate(initiatePaymentSchema), paymentController.initiatePayment);
 
