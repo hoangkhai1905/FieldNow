@@ -19,8 +19,9 @@ const handleSepayIpn = async (req, res, next) => {
     const result = await paymentService.handleSepayIpn(req.headers, req.body);
     res.status(200).json(result);
   } catch (error) {
-    // Always respond 200 to SePay; log the error server-side
-    res.status(200).json({ success: false, error: error.message });
+    // SePay REQUIRES { success: true } in the response body, even if we fail to process
+    // otherwise it will mark the webhook as failed and keep retrying.
+    res.status(200).json({ success: true, error: error.message });
   }
 };
 
