@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { verifyVnPayReturn, getBookingDetail, getPaymentStatus } from '../../api/endpoints';
-import { formatCurrency } from '../../api/endpoints';
+import { getBookingDetail, getPaymentStatus, formatCurrency } from '../../api/endpoints';
 
 const PaymentResult = () => {
   const location = useLocation();
@@ -15,16 +14,12 @@ const PaymentResult = () => {
     const params = Object.fromEntries(new URLSearchParams(location.search));
     const run = async () => {
       try {
-        const result = await verifyVnPayReturn(params);
-        // Backend should return something like { bookingId, paymentId, status }
-        const bookingId = result?.bookingId || result?.data?.bookingId || params?.bookingId;
-        const paymentId = result?.paymentId || result?.data?.paymentId || params?.paymentId;
-        const st = result?.status || result?.data?.status || 'unknown';
+        const bookingId = params?.bookingId || params?.order_invoice_number;
+        const queryStatus = params?.status || 'unknown';
+
         if (bookingId) {
           const b = await getBookingDetail(bookingId);
           setBooking(b);
-        }
-        if (bookingId) {
           try {
             const p = await getPaymentStatus(bookingId);
             setPayment(p);
@@ -32,11 +27,21 @@ const PaymentResult = () => {
             // ignore
           }
         }
+        
         setStatus('done');
-        setMessage(`Trạng thái: ${st}`);
+        
+        if (queryStatus === 'success') {
+          setMessage('Giao dịch thành công. Xin cảm ơn!');
+        } else if (queryStatus === 'cancel') {
+          setMessage('Giao dịch đã bị hủy.');
+        } else if (queryStatus === 'error') {
+          setMessage('Giao dịch thất bại.');
+        } else {
+          setMessage('Đã nhận phản hồi từ cổng thanh toán.');
+        }
       } catch (err) {
         setStatus('error');
-        setMessage('Xác nhận giao dịch thất bại.');
+        setMessage('Không thể tải thông tin giao dịch.');
       }
     };
 

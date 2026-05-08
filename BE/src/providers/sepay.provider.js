@@ -34,6 +34,12 @@ class SePayProvider {
   createCheckoutFields(bookingId, amount, description = 'Payment for booking') {
     const checkoutUrl = this._client.checkout.initCheckoutUrl();
 
+    const appendQuery = (url, status) => {
+      if (!url) return url;
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}bookingId=${bookingId}&status=${status}`;
+    };
+
     const formFields = this._client.checkout.initOneTimePaymentFields({
       operation: 'PURCHASE',
       payment_method: 'BANK_TRANSFER',   // QR chuyển khoản VietQR — nhanh nhất, không cần hồ sơ
@@ -41,9 +47,9 @@ class SePayProvider {
       order_amount: amount,
       currency: 'VND',
       order_description: description,
-      success_url: this.successUrl,
-      error_url: this.errorUrl,
-      cancel_url: this.cancelUrl,
+      success_url: appendQuery(this.successUrl, 'success'),
+      error_url: appendQuery(this.errorUrl, 'error'),
+      cancel_url: appendQuery(this.cancelUrl, 'cancel'),
     });
 
     return { checkoutUrl, formFields };

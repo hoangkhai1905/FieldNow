@@ -3,6 +3,24 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { createBooking, formatCurrency, getFieldDetail, initiatePayment } from '../../api/endpoints';
 import './UserFacing.css';
 
+const redirectToSePay = (checkoutUrl, formFields) => {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = checkoutUrl;
+  form.style.display = 'none';
+
+  Object.entries(formFields || {}).forEach(([name, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+};
+
 const FieldDetail = () => {
   const { id } = useParams();
   const [field, setField] = useState(null);
@@ -114,7 +132,7 @@ const FieldDetail = () => {
 
     try {
       const result = await initiatePayment(booking.id);
-      window.location.assign(result.paymentUrl);
+      redirectToSePay(result.checkoutUrl, result.formFields);
     } catch (requestError) {
       setActionError(requestError.message || 'Không khởi tạo được thanh toán');
       setToast({ type: 'error', text: 'Không thể khởi tạo thanh toán' });
