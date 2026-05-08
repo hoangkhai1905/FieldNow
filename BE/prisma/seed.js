@@ -36,10 +36,20 @@ async function main() {
   for (const userData of users) {
     let user = await prisma.user.findUnique({ where: { email: userData.email } });
     if (!user) {
-      user = await prisma.user.create({ data: userData });
+      user = await prisma.user.create({ 
+        data: { 
+          ...userData,
+          is_email_verified: true 
+        } 
+      });
       console.log(`  ✅ Created ${userData.role}: ${userData.email}`);
     } else {
-      console.log(`  ⏭️  Skipped ${userData.role}: ${userData.email} (already exists)`);
+      // Ensure existing users are verified for testing
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { is_email_verified: true }
+      });
+      console.log(`  ⏭️  Skipped ${userData.role}: ${userData.email} (already exists, ensured verified)`);
     }
     
     if (user.role === 'OWNER') {
@@ -49,10 +59,10 @@ async function main() {
 
   // --- Seed Fields and Slots ---
   if (ownerId) {
-    const existingField = await prisma.field.findFirst({ where: { name: 'Central Stadium' } });
+    let field = await prisma.field.findFirst({ where: { name: 'Central Stadium' } });
     
-    if (!existingField) {
-      const field = await prisma.field.create({
+    if (!field) {
+      field = await prisma.field.create({
         data: {
           owner_id: ownerId,
           name: 'Central Stadium',
@@ -64,23 +74,52 @@ async function main() {
         }
       });
       console.log(`  ✅ Created Field: ${field.name}`);
-
-      // Seed slots for the field (for today and tomorrow)
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const slotsToCreate = [
-        { field_id: field.id, date: today, start_time: '18:00', end_time: '19:00' },
-        { field_id: field.id, date: today, start_time: '19:00', end_time: '20:00', price_override: 600000 },
-        { field_id: field.id, date: tomorrow, start_time: '18:00', end_time: '19:00' },
-      ];
-
-      await prisma.fieldSlot.createMany({ data: slotsToCreate });
-      console.log(`  ✅ Created ${slotsToCreate.length} Slots for Field: ${field.name}`);
     } else {
-      console.log(`  ⏭️  Skipped Field: Central Stadium (already exists)`);
+      console.log(`  ⏭️  Skipped Field: ${field.name} (already exists)`);
+    }
+
+    // Seed slots for the next 7 days
+    console.log(`  ⏳ Seeding slots for the next 7 days...`);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const toTimeDate = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+    };
+
+    let slotsCreated = 0;
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+
+      // Create 5 slots per day: 17:00 to 22:00
+      const startHours = [17, 18, 19, 20, 21];
+      for (const hour of startHours) {
+        const startTimeStr = `${hour}:00`;
+        const endTimeStr = `${hour + 1}:00`;
+        
+        try {
+          await prisma.fieldSlot.create({
+            data: {
+              field_id: field.id,
+              date: date,
+              start_time: toTimeDate(startTimeStr),
+              end_time: toTimeDate(endTimeStr),
+              price_override: hour >= 19 ? 600000 : null, // Peak hour pricing
+            }
+          });
+          slotsCreated++;
+        } catch (error) {
+          // Skip if slot already exists
+        }
+      }
+    }
+    
+    if (slotsCreated > 0) {
+      console.log(`  ✅ Created ${slotsCreated} new slots for Field: ${field.name}`);
+    } else {
+      console.log(`  ⏭️  No new slots needed for Field: ${field.name}`);
     }
   }
 }
