@@ -126,7 +126,21 @@ const cancelBooking = async (bookingId, userId) => {
     throw errors.conflict(`Cannot cancel a booking with status ${booking.status}`);
   }
 
-  const updatedBooking = await bookingRepository.updateStatus(bookingId, 'CANCELLED');
+  const updatedBooking = await prisma.$transaction(async (tx) => {
+    // 1. Update Booking status to CANCELLED
+    const updated = await bookingRepository.updateStatus(bookingId, 'CANCELLED', tx);
+
+    // 2. Automatically update any pending payment records to FAILED
+    await tx.payment.updateMany({
+      where: {
+        booking_id: bookingId,
+        status: 'PENDING',
+      },
+      data: { status: 'FAILED' },
+    });
+
+    return updated;
+  });
 
   await emailQueue.add('email.booking_cancelled', {
     userId,
