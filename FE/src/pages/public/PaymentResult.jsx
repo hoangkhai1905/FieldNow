@@ -1,109 +1,222 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  ArrowLeft, 
+  ChevronRight, 
+  Calendar, 
+  MapPin, 
+  CreditCard,
+  Zap
+} from 'lucide-react';
 import { getBookingDetail, getPaymentStatus, formatCurrency } from '../../api/endpoints';
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+};
 
 const PaymentResult = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('loading');
-  const [message, setMessage] = useState('Đang xác nhận giao dịch...');
+  const [status, setStatus] = useState('loading'); // loading, success, error, pending
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
+  const [pollCount, setPollCount] = useState(0);
 
   useEffect(() => {
     const params = Object.fromEntries(new URLSearchParams(location.search));
+    const queryStatus = params?.status || 'unknown';
+    const bookingId = params?.bookingId || params?.order_invoice_number;
+
     let pollInterval = null;
-    const run = async () => {
+
+    const fetchStatus = async () => {
+      if (!bookingId) return;
       try {
-        const bookingId = params?.bookingId || params?.order_invoice_number;
-        const queryStatus = params?.status || 'unknown';
-
-        if (bookingId) {
-          const fetchStatus = async () => {
-            try {
-              const b = await getBookingDetail(bookingId);
-              setBooking(b);
-              try {
-                const p = await getPaymentStatus(bookingId);
-                setPayment(p);
-              } catch (e) {}
-
-              if (b.status === 'CONFIRMED') {
-                setMessage('Giao dịch thành công. Xin cảm ơn!');
-                if (pollInterval) clearInterval(pollInterval);
-              }
-            } catch (e) { console.error(e); }
-          };
-
-          await fetchStatus();
-          
-          if (queryStatus === 'success' || queryStatus === 'unknown') {
-            pollInterval = setInterval(fetchStatus, 3000);
-          }
-        }
+        const b = await getBookingDetail(bookingId);
+        setBooking(b);
         
-        setStatus('done');
-        
-        if (queryStatus === 'success') {
-          setMessage('Giao dịch thành công. Xin cảm ơn!');
-        } else if (queryStatus === 'cancel') {
-          setMessage('Giao dịch đã bị hủy.');
-        } else if (queryStatus === 'error') {
-          setMessage('Giao dịch thất bại.');
+        try {
+          const p = await getPaymentStatus(bookingId);
+          setPayment(p);
+        } catch (e) {}
+
+        if (b.status === 'CONFIRMED') {
+          setStatus('success');
+          if (pollInterval) clearInterval(pollInterval);
+        } else if (b.status === 'CANCELLED') {
+          setStatus('error');
+          if (pollInterval) clearInterval(pollInterval);
         } else {
-          setMessage('Đã nhận phản hồi từ cổng thanh toán.');
+          setPollCount(prev => prev + 1);
         }
-      } catch (err) {
-        setStatus('error');
-        setMessage('Không thể tải thông tin giao dịch.');
+      } catch (e) {
+        console.error('Fetch status error:', e);
       }
     };
 
-    run();
+    if (bookingId) {
+      fetchStatus();
+      // Start polling if status is success from redirect but not yet confirmed in DB
+      if (queryStatus === 'success' || queryStatus === 'unknown') {
+        pollInterval = setInterval(() => {
+          fetchStatus();
+        }, 3000);
+      } else if (queryStatus === 'cancel' || queryStatus === 'error') {
+        setStatus('error');
+      }
+    } else {
+      setStatus('error');
+    }
+
+    // Stop polling after 10 attempts (30 seconds)
+    if (pollCount >= 10) {
+      if (pollInterval) clearInterval(pollInterval);
+      if (status === 'loading') setStatus('pending');
+    }
+
     return () => { if (pollInterval) clearInterval(pollInterval); };
-  }, [location.search]);
+  }, [location.search, pollCount, status]);
+
+  const glassStyle = {
+    background: 'rgba(2, 44, 34, 0.85)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '32px',
+    padding: '48px',
+    width: '100%',
+    maxWidth: '600px',
+    boxShadow: '0 40px 100px rgba(0,0,0,0.6)',
+    textAlign: 'center'
+  };
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle2 size={80} color="#10b981" strokeWidth={1.5} />;
+      case 'error':
+        return <XCircle size={80} color="#f43f5e" strokeWidth={1.5} />;
+      case 'pending':
+      case 'loading':
+        return <Clock size={80} color="#F59E0B" className="animate-spin-slow" strokeWidth={1.5} />;
+      default:
+        return <Clock size={80} color="#F59E0B" strokeWidth={1.5} />;
+    }
+  };
+
+  const getStatusTitle = () => {
+    switch (status) {
+      case 'success': return 'Thanh toán thành công';
+      case 'error': return 'Thanh toán thất bại';
+      case 'pending': return 'Đang xử lý thanh toán';
+      default: return 'Đang xác nhận...';
+    }
+  };
+
+  const getStatusDesc = () => {
+    switch (status) {
+      case 'success': return 'Tuyệt vời! Sân của bạn đã được đặt thành công. Hãy sẵn sàng cho trận đấu nhé!';
+      case 'error': return 'Rất tiếc, đã có lỗi xảy ra trong quá trình thanh toán hoặc giao dịch bị hủy.';
+      case 'pending': return 'Hệ thống đang đợi xác nhận từ ngân hàng. Quá trình này có thể mất vài phút.';
+      default: return 'Vui lòng không đóng trình duyệt lúc này.';
+    }
+  };
 
   return (
-    <div className="user-page shell-md">
-      <section className="search-hero">
-        <p className="hero-kicker">Giao dịch</p>
-        <h1>Kết quả giao dịch</h1>
-        <p>{message}</p>
-        {status === 'loading' && <p>Vui lòng chờ...</p>}
-        {status === 'error' && (
-          <div>
-            <p>Không thể xác nhận giao dịch. Vui lòng kiểm tra lại lịch sử đặt sân của bạn.</p>
-            <button onClick={() => navigate('/nguoi-dung/dat-san-cua-toi')}>Xem đặt sân của tôi</button>
-          </div>
-        )}
-        {status === 'done' && booking && (
-          <div className="card mt-4">
-            <h3>Đặt sân #{booking.id}</h3>
-            <p>Trạng thái đặt: {booking.status}</p>
-            {booking.slot && booking.slot.field && (
-              <div>
-                <p> Sân: {booking.slot.field.name}</p>
-                <p> Ngày: {booking.slot.date} {booking.slot.startTime} - {booking.slot.endTime}</p>
-              </div>
-            )}
-            {payment && (
-              <div>
-                <p>Giao dịch: {payment.status} - {formatCurrency(payment.amount)}</p>
-              </div>
-            )}
-            <div className="mt-3">
-              <button onClick={() => navigate('/nguoi-dung/dat-san-cua-toi')}>Xem đặt sân của tôi</button>
-              <button onClick={() => navigate('/')}>Về trang chủ</button>
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', position: 'relative', overflow: 'hidden' }}>
+      {/* Decorative Glows */}
+      <div style={{ position: 'absolute', top: '10%', left: '20%', width: '400px', height: '400px', background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)', opacity: 0.1, filter: 'blur(100px)', pointerEvents: 'none' }}></div>
+      <div style={{ position: 'absolute', bottom: '10%', right: '20%', width: '400px', height: '400px', background: 'radial-gradient(circle, #10b981 0%, transparent 70%)', opacity: 0.1, filter: 'blur(100px)', pointerEvents: 'none' }}></div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        style={glassStyle}
+      >
+        <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'center' }}>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.2 }}
+          >
+            {getStatusIcon()}
+          </motion.div>
+        </div>
+
+        <h1 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '-1px' }}>
+          {getStatusTitle()}
+        </h1>
+        <p style={{ color: '#a7f3d0', fontSize: '16px', lineHeight: 1.6, marginBottom: '40px', opacity: 0.8 }}>
+          {getStatusDesc()}
+        </p>
+
+        {booking && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '24px', padding: '24px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '40px', textAlign: 'left' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#F59E0B', fontSize: '12px', fontWeight: '900', letterSpacing: '1px', marginBottom: '16px' }}>
+              <Zap size={14} fill="#F59E0B" /> THÔNG TIN ĐẶT SÂN
             </div>
-          </div>
+            
+            <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: '800', marginBottom: '20px' }}>{booking.slot?.field?.name || 'Chi tiết đặt sân'}</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#a7f3d0', fontSize: '14px' }}>
+                <Calendar size={18} color="#10b981" />
+                <span>
+                  {formatDate(booking.slot?.date)} • {booking.slot?.startTime?.includes('T') ? booking.slot.startTime.split('T')[1].slice(0, 5) : booking.slot?.startTime?.slice(0, 5)} - {booking.slot?.endTime?.includes('T') ? booking.slot.endTime.split('T')[1].slice(0, 5) : booking.slot?.endTime?.slice(0, 5)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#a7f3d0', fontSize: '14px' }}>
+                <MapPin size={18} color="#10b981" />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{booking.slot?.field?.location}</span>
+              </div>
+              {payment && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#a7f3d0', fontSize: '14px' }}>
+                  <CreditCard size={18} color="#10b981" />
+                  <span>{formatCurrency(payment.amount)} • {payment.provider?.toUpperCase()}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
-        {status === 'done' && !booking && (
-          <div>
-            <p>Không có thông tin đặt sân liên quan. Hãy kiểm tra lại lịch sử đặt sân.</p>
-            <button onClick={() => navigate('/nguoi-dung/dat-san-cua-toi')}>Xem đặt sân của tôi</button>
-          </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <button
+            onClick={() => navigate('/nguoi-dung/dat-san-cua-toi')}
+            style={{ width: '100%', background: '#F59E0B', color: '#000', border: 'none', padding: '18px', borderRadius: '16px', fontSize: '16px', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 15px 30px rgba(245, 158, 11, 0.2)', transition: 'all 0.3s' }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            XEM LỊCH ĐẶT CỦA TÔI <ChevronRight size={20} />
+          </button>
+          
+          <button
+            onClick={() => navigate('/')}
+            style={{ width: '100%', background: 'transparent', color: '#a7f3d0', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '18px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <ArrowLeft size={18} /> QUAY LẠI TRANG CHỦ
+          </button>
+        </div>
+        
+        {status === 'pending' && (
+          <p style={{ marginTop: '24px', color: '#64748b', fontSize: '13px' }}>
+            Nếu bạn đã thanh toán thành công nhưng trạng thái chưa cập nhật, vui lòng đợi vài phút hoặc liên hệ hỗ trợ.
+          </p>
         )}
-      </section>
+      </motion.div>
     </div>
   );
 };

@@ -27,6 +27,15 @@ export const apiPaths = {
 		returnUrl: '/payments/vnpay-return',
 		ipn: '/payments/vnpay-ipn',
 	},
+	user: {
+		profile: '/users/profile',
+	},
+	password: {
+		forgot: '/password/forgot',
+		reset: '/password/reset',
+		changeRequest: '/password/change-request',
+		change: '/password/change',
+	},
 	owner: {
 		fields: '/owner/fields',
 		field: (fieldId) => `/owner/fields/${fieldId}`,
@@ -166,11 +175,11 @@ export const getFieldDetail = async (fieldId, date) => {
 	return normalizeField(data);
 };
 
-export const createBooking = async (slotId) => {
+export const createBooking = async (payload) => {
 	const data = await apiRequest({
 		method: 'POST',
 		url: apiPaths.bookings.create,
-		data: { slotId },
+		data: payload,
 	});
 
 	return normalizeBooking(data);
@@ -184,6 +193,31 @@ export const getMyBookings = async () => {
 export const getBookingDetail = async (bookingId) => {
 	const data = await apiRequest({ method: 'GET', url: apiPaths.bookings.detail(bookingId) });
 	return normalizeBooking(data);
+};
+
+export const updateProfile = async (data) => {
+	const result = await apiRequest({
+		method: 'PATCH',
+		url: apiPaths.user.profile,
+		data,
+	});
+	return result;
+};
+
+export const forgotPassword = async (data) => {
+	return await apiRequest({ method: 'POST', url: apiPaths.password.forgot, data });
+};
+
+export const resetPassword = async (data) => {
+	return await apiRequest({ method: 'POST', url: apiPaths.password.reset, data });
+};
+
+export const requestChangePassword = async () => {
+	return await apiRequest({ method: 'POST', url: apiPaths.password.changeRequest });
+};
+
+export const changePassword = async (data) => {
+	return await apiRequest({ method: 'POST', url: apiPaths.password.change, data });
 };
 
 export const cancelBooking = async (bookingId) => {
@@ -226,6 +260,9 @@ export const updateOwnerField = async (fieldId, payload) => {
 	const data = await apiRequest({ method: 'PATCH', url: apiPaths.owner.field(fieldId), data: payload });
 	return normalizeField(data);
 };
+
+export const deleteOwnerField = async (fieldId) =>
+	apiRequest({ method: 'DELETE', url: apiPaths.owner.field(fieldId) });
 
 export const createBatchSlots = async (fieldId, slots) => {
 	const data = await apiRequest({

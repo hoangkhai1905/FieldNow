@@ -1,20 +1,36 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Users, 
+  UserCheck, 
+  ShieldAlert, 
+  ShieldCheck, 
+  Mail, 
+  Phone, 
+  Search, 
+  Filter, 
+  MoreVertical,
+  Check,
+  X,
+  Loader2,
+  Activity,
+  Award
+} from 'lucide-react';
 import { getAdminUsers, updateUserRole } from '../../api/endpoints';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadUsers = async () => {
     setLoading(true);
-
     try {
       const data = await getAdminUsers();
       setUsers(data);
     } catch (requestError) {
-      setError(requestError.message || 'Không tải được danh sách người dùng');
+      setToast({ type: 'error', text: requestError.message || 'Lỗi tải dữ liệu' });
       setUsers([]);
     } finally {
       setLoading(false);
@@ -25,88 +41,165 @@ const UserManagement = () => {
     void loadUsers();
   }, []);
 
-  const roleStats = useMemo(() => {
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => 
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  const stats = useMemo(() => {
     return users.reduce(
-      (accumulator, user) => {
-        accumulator[user.role] = (accumulator[user.role] || 0) + 1;
-        return accumulator;
+      (acc, user) => {
+        acc[user.role] = (acc[user.role] || 0) + 1;
+        return acc;
       },
       { USER: 0, OWNER: 0, ADMIN: 0 }
     );
   }, [users]);
 
   const handleRoleChange = async (userId, role) => {
-    setMessage('');
-    setError('');
-
     try {
       await updateUserRole(userId, role);
-      setMessage(`Đã đổi role của ${userId} thành ${role}.`);
+      setToast({ type: 'success', text: `Đã cập nhật vai trò người dùng thành ${role}` });
       await loadUsers();
     } catch (requestError) {
-      setError(requestError.message || 'Không cập nhật được role');
+      setToast({ type: 'error', text: requestError.message || 'Không thể cập nhật' });
     }
   };
 
+  const glassStyle = {
+    background: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '24px'
+  };
+
   return (
-    <div className="dashboard-content">
-      <section className="dashboard-hero">
-        <p className="hero-kicker">User management</p>
-        <h1>Quản lý người dùng và phân quyền theo endpoint admin.</h1>
-        <p>Danh sách này gọi /admin/users và cho phép đổi role bằng /admin/users/:id/role.</p>
-      </section>
+    <div style={{ color: '#fff', padding: '40px' }}>
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 20 }} exit={{ opacity: 0, y: -50 }}
+            style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 3000, padding: '16px 32px', background: toast.type === 'success' ? '#10b981' : '#f43f5e', color: '#fff', borderRadius: '100px', fontWeight: '800', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            {toast.type === 'success' ? <Check size={20} /> : <X size={20} />}
+            {toast.text}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {message && <div className="notice notice-success">{message}</div>}
-      {error && <div className="notice notice-error">{error}</div>}
-
-      <div className="metric-grid dashboard-metrics">
-        <article><strong>{roleStats.USER}</strong><span>USER</span></article>
-        <article><strong>{roleStats.OWNER}</strong><span>OWNER</span></article>
-        <article><strong>{roleStats.ADMIN}</strong><span>ADMIN</span></article>
-      </div>
-
-      <section className="section-shell">
-        <div className="section-heading">
-          <h2>Người dùng</h2>
-          <p>{loading ? 'Đang tải...' : `${users.length} tài khoản`}</p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div style={{ marginBottom: '40px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '950', margin: 0, letterSpacing: '-1px' }}>HỆ THỐNG QUẢN TRỊ NGƯỜI DÙNG</h1>
+          <p style={{ color: '#64748b', marginTop: '8px', fontSize: '16px' }}>Quản lý phân quyền và giám sát hoạt động tài khoản.</p>
         </div>
 
-        <div className="table-wrap">
-          <table className="booking-table">
-            <thead>
-              <tr>
-                <th>Người dùng</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Số điện thoại</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.fullName || user.id}</td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>{user.phoneNumber || 'Chưa cập nhật'}</td>
-                  <td>
-                    <div className="table-actions">
-                      <select
-                        defaultValue={user.role}
-                        onChange={(event) => handleRoleChange(user.id, event.target.value)}
-                      >
-                        <option value="USER">USER</option>
-                        <option value="OWNER">OWNER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
+          {[
+            { label: 'Tổng người dùng', value: users.length, icon: Users, color: '#3b82f6' },
+            { label: 'Cầu thủ (USER)', value: stats.USER, icon: Activity, color: '#F59E0B' },
+            { label: 'Chủ sân (OWNER)', value: stats.OWNER, icon: Award, color: '#10b981' },
+            { label: 'Quản trị (ADMIN)', value: stats.ADMIN, icon: ShieldCheck, color: '#f43f5e' }
+          ].map((stat, idx) => (
+            <motion.div key={idx} whileHover={{ y: -5 }} style={{ ...glassStyle, padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: `${stat.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <stat.icon size={28} color={stat.color} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>{stat.label}</p>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: '950' }}>{stat.value}</p>
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </section>
+
+        {/* Search & Actions */}
+        <div style={{ ...glassStyle, padding: '24px', marginBottom: '32px', display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input 
+              placeholder="Tìm kiếm theo tên hoặc email..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 14px 14px 52px', color: '#fff', fontSize: '15px', outline: 'none' }}
+            />
+          </div>
+          <button style={{ padding: '14px 24px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '700' }}>
+            <Filter size={18} /> Lọc
+          </button>
+        </div>
+
+        {/* User Table (Modern Card List) */}
+        <div style={{ ...glassStyle, overflow: 'hidden' }}>
+          <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 0.5fr', color: '#64748b', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <span>Thông tin người dùng</span>
+            <span>Liên hệ</span>
+            <span>Vai trò</span>
+            <span>Ngày tham gia</span>
+            <span style={{ textAlign: 'right' }}>Hành động</span>
+          </div>
+
+          <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+            {loading ? (
+              <div style={{ padding: '100px', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} color="#F59E0B" /></div>
+            ) : filteredUsers.map((user, idx) => (
+              <motion.div 
+                key={user.id} 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 0.5fr', alignItems: 'center', transition: 'background 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(45deg, #3b82f6, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '18px' }}>
+                    {(user.full_name || user.fullName || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: '800', fontSize: '15px' }}>{user.full_name || user.fullName || 'User #' + user.id.slice(0,4)}</p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>ID: {user.id.slice(0, 12)}...</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '13px' }}>
+                    <Mail size={14} /> {user.email}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
+                    <Phone size={14} /> {user.phone || user.phoneNumber || 'N/A'}
+                  </div>
+                </div>
+
+                <div>
+                  <select 
+                    value={user.role}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px 12px', color: '#fff', fontSize: '13px', fontWeight: '700', outline: 'none' }}
+                  >
+                    <option value="USER">USER</option>
+                    <option value="OWNER">OWNER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+
+                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                  {new Date(user.created_at || user.createdAt).toLocaleDateString('vi-VN')}
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                    <MoreVertical size={20} />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

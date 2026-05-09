@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
+import ForgotPassword from '../pages/auth/ForgotPassword';
 import Home from '../pages/public/Home';
 import SearchFields from '../pages/public/SearchFields';
 import FieldDetail from '../pages/public/FieldDetail';
@@ -18,6 +19,7 @@ import Approvals from '../pages/admin/Approvals';
 import UserManagement from '../pages/admin/UserManagement';
 
 import VerifyOTP from '../pages/auth/VerifyOTP';
+import ScrollToTop from '../components/layout/ScrollToTop';
 
 const Unauthorized = () => (
   <div className="user-page shell-xl">
@@ -41,13 +43,16 @@ const NotFound = () => (
 
 const AppRoutes = () => {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/tim-san" element={<SearchFields />} />
         <Route path="/san/:id" element={<FieldDetail />} />
         <Route path="/payment/result" element={<PaymentResult />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/nguoi-dung/dat-san-cua-toi"
           element={
@@ -119,6 +124,7 @@ const AppRoutes = () => {
 
         <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 };
 

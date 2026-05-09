@@ -25,12 +25,16 @@ const SearchFields = () => {
 
   const fieldTypes = [
     { value: '', label: 'Tất cả loại sân' },
-    { value: 'FUTSAL', label: 'Sân Futsal' },
+    { value: 'FUTSAL', label: 'Sân Bóng đá' },
     { value: 'BADMINTON', label: 'Cầu lông' },
     { value: 'BASKETBALL', label: 'Bóng rổ' },
     { value: 'VOLLEYBALL', label: 'Bóng chuyền' },
     { value: 'TENNIS', label: 'Tennis' },
   ];
+
+  const getFieldTypeLabel = (type) => {
+    return fieldTypes.find(t => t.value === type)?.label || type || 'Sân bóng đá';
+  };
 
   const loadFields = async (page = 1) => {
     setLoading(true);
@@ -61,7 +65,7 @@ const SearchFields = () => {
   const getImageUrl = (img) => {
     if (!img) return 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80';
     if (img.startsWith('data:') || img.startsWith('http')) return img;
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${img}`;
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${img}`;
   };
 
   const glassStyle = {
@@ -114,11 +118,11 @@ const SearchFields = () => {
           <div style={{ position: 'relative', width: '280px' }}>
             <div
               onClick={() => setIsTypeOpen(!isTypeOpen)}
-              style={{ 
-                ...inputStyle, 
-                cursor: 'pointer', 
-                display: 'flex', 
-                alignItems: 'center', 
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 border: isTypeOpen ? '1px solid #F59E0B' : '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: isTypeOpen ? '0 0 0 4px rgba(245, 158, 11, 0.1)' : 'none'
@@ -138,9 +142,9 @@ const SearchFields = () => {
             <AnimatePresence>
               {isTypeOpen && (
                 <>
-                  <div 
-                    style={{ position: 'fixed', inset: 0, zIndex: 40 }} 
-                    onClick={() => setIsTypeOpen(false)} 
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                    onClick={() => setIsTypeOpen(false)}
                   />
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -237,7 +241,7 @@ const SearchFields = () => {
                     </div>
                     <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '24px', background: 'linear-gradient(to top, rgba(2, 44, 34, 1), transparent)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#F59E0B', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        <Zap size={12} fill="#F59E0B" /> {field.type || 'FUTSAL'}
+                        <Zap size={12} fill="#F59E0B" /> {getFieldTypeLabel(field.type)}
                       </div>
                     </div>
                   </div>

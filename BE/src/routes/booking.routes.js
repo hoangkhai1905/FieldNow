@@ -7,7 +7,10 @@ const { z } = require('zod');
 const router = express.Router();
 
 const createBookingSchema = z.object({
-  slotId: z.string().uuid('Invalid slot ID format'),
+  fieldId: z.string().uuid('Invalid field ID format'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid start time format (HH:mm)'),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid end time format (HH:mm)'),
 });
 
 router.use(authMiddleware);

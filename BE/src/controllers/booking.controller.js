@@ -2,7 +2,13 @@ const bookingService = require('../services/booking.service');
 
 const createBooking = async (req, res, next) => {
   try {
-    const booking = await bookingService.createBooking(req.user.userId, req.body.slotId);
+    const { fieldId, date, startTime, endTime } = req.body;
+    const booking = await bookingService.createBooking(req.user.userId, { 
+      fieldId, 
+      date, 
+      startTime, 
+      endTime 
+    });
     res.status(201).json({ success: true, data: booking });
   } catch (error) {
     next(error);
