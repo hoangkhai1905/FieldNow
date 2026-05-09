@@ -68,9 +68,9 @@ async function main() {
           name: 'Central Stadium',
           location: '123 Main St, Ho Chi Minh City',
           description: 'A beautiful football field in the heart of the city.',
-          images: ['https://example.com/field1.jpg'],
+          images: ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80'],
           price_per_hour: 500000,
-          is_active: true, // Approved by default for testing
+          is_active: true,
         }
       });
       console.log(`  ✅ Created Field: ${field.name}`);
@@ -78,8 +78,30 @@ async function main() {
       console.log(`  ⏭️  Skipped Field: ${field.name} (already exists)`);
     }
 
+    let seedField = await prisma.field.findFirst({ where: { name: 'Seed Field' } });
+    if (!seedField) {
+      seedField = await prisma.field.create({
+        data: {
+          owner_id: ownerId,
+          name: 'Seed Field',
+          location: 'Ho Chi Minh',
+          description: 'Sân bóng dùng để test đặt sân giá rẻ.',
+          images: ['https://images.unsplash.com/photo-1529900948638-196987144599?auto=format&fit=crop&w=1400&q=80'],
+          price_per_hour: 5000,
+          is_active: true,
+        }
+      });
+      console.log(`  ✅ Created Field: ${seedField.name}`);
+    } else {
+      seedField = await prisma.field.update({
+        where: { id: seedField.id },
+        data: { price_per_hour: 5000 }
+      });
+      console.log(`  ✅ Updated Field Price: ${seedField.name} to 5000`);
+    }
+
     // Seed slots for the next 7 days
-    console.log(`  ⏳ Seeding slots for the next 7 days...`);
+    console.log(`  ⏳ Seeding/Updating slots for the next 7 days...`);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
@@ -89,38 +111,55 @@ async function main() {
     };
 
     let slotsCreated = 0;
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + i);
+    let slotsUpdated = 0;
+    const targetFields = [field, seedField].filter(Boolean);
 
-      // Create 5 slots per day: 17:00 to 22:00
-      const startHours = [17, 18, 19, 20, 21];
-      for (const hour of startHours) {
-        const startTimeStr = `${hour}:00`;
-        const endTimeStr = `${hour + 1}:00`;
-        
-        try {
-          await prisma.fieldSlot.create({
-            data: {
-              field_id: field.id,
+    for (const f of targetFields) {
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+
+        const startHours = [17, 18, 19, 20, 21];
+        for (const hour of startHours) {
+          const startTimeStr = `${hour}:00`;
+          const endTimeStr = `${hour + 1}:00`;
+          const startTime = toTimeDate(startTimeStr);
+          const endTime = toTimeDate(endTimeStr);
+          
+          const existingSlot = await prisma.fieldSlot.findFirst({
+            where: {
+              field_id: f.id,
               date: date,
-              start_time: toTimeDate(startTimeStr),
-              end_time: toTimeDate(endTimeStr),
-              price_override: hour >= 19 ? 600000 : null, // Peak hour pricing
+              start_time: startTime,
+              end_time: endTime
             }
           });
-          slotsCreated++;
-        } catch (error) {
-          // Skip if slot already exists
+
+          const priceOverride = f.name === 'Seed Field' ? 5000 : (hour >= 19 ? 600000 : null);
+
+          if (!existingSlot) {
+            await prisma.fieldSlot.create({
+              data: {
+                field_id: f.id,
+                date: date,
+                start_time: startTime,
+                end_time: endTime,
+                price_override: priceOverride,
+              }
+            });
+            slotsCreated++;
+          } else {
+            await prisma.fieldSlot.update({
+              where: { id: existingSlot.id },
+              data: { price_override: priceOverride }
+            });
+            slotsUpdated++;
+          }
         }
       }
     }
     
-    if (slotsCreated > 0) {
-      console.log(`  ✅ Created ${slotsCreated} new slots for Field: ${field.name}`);
-    } else {
-      console.log(`  ⏭️  No new slots needed for Field: ${field.name}`);
-    }
+    console.log(`  ✅ Done: ${slotsCreated} created, ${slotsUpdated} updated.`);
   }
 }
 

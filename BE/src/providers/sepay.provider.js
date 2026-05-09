@@ -117,19 +117,29 @@ class SePayProvider {
     }
     
     // 2. Bank Transaction Webhook Schema (from "Mô phỏng giao dịch")
+    const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+    
+    // Check in 'code' field
     if (body?.code) {
-      const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
-      if (uuidRegex.test(body.code)) return body.code;
-    }
-
-    // Fallback: search raw content for UUID (useful for testing when pasting UUID in memo)
-    if (body?.content) {
-      const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
-      const match = body.content.match(uuidRegex);
+      const match = body.code.match(uuidRegex);
       if (match) return match[0];
     }
     
-    // Return original code if no UUID found to let it fail properly later
+    // Check in 'content' field (common for bank transfers)
+    if (body?.content) {
+      const match = body.content.match(uuidRegex);
+      if (match) return match[0];
+    }
+
+    // Check in 'description' (fallback)
+    if (body?.description) {
+      const match = body.description.match(uuidRegex);
+      if (match) return match[0];
+    }
+    
+    // Log full body if nothing found to help user debug
+    logger.warn(`[SePay IPN] Could not extract UUID from body. Keys present: ${Object.keys(body || {}).join(', ')}`);
+    
     return body?.code || null;
   }
 }

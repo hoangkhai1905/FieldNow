@@ -1,158 +1,241 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  Search, 
+  ChevronRight, 
+  Trophy, 
+  Zap, 
+  Users, 
+  MapPin, 
+  Star,
+  ArrowUpRight,
+  ShieldCheck,
+  CreditCard
+} from 'lucide-react';
 import { formatCurrency, searchFields } from '../../api/endpoints';
-import './UserFacing.css';
-import './Home.css';
-
-const featureCards = [
-  {
-    title: 'Tìm sân theo vị trí và giá',
-    body: 'Lọc theo khu vực, mức giá và tình trạng sân để chọn lịch phù hợp.',
-    icon: '🎯',
-  },
-  {
-    title: 'Đặt sân nhanh, thanh toán dễ',
-    body: 'Giữ chỗ trong vài bước, thanh toán an toàn để chốt lịch chơi.',
-    icon: '⚡',
-  },
-  {
-    title: 'Mỗi vai trò, một trải nghiệm',
-    body: 'Người chơi, chủ sân và đội vận hành đều có luồng thao tác riêng gọn gàng.',
-    icon: '👥',
-  },
-];
+import useAuth from '../../hooks/useAuth';
 
 const Home = () => {
+  const { isAuthenticated } = useAuth();
   const [featuredFields, setFeaturedFields] = useState([]);
-  const [stats, setStats] = useState({ total: 0 });
   const [loading, setLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
     const load = async () => {
       try {
-        const result = await searchFields({ page: 1, limit: 4 });
-        if (!mounted) return;
-
+        const result = await searchFields({ page: 1, limit: 3 });
         setFeaturedFields(result.fields);
-        setStats({ total: result.pagination?.total || result.fields.length });
-      } catch {
-        if (mounted) {
-          setFeaturedFields([]);
-        }
+      } catch (err) {
+        console.error(err);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
-
-    void load();
-
-    return () => {
-      mounted = false;
-    };
+    load();
   }, []);
 
+  const glassStyle = {
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '32px'
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { staggerChildren: 0.2 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+  };
+
   return (
-    <div className={`user-page home-page ${isVisible ? 'fade-in' : ''}`}>
-      {/* Hero Section */}
-      <section className="hero-shell">
-        <div className="hero-copy">
-          <p className="hero-kicker stagger-fade" style={{ animationDelay: '0.1s' }}>
-            FieldNow Platform
-          </p>
-          <h1 className="stagger-fade" style={{ animationDelay: '0.2s' }}>
-            Chọn sân cỏ đẹp, đặt lịch nhanh, lên sân đúng giờ.
-          </h1>
-          <p className="stagger-fade" style={{ animationDelay: '0.3s' }}>
-            Mọi thao tác đều tập trung vào trải nghiệm bóng đá: tìm sân, giữ chỗ, thanh toán và xác nhận lịch chơi.
-          </p>
+    <div style={{ 
+      color: '#fff', 
+      flex: 1, 
+      overflowX: 'hidden', 
+      position: 'relative' 
+    }}>
+      {/* Soccer Pitch Pattern Overlay */}
+      <div style={{ 
+        position: 'absolute', 
+        inset: 0, 
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)', 
+        backgroundSize: '40px 40px', 
+        pointerEvents: 'none', 
+        zIndex: 0 
+      }}></div>
+      
+      {/* Decorative Lights */}
+      <div style={{ position: 'fixed', top: '-10%', right: '-5%', width: '600px', height: '600px', background: 'radial-gradient(circle, #10b981 0%, transparent 70%)', opacity: 0.15, filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }}></div>
+      <div style={{ position: 'fixed', bottom: '10%', left: '-5%', width: '500px', height: '500px', background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)', opacity: 0.1, filter: 'blur(100px)', pointerEvents: 'none', zIndex: 0 }}></div>
 
-          <div className="hero-actions stagger-fade" style={{ animationDelay: '0.4s' }}>
-            <Link to="/tim-san" className="primary-button btn-pulse">
-              Bắt đầu tìm sân
-            </Link>
-            <Link to="/register" className="secondary-button">
-              Tạo tài khoản
-            </Link>
-          </div>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px', position: 'relative', zIndex: 1 }}
+      >
+        {/* HERO SECTION */}
+        <section style={{ marginBottom: '100px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '40px', alignItems: 'center', minHeight: '600px' }}>
+          <motion.div variants={itemVariants}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'rgba(245, 158, 11, 0.2)', borderRadius: '100px', border: '1px solid rgba(245, 158, 11, 0.4)', marginBottom: '32px' }}>
+              <Zap size={18} color="#F59E0B" fill="#F59E0B" />
+              <span style={{ color: '#F59E0B', fontSize: '13px', fontWeight: '900', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Sẵn sàng cho trận đấu</span>
+            </div>
+            <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: '950', lineHeight: 0.9, letterSpacing: '-3px', marginBottom: '32px', textTransform: 'uppercase', textShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+              Nâng tầm <br /><span style={{ color: '#F59E0B' }}>trải nghiệm</span> <br />đặt sân cỏ.
+            </h1>
+            <p style={{ fontSize: '20px', color: '#d1fae5', lineHeight: 1.6, maxWidth: '540px', marginBottom: '48px', fontWeight: '500', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              Hệ thống quản lý và đặt sân bóng đá hiện đại nhất. <br />Tìm sân nhanh, chốt lịch dễ dàng, thanh toán an toàn.
+            </p>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              <Link to="/tim-san" style={{ background: '#F59E0B', color: '#000', padding: '22px 48px', borderRadius: '20px', fontWeight: '950', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', fontSize: '15px' }}>
+                BẮT ĐẦU TÌM SÂN <ChevronRight size={22} strokeWidth={3} />
+              </Link>
+              {!isAuthenticated ? (
+                <Link to="/register" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '22px 48px', borderRadius: '20px', fontWeight: '900', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)', fontSize: '15px', backdropFilter: 'blur(10px)' }}>
+                  TẠO TÀI KHOẢN
+                </Link>
+              ) : (
+                <Link to="/nguoi-dung/dat-san-cua-toi" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '22px 48px', borderRadius: '20px', fontWeight: '900', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)', fontSize: '15px', backdropFilter: 'blur(10px)' }}>
+                  LỊCH ĐẶT CỦA TÔI
+                </Link>
+              )}
+            </div>
+          </motion.div>
 
-          <div className="metric-grid">
-            {[
-              { value: stats.total, label: 'Sân đang mở đặt lịch', delay: '0.5s' },
-              { value: 'VNPay', label: 'Thanh toán an toàn', delay: '0.6s' },
-              { value: 'Chủ sân', label: 'Quản lý lịch sân linh hoạt', delay: '0.7s' },
-            ].map((metric, idx) => (
-              <article key={idx} className="metric-card stagger-fade" style={{ animationDelay: metric.delay }}>
-                <strong>{metric.value}</strong>
-                <span>{metric.label}</span>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className="hero-panel">
-          <div className="grass-ornament" aria-hidden="true" />
-          <div className="panel-heading">
-            <span>Gợi ý</span>
-            <small>{loading ? 'Đang tải dữ liệu...' : 'Sân nổi bật hôm nay'}</small>
-          </div>
-
-          <div className="featured-stack">
-            {featuredFields.length ? (
-              featuredFields.map((field, idx) => (
-                <article
-                  key={field.id}
-                  className="featured-card card-hover"
-                  style={{ animationDelay: `${0.5 + idx * 0.1}s` }}
-                >
-                  <img src={field.image} alt={field.name} />
-                  <div>
-                    <h3>{field.name}</h3>
-                    <p>{field.location}</p>
-                    <strong>{formatCurrency(field.pricePerHour)} / giờ</strong>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div className="empty-state compact fade-in-delayed">
-                <h3>Chưa có dữ liệu nổi bật</h3>
-                <p>Sân nổi bật sẽ sớm xuất hiện khi dữ liệu được cập nhật.</p>
+          {/* Quick Stats Panel */}
+          <motion.div variants={itemVariants} style={{ ...glassStyle, padding: '48px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                  <ShieldCheck size={32} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>Thanh toán an toàn</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: '#a7f3d0' }}>Tích hợp VNPay & SePay</p>
+                </div>
               </div>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  <Trophy size={32} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>Chất lượng hàng đầu</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: '#a7f3d0' }}>Sân cỏ tiêu chuẩn FIFA</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                  <CreditCard size={32} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>Hoàn tiền nhanh</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: '#a7f3d0' }}>Nếu sân gặp sự cố</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* FEATURED FIELDS SECTION */}
+        <section style={{ marginBottom: '100px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px' }}>
+            <motion.div variants={itemVariants}>
+              <h2 style={{ fontSize: '36px', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>Sân nổi bật hôm nay</h2>
+              <p style={{ color: '#a7f3d0', margin: '12px 0 0 0', fontSize: '17px' }}>Những sân bóng đẳng cấp nhất trong khu vực của bạn.</p>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <Link to="/tim-san" style={{ color: '#F59E0B', fontWeight: '900', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '15px', letterSpacing: '0.5px' }}>
+                XEM TẤT CẢ <ArrowUpRight size={20} strokeWidth={2.5} />
+              </Link>
+            </motion.div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '40px' }}>
+            {loading ? (
+              [1, 2, 3].map(i => <div key={i} style={{ ...glassStyle, height: '440px', background: 'rgba(255,255,255,0.05)', animation: 'pulse 2s infinite' }}></div>)
+            ) : (
+              featuredFields.map((field) => (
+                <motion.div 
+                  key={field.id}
+                  variants={itemVariants}
+                  whileHover={{ y: -12 }}
+                  style={{ ...glassStyle, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)' }}
+                >
+                  <Link to={`/san/${field.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{ position: 'relative', height: '260px', overflow: 'hidden' }}>
+                      <img src={field.image} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(2, 44, 34, 0.8)', backdropFilter: 'blur(12px)', padding: '8px 16px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(255,255,255,0.15)' }}>
+                        <Star size={16} fill="#F59E0B" color="#F59E0B" />
+                        <span style={{ fontSize: '14px', fontWeight: '900', color: '#fff' }}>4.9</span>
+                      </div>
+                    </div>
+                    <div style={{ padding: '32px' }}>
+                      <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '900', marginBottom: '10px', color: '#fff' }}>{field.name}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '15px', marginBottom: '24px' }}>
+                        <MapPin size={16} color="#F59E0B" />
+                        <span>{field.location}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div>
+                          <span style={{ fontSize: '13px', color: '#a7f3d0', display: 'block', textTransform: 'uppercase', fontWeight: 'bold', opacity: 0.8 }}>Giá thuê</span>
+                          <span style={{ fontSize: '24px', fontWeight: '950', color: '#F59E0B' }}>{formatCurrency(field.pricePerHour)}<span style={{ fontSize: '15px', color: '#a7f3d0', fontWeight: 'normal' }}>/h</span></span>
+                        </div>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                          <ChevronRight size={28} strokeWidth={2.5} />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
             )}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Features Section */}
-      <section className="section-shell feature-section shell-xl">
-        <div className="section-heading">
-          <h2 className="fade-in-up">Trải nghiệm dành cho người yêu bóng đá</h2>
-          <p className="fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Tập trung vào hành trình: tìm sân, chọn lịch, giữ chỗ và xác nhận thanh toán.
-          </p>
-        </div>
-
-        <div className="card-grid three-up">
-          {featureCards.map((card, idx) => (
-            <article
-              key={card.title}
-              className="panel-card card-lift"
-              style={{ animationDelay: `${0.2 + idx * 0.1}s` }}
-            >
-              <div className="card-icon">{card.icon}</div>
-              <p className="card-eyebrow">Trải nghiệm</p>
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+        {/* EXPERIENCE SECTION */}
+        <section style={{ ...glassStyle, padding: '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), transparent)', pointerEvents: 'none' }}></div>
+           <motion.div variants={itemVariants} style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+              <h2 style={{ fontSize: '56px', fontWeight: '950', marginBottom: '28px', textTransform: 'uppercase', lineHeight: 1, letterSpacing: '-1px', textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>Sẵn sàng tỏa sáng <br />trên sân cỏ?</h2>
+              <p style={{ color: '#d1fae5', fontSize: '20px', marginBottom: '56px', lineHeight: 1.6 }}>
+                Đừng để việc tìm sân làm gián đoạn niềm đam mê. <br />Gia nhập cộng đồng cầu thủ đã tin dùng FieldNow.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', marginBottom: '64px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#F59E0B', fontSize: '40px', fontWeight: '950' }}>10K+</div>
+                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Cầu thủ</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#F59E0B', fontSize: '40px', fontWeight: '950' }}>500+</div>
+                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Sân bóng</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#F59E0B', fontSize: '40px', fontWeight: '950' }}>24/7</div>
+                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Hỗ trợ</div>
+                </div>
+              </div>
+              {!isAuthenticated ? (
+                <Link to="/register" style={{ background: '#fff', color: '#064e3b', padding: '24px 64px', borderRadius: '22px', fontWeight: '950', textDecoration: 'none', display: 'inline-block', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', fontSize: '16px' }}>
+                  ĐĂNG KÝ NGAY
+                </Link>
+              ) : (
+                <Link to="/nguoi-dung/ho-so" style={{ background: '#fff', color: '#064e3b', padding: '24px 64px', borderRadius: '22px', fontWeight: '950', textDecoration: 'none', display: 'inline-block', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', fontSize: '16px' }}>
+                  TRANG CÁ NHÂN
+                </Link>
+              )}
+           </motion.div>
+        </section>
+      </motion.div>
     </div>
   );
 };

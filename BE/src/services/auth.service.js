@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const userRepository = require('../repositories/user.repository');
 const refreshTokenRepository = require('../repositories/refresh-token.repository');
+const otpService = require('./otp.service');
 const { errors } = require('../utils/errors');
 
 const register = async (email, password, fullName, role) => {
@@ -20,6 +21,15 @@ const register = async (email, password, fullName, role) => {
     full_name: fullName,
     role: role || 'USER',
   });
+
+  // Automatically trigger OTP sending after registration
+  try {
+    await otpService.sendOTP(user.email);
+  } catch (error) {
+    console.error(`[Auth] Failed to send initial OTP to ${user.email}: ${error.message}`);
+    // We don't throw the error here so the registration still succeeds,
+    // the user can request a new OTP later if the email failed.
+  }
 
   return { id: user.id, email: user.email, role: user.role };
 };

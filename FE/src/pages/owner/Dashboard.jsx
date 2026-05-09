@@ -1,5 +1,16 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  Trophy, 
+  Activity, 
+  ShieldCheck, 
+  Clock, 
+  ArrowRight, 
+  ExternalLink,
+  Plus,
+  BarChart3
+} from 'lucide-react';
 import { getOwnerFields, formatCurrency } from '../../api/endpoints';
 
 const Dashboard = () => {
@@ -8,7 +19,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-
     const load = async () => {
       try {
         const data = await getOwnerFields();
@@ -17,61 +27,120 @@ const Dashboard = () => {
         if (mounted) setLoading(false);
       }
     };
-
-    void load();
-
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => { mounted = false; };
   }, []);
 
   const activeFields = fields.filter((field) => field.isActive).length;
   const pendingFields = fields.length - activeFields;
 
-  return (
-    <div className="dashboard-content">
-      <section className="dashboard-hero">
-        <p className="hero-kicker">Owner dashboard</p>
-        <h1>Điều khiển sân của bạn từ dữ liệu thật</h1>
-        <p>
-          Trang này đọc /owner/fields để theo dõi số sân, trạng thái duyệt và giá niêm yết. Từ đây bạn đi vào màn tạo hoặc chỉnh sửa sân.
-        </p>
-        <div className="hero-actions">
-          <Link to="/owner/fields" className="primary-button">Quản lý sân</Link>
-          <Link to="/tim-san" className="secondary-button">Xem public search</Link>
-        </div>
-      </section>
+  const glassStyle = {
+    background: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '24px'
+  };
 
-      <div className="metric-grid dashboard-metrics">
-        <article>
-          <strong>{loading ? '...' : fields.length}</strong>
-          <span>Tổng sân</span>
-        </article>
-        <article>
-          <strong>{loading ? '...' : activeFields}</strong>
-          <span>Đã active</span>
-        </article>
-        <article>
-          <strong>{loading ? '...' : pendingFields}</strong>
-          <span>Chờ duyệt</span>
-        </article>
+  return (
+    <div style={{ color: '#fff' }}>
+      {/* Hero Section */}
+      <motion.section 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ marginBottom: '48px' }}
+      >
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '100px', border: '1px solid rgba(16, 185, 129, 0.3)', marginBottom: '24px' }}>
+          <BarChart3 size={14} color="#10b981" />
+          <span style={{ color: '#10b981', fontSize: '11px', fontWeight: '900', letterSpacing: '1px' }}>BUSINESS OVERVIEW</span>
+        </div>
+        <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', margin: 0, letterSpacing: '-2px', lineHeight: 1 }}>
+          Quản lý <span style={{ color: '#F59E0B' }}>kinh doanh</span>
+        </h1>
+        <p style={{ color: '#a7f3d0', fontSize: '18px', marginTop: '16px', opacity: 0.8, maxWidth: '600px', lineHeight: 1.6 }}>
+          Theo dõi hiệu suất sân bóng, quản lý lịch đặt và tối ưu hóa doanh thu từ dữ liệu thực tế.
+        </p>
+        
+        <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
+           <Link to="/owner/fields" style={{ textDecoration: 'none', background: '#F59E0B', color: '#000', padding: '16px 28px', borderRadius: '14px', fontWeight: '900', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 20px rgba(245, 158, 11, 0.2)' }}>
+              QUẢN LÝ SÂN <ArrowRight size={18} strokeWidth={3} />
+           </Link>
+           <Link to="/tim-san" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: '#fff', padding: '16px 28px', borderRadius: '14px', fontWeight: '800', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              XEM CÔNG KHAI <ExternalLink size={18} />
+           </Link>
+        </div>
+      </motion.section>
+
+      {/* Metrics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '48px' }}>
+        {[
+          { label: 'Tổng số sân', value: fields.length, icon: Trophy, color: '#F59E0B', sub: 'Tài nguyên sở hữu' },
+          { label: 'Đang hoạt động', value: activeFields, icon: ShieldCheck, color: '#10b981', sub: 'Sẵn sàng đặt lịch' },
+          { label: 'Đang chờ duyệt', value: pendingFields, icon: Clock, color: '#3b82f6', sub: 'Cần admin kiểm tra' }
+        ].map((metric, idx) => (
+          <motion.article 
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            style={{ ...glassStyle, padding: '32px', position: 'relative', overflow: 'hidden' }}
+          >
+            <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.05 }}>
+               <metric.icon size={120} color={metric.color} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+               <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: `${metric.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <metric.icon size={20} color={metric.color} />
+               </div>
+               <span style={{ fontSize: '14px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px' }}>{metric.label}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+               <strong style={{ fontSize: '42px', fontWeight: '950' }}>{loading ? '...' : metric.value}</strong>
+               <span style={{ color: '#a7f3d0', fontSize: '12px', fontWeight: '600', opacity: 0.6 }}>{metric.sub}</span>
+            </div>
+          </motion.article>
+        ))}
       </div>
 
-      <section className="section-shell">
-        <div className="section-heading">
-          <h2>Sân gần đây</h2>
-          <p>{loading ? 'Đang tải...' : 'Danh sách từ backend owner endpoints.'}</p>
+      {/* Recent Fields Section */}
+      <section>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+           <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0 }}>Sân bóng gần đây</h2>
+           <Link to="/owner/fields" style={{ color: '#F59E0B', textDecoration: 'none', fontSize: '14px', fontWeight: '800' }}>XEM TẤT CẢ</Link>
         </div>
 
-        <div className="card-grid two-up">
-          {fields.slice(0, 2).map((field) => (
-            <article className="panel-card" key={field.id}>
-              <p className="card-eyebrow">{field.isActive ? 'Active' : 'Pending'}</p>
-              <h3>{field.name}</h3>
-              <p>{field.location}</p>
-              <strong>{formatCurrency(field.pricePerHour)} / giờ</strong>
-            </article>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+          {loading ? (
+            [1, 2].map(i => <div key={i} style={{ ...glassStyle, height: '160px', animation: 'pulse 2s infinite' }}></div>)
+          ) : fields.length > 0 ? (
+            fields.slice(0, 2).map((field, idx) => (
+              <motion.article 
+                key={field.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + idx * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+                style={{ ...glassStyle, padding: '24px', display: 'flex', gap: '24px', alignItems: 'center' }}
+              >
+                <div style={{ width: '100px', height: '100px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                   <Trophy size={48} color={field.isActive ? '#10b981' : '#64748b'} />
+                </div>
+                <div style={{ flex: 1 }}>
+                   <div style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: '100px', background: field.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: field.isActive ? '#10b981' : '#3b82f6', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      {field.isActive ? 'ĐANG HOẠT ĐỘNG' : 'CHỜ DUYỆT'}
+                   </div>
+                   <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900' }}>{field.name}</h3>
+                   <p style={{ color: '#64748b', fontSize: '14px', margin: '0 0 12px 0' }}>{field.location}</p>
+                   <strong style={{ color: '#F59E0B', fontSize: '18px', fontWeight: '900' }}>{formatCurrency(field.pricePerHour)}<span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}> / giờ</span></strong>
+                </div>
+              </motion.article>
+            ))
+          ) : (
+            <div style={{ ...glassStyle, padding: '60px', textAlign: 'center', gridColumn: '1 / -1' }}>
+               <p style={{ color: '#64748b', marginBottom: '20px' }}>Bạn chưa có sân bóng nào.</p>
+               <Link to="/owner/fields" style={{ textDecoration: 'none', background: '#10b981', color: '#fff', padding: '12px 24px', borderRadius: '12px', fontWeight: '800' }}>TẠO SÂN NGAY</Link>
+            </div>
+          )}
         </div>
       </section>
     </div>

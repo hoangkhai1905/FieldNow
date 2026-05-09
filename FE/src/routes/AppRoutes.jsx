@@ -17,6 +17,8 @@ import FieldManagement from '../pages/owner/FieldManagement';
 import Approvals from '../pages/admin/Approvals';
 import UserManagement from '../pages/admin/UserManagement';
 
+import VerifyOTP from '../pages/auth/VerifyOTP';
+
 const Unauthorized = () => (
   <div className="user-page shell-xl">
     <section className="search-hero">
@@ -45,6 +47,7 @@ const AppRoutes = () => {
         <Route path="/tim-san" element={<SearchFields />} />
         <Route path="/san/:id" element={<FieldDetail />} />
         <Route path="/payment/result" element={<PaymentResult />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route
           path="/nguoi-dung/dat-san-cua-toi"
           element={

@@ -12,19 +12,33 @@ const PaymentResult = () => {
 
   useEffect(() => {
     const params = Object.fromEntries(new URLSearchParams(location.search));
+    let pollInterval = null;
     const run = async () => {
       try {
         const bookingId = params?.bookingId || params?.order_invoice_number;
         const queryStatus = params?.status || 'unknown';
 
         if (bookingId) {
-          const b = await getBookingDetail(bookingId);
-          setBooking(b);
-          try {
-            const p = await getPaymentStatus(bookingId);
-            setPayment(p);
-          } catch (e) {
-            // ignore
+          const fetchStatus = async () => {
+            try {
+              const b = await getBookingDetail(bookingId);
+              setBooking(b);
+              try {
+                const p = await getPaymentStatus(bookingId);
+                setPayment(p);
+              } catch (e) {}
+
+              if (b.status === 'CONFIRMED') {
+                setMessage('Giao dịch thành công. Xin cảm ơn!');
+                if (pollInterval) clearInterval(pollInterval);
+              }
+            } catch (e) { console.error(e); }
+          };
+
+          await fetchStatus();
+          
+          if (queryStatus === 'success' || queryStatus === 'unknown') {
+            pollInterval = setInterval(fetchStatus, 3000);
           }
         }
         
@@ -46,6 +60,7 @@ const PaymentResult = () => {
     };
 
     run();
+    return () => { if (pollInterval) clearInterval(pollInterval); };
   }, [location.search]);
 
   return (

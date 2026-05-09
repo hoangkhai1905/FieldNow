@@ -1,19 +1,25 @@
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 
 const OwnerLayout = () => {
 	return (
-		<div className="dashboard-shell">
+		<div className="owner-shell" style={{ 
+			background: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)',
+			minHeight: '100vh',
+			display: 'flex',
+			color: '#fff'
+		}}>
 			<Sidebar
-				title="Khu vực chủ sân"
-				description="Quản lý sân, tạo khung giờ và theo dõi các tài nguyên đang chờ duyệt."
+				title="Quản trị chủ sân"
+				description="Điều hành kinh doanh và quản lý tài nguyên sân bóng."
 				links={[
-					{ to: '/owner', label: 'Tổng quan', meta: 'Dashboard' },
-					{ to: '/owner/fields', label: 'Sân của tôi', meta: 'Owner fields' },
+					{ to: '/owner', label: 'Bảng điều khiển', meta: 'Overview', icon: 'Layout' },
+					{ to: '/owner/fields', label: 'Sân của tôi', meta: 'My Fields', icon: 'Trophy' },
 				]}
 			/>
 
-			<section className="dashboard-main">
+			<section style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
 				<Outlet />
 			</section>
 		</div>

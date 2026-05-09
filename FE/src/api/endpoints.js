@@ -6,6 +6,11 @@ export const apiPaths = {
 		register: '/auth/register',
 		me: '/auth/me',
 	},
+	otp: {
+		send: '/otp/send',
+		verify: '/otp/verify',
+		resend: '/otp/resend',
+	},
 	fields: {
 		search: '/fields',
 		detail: (fieldId) => `/fields/${fieldId}`,
@@ -123,6 +128,15 @@ export const loginRequest = (payload) => apiRequest({ method: 'POST', url: apiPa
 
 export const registerRequest = (payload) =>
 	apiRequest({ method: 'POST', url: apiPaths.auth.register, data: payload });
+
+export const sendOTPRequest = (payload) => 
+	apiRequest({ method: 'POST', url: apiPaths.otp.send, data: payload });
+
+export const verifyOTPRequest = (payload) => 
+	apiRequest({ method: 'POST', url: apiPaths.otp.verify, data: payload });
+
+export const resendOTPRequest = (payload) => 
+	apiRequest({ method: 'POST', url: apiPaths.otp.resend, data: payload });
 
 export const getCurrentUser = async () => {
 	const data = await apiRequest({ method: 'GET', url: apiPaths.auth.me });

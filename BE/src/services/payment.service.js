@@ -36,7 +36,7 @@ const initiatePayment = async (bookingId, userId) => {
   const { checkoutUrl, formFields } = sepayProvider.createCheckoutFields(
     bookingId,
     amount,
-    `Payment for booking ${bookingId}`,
+    `${bookingId} - FieldNow Payment`,
   );
 
   return { checkoutUrl, formFields, paymentId: payment.id };
@@ -50,34 +50,65 @@ const handleSepayIpn = async (headers, body) => {
   // 1. Verify secret key
   const isValidKey = sepayProvider.verifyIpn(headers);
   if (!isValidKey) {
-    throw errors.forbidden('Invalid SePay IPN secret key');
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('[SePay IPN] Invalid Secret Key, but allowing it because NODE_ENV=development');
+    } else {
+      throw errors.forbidden('Invalid SePay IPN secret key');
+    }
   }
 
-  logger.info('--- Received IPN Body ---');
-  console.log(JSON.stringify(body, null, 2));
-
-  // If this is a test notification from SePay dashboard, respond success early
-  if (body?.notification_type === 'TEST' || body?.order?.order_invoice_number === 'test') {
-    logger.info('[SePay IPN] Received TEST notification from SePay dashboard');
-    return { success: true };
-  }
+  logger.info('[SePay IPN] --- START PROCESSING ---');
+  logger.info(`[SePay IPN] Body: ${JSON.stringify(body, null, 2)}`);
 
   // 2. Extract booking ID and check success
   const bookingId = sepayProvider.extractBookingId(body);
+  logger.info(`[SePay IPN] Extracted bookingId: ${bookingId}`);
+
   if (!bookingId) {
-    throw errors.validation('Missing order_invoice_number in IPN payload');
+    logger.warn('[SePay IPN] Missing booking ID in IPN payload');
+    return { success: true };
   }
 
-  // Validate if bookingId is a valid UUID (Prisma crashes if it's not)
-  // The SePay simulator sends things like "DH046183932" which are not UUIDs
-  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  // Validate if bookingId is a valid UUID
+  const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
   if (!uuidRegex.test(bookingId)) {
-    logger.warn(`[SePay IPN] Ignoring webhook: extracted bookingId '${bookingId}' is not a valid UUID (likely a test)`);
+    logger.warn(`[SePay IPN] bookingId '${bookingId}' is not a valid UUID. Attempting fallback matching...`);
+    
+    // FALLBACK FOR DEVELOPMENT: If no UUID found, try matching by amount
+    if (process.env.NODE_ENV === 'development') {
+      const amount = body?.transferAmount || body?.order?.order_amount;
+      if (amount) {
+        logger.info(`[SePay IPN] Attempting fallback matching for amount: ${amount}`);
+        try {
+          const pendingPayments = await prisma.payment.findMany({
+            where: { 
+              status: 'PENDING',
+              amount: Number(amount)
+            },
+            include: { booking: true },
+            orderBy: { created_at: 'desc' },
+            take: 1 // Just take the most recent one for dev purposes
+          });
+
+          if (pendingPayments.length > 0 && pendingPayments[0].booking.status === 'PENDING') {
+            const fallbackId = pendingPayments[0].booking_id;
+            logger.info(`[SePay IPN] Fallback MATCH FOUND: ${fallbackId}. Confirming...`);
+            await processPaymentCallback(fallbackId, sepayProvider.isSuccess(body), 'sepay');
+            return { success: true, matched_by: 'amount_fallback' };
+          } else {
+            logger.warn(`[SePay IPN] Fallback failed: found 0 pending payments for amount ${amount}`);
+          }
+        } catch (dbError) {
+          logger.error(`[SePay IPN] Prisma query error in fallback: ${dbError.message}`);
+        }
+      }
+    }
+    
     return { success: true };
   }
 
   const isSuccess = sepayProvider.isSuccess(body);
-  logger.info(`[SePay IPN] bookingId=${bookingId} success=${isSuccess} type=${body?.notification_type}`);
+  logger.info(`[SePay IPN] bookingId=${bookingId} | success=${isSuccess} | notification_type=${body?.notification_type}`);
 
   try {
     await processPaymentCallback(bookingId, isSuccess, 'sepay');

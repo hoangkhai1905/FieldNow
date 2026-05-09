@@ -20,17 +20,17 @@ const createFieldSchema = z.object({
   images: z
     .array(
       z.string()
-        .url('Each image must be a valid URL')
-        .startsWith('https://', 'Image URLs must use HTTPS')
-        .refine((url) => {
-          const allowedDomains = ['example.com', 'cloudinary.com', 'aws.com', 'supabase.co'];
+        .refine((val) => {
+          // Allow data URLs (Base64)
+          if (val.startsWith('data:image/')) return true;
+          // Allow standard URLs
           try {
-            const hostname = new URL(url).hostname;
-            return allowedDomains.some((domain) => hostname.endsWith(domain));
+            new URL(val);
+            return true;
           } catch {
             return false;
           }
-        }, { message: 'Image domain not allowed' })
+        }, { message: 'Each image must be a valid URL or data:image string' })
     )
     .max(10, 'Maximum 10 images allowed')
     .default([]),
@@ -47,17 +47,15 @@ const updateFieldSchema = z.object({
   images: z
     .array(
       z.string()
-        .url('Each image must be a valid URL')
-        .startsWith('https://', 'Image URLs must use HTTPS')
-        .refine((url) => {
-          const allowedDomains = ['example.com', 'cloudinary.com', 'aws.com', 'supabase.co'];
+        .refine((val) => {
+          if (val.startsWith('data:image/')) return true;
           try {
-            const hostname = new URL(url).hostname;
-            return allowedDomains.some((domain) => hostname.endsWith(domain));
+            new URL(val);
+            return true;
           } catch {
             return false;
           }
-        }, { message: 'Image domain not allowed' })
+        }, { message: 'Each image must be a valid URL or data:image string' })
     )
     .max(10, 'Maximum 10 images allowed')
     .optional(),
