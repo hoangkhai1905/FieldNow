@@ -210,16 +210,26 @@ export const forgotPassword = async (data) => {
 	return await apiRequest({ method: 'POST', url: apiPaths.password.forgot, data });
 };
 
-export const resetPassword = async (data) => {
-	return await apiRequest({ method: 'POST', url: apiPaths.password.reset, data });
+export const resetPassword = async (payload) => {
+	const { email, otp, newPassword } = payload;
+	return await apiRequest({ 
+		method: 'POST', 
+		url: apiPaths.password.reset, 
+		data: { email, otp_code: otp, new_password: newPassword } 
+	});
 };
 
 export const requestChangePassword = async () => {
 	return await apiRequest({ method: 'POST', url: apiPaths.password.changeRequest });
 };
 
-export const changePassword = async (data) => {
-	return await apiRequest({ method: 'POST', url: apiPaths.password.change, data });
+export const changePassword = async (payload) => {
+	const { otp, newPassword } = payload;
+	return await apiRequest({ 
+		method: 'POST', 
+		url: apiPaths.password.change, 
+		data: { otp_code: otp, new_password: newPassword } 
+	});
 };
 
 export const cancelBooking = async (bookingId) => {

@@ -19,12 +19,14 @@ const processExpirationJob = async (job) => {
 
       // If status matches expected (usually PENDING) and expires_at is past
       // booking.payments is an array due to 1-n relation in schema
-      const payment = booking.payments?.[0];
-      const isCash = payment?.provider?.toLowerCase() === 'cash';
+      // Check if ANY payment associated with this booking is 'cash'
+      const isCash = booking.payments?.some(p => p.provider?.toLowerCase() === 'cash');
+      
+      logger.info(`[Worker] Checking expiration for Booking ${bookingId}. Status: ${booking.status}, isCash: ${isCash}, Providers: ${booking.payments?.map(p => p.provider).join(', ')}`);
 
       if (booking.status === expectedStatus && booking.expires_at <= new Date()) {
         if (isCash) {
-          logger.info(`[Worker] Booking ${bookingId} is CASH, skipping auto-cancellation.`);
+          logger.info(`[Worker] Booking ${bookingId} has CASH payment, skipping auto-cancellation.`);
           return;
         }
 

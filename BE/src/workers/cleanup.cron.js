@@ -18,6 +18,15 @@ const startCleanupCron = () => {
         where: {
           status: 'PENDING',
           expires_at: { lt: fifteenMinutesAgo },
+          // Exclude bookings that have a 'cash' payment provider
+          payments: {
+            none: {
+              provider: {
+                equals: 'cash',
+                mode: 'insensitive',
+              },
+            },
+          },
         },
       });
 
