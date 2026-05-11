@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Field" ADD COLUMN     "close_time" TIME NOT NULL DEFAULT '22:00:00',
+ADD COLUMN     "open_time" TIME NOT NULL DEFAULT '06:00:00';

@@ -53,6 +53,8 @@ const findPublicWithFilters = async ({ location, minPrice, maxPrice, page = 1, l
           "images",
           "price_per_hour",
           "type",
+          "open_time",
+          "close_time",
           "is_active",
           "created_at",
           "updated_at"

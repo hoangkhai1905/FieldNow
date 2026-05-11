@@ -6,6 +6,13 @@ class CheckAvailabilityStep {
     }
     ctx.field = field;
 
+    const openStr = field.open_time.toISOString().slice(11, 16);
+    const closeStr = field.close_time.toISOString().slice(11, 16);
+
+    if (ctx.sTime < openStr || ctx.eTime > closeStr) {
+      throw ctx.errors.validation(`Thời gian đặt sân phải nằm trong khung giờ hoạt động của sân (${openStr} - ${closeStr})`);
+    }
+
     const overlappingBooking = await ctx.prisma.booking.findFirst({
       where: {
         field_id: ctx.fieldId,
