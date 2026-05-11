@@ -70,6 +70,8 @@ async function main() {
           description: 'A beautiful football field in the heart of the city.',
           images: ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80'],
           price_per_hour: 500000,
+          open_time: toTimeDate('05:00'),
+          close_time: toTimeDate('23:00'),
           is_active: true,
         }
       });
@@ -88,6 +90,8 @@ async function main() {
           description: 'Sân bóng dùng để test đặt sân giá rẻ.',
           images: ['https://images.unsplash.com/photo-1529900948638-196987144599?auto=format&fit=crop&w=1400&q=80'],
           price_per_hour: 5000,
+          open_time: toTimeDate('08:00'),
+          close_time: toTimeDate('22:00'),
           is_active: true,
         }
       });

@@ -43,7 +43,7 @@ const SearchFields = () => {
       const result = await searchFields({
         page,
         limit: 12,
-        name: searchQuery,
+        location: searchQuery,
         type: typeFilter
       });
       setFields(result.fields);
@@ -58,7 +58,7 @@ const SearchFields = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       loadFields();
-    }, 400);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, typeFilter]);
 

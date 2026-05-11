@@ -96,6 +96,7 @@ export const normalizeField = (field) => ({
 	createdAt: field.created_at ?? field.createdAt ?? null,
 	updatedAt: field.updated_at ?? field.updatedAt ?? null,
 	slots: Array.isArray(field.slots) ? field.slots.map(normalizeSlot) : [],
+	bookedIntervals: field.bookedIntervals ?? [],
 });
 
 export const normalizeBooking = (booking) => ({
@@ -103,6 +104,7 @@ export const normalizeBooking = (booking) => ({
 	userId: booking.user_id ?? booking.userId ?? null,
 	slotId: booking.slot_id ?? booking.slotId ?? null,
 	status: booking.status,
+	totalPrice: toNumber(booking.total_price ?? booking.totalPrice),
 	createdAt: booking.created_at ?? booking.createdAt ?? null,
 	updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
 	expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
@@ -225,11 +227,12 @@ export const cancelBooking = async (bookingId) => {
 	return data;
 };
 
-export const initiatePayment = async (bookingId) => {
+export const initiatePayment = async (bookingId, provider = 'sepay') => {
+	console.log('[API] initiatePayment called with:', { bookingId, provider });
 	const data = await apiRequest({
 		method: 'POST',
 		url: apiPaths.payments.initiate,
-		data: { bookingId },
+		data: { bookingId, provider },
 	});
 
 	return data;

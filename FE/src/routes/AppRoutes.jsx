@@ -51,6 +51,9 @@ const AppRoutes = () => {
         <Route path="/tim-san" element={<SearchFields />} />
         <Route path="/san/:id" element={<FieldDetail />} />
         <Route path="/payment/result" element={<PaymentResult />} />
+        <Route path="/payment/success" element={<PaymentResult />} />
+        <Route path="/payment/cancel" element={<PaymentResult />} />
+        <Route path="/payment/error" element={<PaymentResult />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route

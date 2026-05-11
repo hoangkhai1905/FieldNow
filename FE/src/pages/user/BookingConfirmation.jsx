@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
   Calendar,
@@ -11,7 +11,8 @@ import {
   Home,
   List,
   Zap,
-  Info
+  Info,
+  Banknote
 } from 'lucide-react';
 import { formatCurrency, initiatePayment } from '../../api/endpoints';
 
@@ -26,6 +27,10 @@ const BookingConfirmation = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const booking = state?.booking || null;
+  const [paymentMethod, setPaymentMethod] = React.useState('sepay'); // 'sepay' or 'cash'
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState('');
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -38,11 +43,40 @@ const BookingConfirmation = () => {
 
   const handlePayNow = async () => {
     if (!booking) return;
+    setIsProcessing(true);
     try {
-      const { paymentUrl } = await initiatePayment(booking.id);
-      window.location.href = paymentUrl;
+      const response = await initiatePayment(booking.id, paymentMethod);
+      
+      if (paymentMethod === 'cash') {
+        setSuccessMessage(response.message || 'Yêu cầu đặt sân đã được gửi thành công!');
+        setShowSuccessModal(true);
+        return;
+      }
+
+      if (response.formFields) {
+        // SePay integration
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = response.checkoutUrl;
+        
+        Object.entries(response.formFields).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+      } else if (response.paymentUrl || response.checkoutUrl) {
+        // VNPay integration
+        window.location.href = response.paymentUrl || response.checkoutUrl;
+      }
     } catch (error) {
       alert(error.message || 'Không thể khởi tạo thanh toán');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -92,7 +126,7 @@ const BookingConfirmation = () => {
               <div style={{ textAlign: 'right' }}>
                 <p style={{ margin: 0, fontSize: '12px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Tổng thanh toán</p>
                 <h2 style={{ margin: 0, fontSize: '32px', fontWeight: '950', color: '#fff' }}>
-                  {formatCurrency(booking.slot?.priceOverride ?? booking.slot?.field?.pricePerHour ?? 0)}
+                  {formatCurrency(booking.totalPrice || 0)}
                 </h2>
               </div>
             </div>
@@ -115,7 +149,7 @@ const BookingConfirmation = () => {
                   </div>
                   <div>
                     <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Ngày thi đấu</p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>{formatDate(booking.slot?.date)}</p>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>{formatDate(booking.date || booking.slot?.date)}</p>
                   </div>
                 </div>
               </div>
@@ -128,7 +162,7 @@ const BookingConfirmation = () => {
                   <div>
                     <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Khung giờ</p>
                     <p style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>
-                      {booking.slot?.startTime?.includes('T') ? booking.slot.startTime.split('T')[1].slice(0, 5) : booking.slot?.startTime?.slice(0, 5)} - {booking.slot?.endTime?.includes('T') ? booking.slot.endTime.split('T')[1].slice(0, 5) : booking.slot?.endTime?.slice(0, 5)}
+                      {(booking.startTime || booking.slot?.startTime)?.includes('T') ? (booking.startTime || booking.slot.startTime).split('T')[1].slice(0, 5) : (booking.startTime || booking.slot?.startTime)?.slice(0, 5)} - {(booking.endTime || booking.slot?.endTime)?.includes('T') ? (booking.endTime || booking.slot.endTime).split('T')[1].slice(0, 5) : (booking.endTime || booking.slot?.endTime)?.slice(0, 5)}
                     </p>
                   </div>
                 </div>
@@ -145,14 +179,81 @@ const BookingConfirmation = () => {
               </div>
             </div>
 
+            {/* Payment Method Selection */}
+            <div style={{ marginTop: '40px' }}>
+              <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Chọn phương thức thanh toán</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setPaymentMethod('sepay')}
+                  style={{ 
+                    padding: '24px', 
+                    borderRadius: '24px', 
+                    border: `2px solid ${paymentMethod === 'sepay' ? '#F59E0B' : 'rgba(255,255,255,0.05)'}`, 
+                    background: paymentMethod === 'sepay' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(0,0,0,0.2)', 
+                    cursor: 'pointer', 
+                    transition: 'all 0.3s',
+                    boxShadow: paymentMethod === 'sepay' ? '0 10px 30px rgba(245, 158, 11, 0.1)' : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: paymentMethod === 'sepay' ? '#F59E0B' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Zap size={24} color={paymentMethod === 'sepay' ? '#000' : '#64748b'} />
+                    </div>
+                    <span style={{ fontWeight: '900', fontSize: '15px', color: paymentMethod === 'sepay' ? '#fff' : '#64748b' }}>Chuyển khoản SePay</span>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setPaymentMethod('cash')}
+                  style={{ 
+                    padding: '24px', 
+                    borderRadius: '24px', 
+                    border: `2px solid ${paymentMethod === 'cash' ? '#10b981' : 'rgba(255,255,255,0.05)'}`, 
+                    background: paymentMethod === 'cash' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(0,0,0,0.2)', 
+                    cursor: 'pointer', 
+                    transition: 'all 0.3s',
+                    boxShadow: paymentMethod === 'cash' ? '0 10px 30px rgba(16, 185, 129, 0.1)' : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: paymentMethod === 'cash' ? '#10b981' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Banknote size={24} color={paymentMethod === 'cash' ? '#000' : '#64748b'} />
+                    </div>
+                    <span style={{ fontWeight: '900', fontSize: '15px', color: paymentMethod === 'cash' ? '#fff' : '#64748b' }}>Tiền mặt tại sân</span>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+
             <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handlePayNow}
-                style={{ flex: 1, padding: '20px', borderRadius: '18px', background: '#F59E0B', color: '#000', fontWeight: '950', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 20px rgba(245, 158, 11, 0.2)' }}
+                disabled={isProcessing}
+                style={{ 
+                  flex: 1, 
+                  padding: '20px', 
+                  borderRadius: '20px', 
+                  background: paymentMethod === 'cash' ? '#10b981' : '#F59E0B', 
+                  color: '#000', 
+                  fontWeight: '950', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '12px', 
+                  boxShadow: paymentMethod === 'cash' ? '0 15px 30px rgba(16, 185, 129, 0.2)' : '0 15px 30px rgba(245, 158, 11, 0.2)', 
+                  opacity: isProcessing ? 0.7 : 1,
+                  transition: 'all 0.3s'
+                }}
               >
-                <CreditCard size={20} /> THANH TOÁN NGAY <ArrowRight size={20} />
+                {paymentMethod === 'cash' ? <Banknote size={20} /> : <CreditCard size={20} />}
+                {isProcessing ? 'ĐANG XỬ LÝ...' : (paymentMethod === 'cash' ? 'XÁC NHẬN ĐẶT SÂN' : 'THANH TOÁN NGAY')} 
+                <ArrowRight size={20} />
               </motion.button>
 
               <motion.button
@@ -191,6 +292,64 @@ const BookingConfirmation = () => {
           </Link>
         </div>
       </div>
+
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}
+              onClick={() => navigate('/nguoi-dung/dat-san-cua-toi')}
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              style={{ 
+                position: 'relative', 
+                width: '100%', 
+                maxWidth: '480px', 
+                background: '#111', 
+                borderRadius: '40px', 
+                padding: '48px', 
+                textAlign: 'center', 
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 30px 60px rgba(0,0,0,0.5)'
+              }}
+            >
+              <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', border: '2px solid rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
+                <CheckCircle2 size={48} color="#10b981" />
+              </div>
+              <h2 style={{ fontSize: '32px', fontWeight: '950', marginBottom: '16px', color: '#fff' }}>TUYỆT VỜI!</h2>
+              <p style={{ color: '#64748b', fontSize: '18px', lineHeight: '1.6', marginBottom: '40px' }}>
+                {successMessage}
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/nguoi-dung/dat-san-cua-toi')}
+                  style={{ padding: '20px', borderRadius: '100px', background: '#10b981', color: '#000', fontWeight: '950', border: 'none', cursor: 'pointer', fontSize: '16px' }}
+                >
+                  XEM LỊCH ĐẶT SÂN
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/')}
+                  style={{ padding: '20px', borderRadius: '100px', background: 'transparent', color: '#64748b', fontWeight: '800', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: '16px' }}
+                >
+                  QUAY LẠI TRANG CHỦ
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

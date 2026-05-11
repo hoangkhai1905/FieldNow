@@ -8,6 +8,7 @@ const router = express.Router();
 
 const initiatePaymentSchema = z.object({
   bookingId: z.string().uuid('Invalid booking ID format'),
+  provider: z.string().optional(),
 });
 
 // --- Public Routes (no auth) ---
@@ -68,6 +69,10 @@ router.use(authMiddleware);
  *               bookingId:
  *                 type: string
  *                 format: uuid
+ *               provider:
+ *                 type: string
+ *                 enum: [sepay, cash]
+ *                 default: sepay
  *     responses:
  *       200:
  *         description: SePay checkout URL and signed form fields

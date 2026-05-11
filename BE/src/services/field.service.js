@@ -85,6 +85,15 @@ const getFieldWithSlots = async (fieldId, date) => {
   }
 
   const bookedIntervals = await bookingRepository.findActiveIntervals(fieldId, date);
+
+  console.log('[FieldService] Field detail:', {
+    id: field.id,
+    name: field.name,
+    openTime: field.open_time,
+    closeTime: field.close_time,
+    bookedCount: bookedIntervals.length
+  });
+
   return {
     field: { ...field, bookedIntervals },
     cacheHit,

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, LogIn, AlertCircle, Loader2, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
+import { loginRequest, sendOTPRequest, normalizeUser } from '../../api/endpoints';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -31,7 +32,8 @@ const Login = () => {
     setShowResend(false);
 
     try {
-      await login(email, password);
+      const data = await loginRequest({ email, password });
+      login(data.token, normalizeUser(data.user));
       navigate(from, { replace: true });
     } catch (err) {
       const errorMessage = err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
@@ -42,6 +44,18 @@ const Login = () => {
         setShowResend(true);
       }
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestVerify = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await sendOTPRequest({ email });
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
+    } catch (err) {
+      setError(err.message || 'Không thể gửi mã xác thực. Vui lòng thử lại.');
       setLoading(false);
     }
   };
@@ -111,12 +125,14 @@ const Login = () => {
               
               {showResend && (
                 <div style={{ paddingLeft: '28px', marginTop: '4px' }}>
-                  <Link 
-                    to={`/verify-otp?email=${encodeURIComponent(email)}`}
-                    style={{ color: '#F59E0B', textDecoration: 'underline', fontSize: '13px', fontWeight: '700' }}
+                  <button 
+                    type="button"
+                    onClick={handleRequestVerify}
+                    disabled={loading}
+                    style={{ background: 'none', border: 'none', color: '#F59E0B', textDecoration: 'underline', fontSize: '13px', fontWeight: '700', padding: 0, cursor: 'pointer' }}
                   >
                     Xác thực tài khoản ngay
-                  </Link>
+                  </button>
                 </div>
               )}
             </motion.div>

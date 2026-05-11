@@ -11,6 +11,7 @@ const createBooking = async ({
   date,
   startTime,
   endTime,
+  totalPrice = 0,
   expiresAt,
 }, tx = prisma) => {
   // Using an optional transaction object (tx) allows this to run inside a managed transaction
@@ -23,6 +24,7 @@ const createBooking = async ({
       start_time: startTime,
       end_time: endTime,
       status: 'PENDING',
+      total_price: totalPrice,
       expires_at: expiresAt,
     },
     include: {
@@ -39,6 +41,7 @@ const findById = async (bookingId, tx = prisma) => {
       field: true,
       slot: true,
       user: true,
+      payments: true,
     },
   });
 };

@@ -1,13 +1,17 @@
 const config = require('../config');
 
-const getPaymentProvider = () => {
-  switch ((config.paymentProvider || 'sepay').toLowerCase()) {
+const getPaymentProvider = (providerName = 'sepay') => {
+  const target = (providerName || 'sepay').toLowerCase();
+  
+  switch (target) {
     case 'vnpay':
       return require('./vnpay.provider');
     case 'sepay':
       return require('./sepay.provider');
+    case 'cash':
+      return require('./cash.provider');
     default:
-      throw new Error(`Unknown payment provider: ${config.paymentProvider}`);
+      throw new Error(`Unknown payment provider: ${target}`);
   }
 };
 

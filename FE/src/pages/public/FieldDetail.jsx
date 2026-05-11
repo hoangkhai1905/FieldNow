@@ -41,6 +41,29 @@ const FieldDetail = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // New: Price calculation
+  const estimatedPrice = useMemo(() => {
+    if (!field || !startTime || !endTime) return 0;
+    const [sH, sM] = startTime.split(':').map(Number);
+    const [eH, eM] = endTime.split(':').map(Number);
+    const durationHours = (eH + eM / 60) - (sH + sM / 60);
+    if (durationHours <= 0) return 0;
+    return Math.round(durationHours * (field.pricePerHour || 0));
+  }, [field, startTime, endTime]);
+
+  const openTimeStr = useMemo(() => {
+    if (!field?.open_time) return '06:00';
+    const t = field.open_time;
+    // If it's an ISO string from Backend (e.g. 1970-01-01T06:00:00.000Z)
+    return t.includes('T') ? t.split('T')[1].slice(0, 5) : t.slice(0, 5);
+  }, [field]);
+
+  const closeTimeStr = useMemo(() => {
+    if (!field?.close_time) return '22:00';
+    const t = field.close_time;
+    return t.includes('T') ? t.split('T')[1].slice(0, 5) : t.slice(0, 5);
+  }, [field]);
+
   const primaryImage = useMemo(() => field?.images?.[0] || field?.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80', [field]);
 
   useEffect(() => {
@@ -63,12 +86,8 @@ const FieldDetail = () => {
 
   const handleBooking = async () => {
     // Basic validation
-    const startH = parseInt(startTime.split(':')[0], 10);
-    const endH = parseInt(endTime.split(':')[0], 10);
-    const endM = parseInt(endTime.split(':')[1], 10);
-
-    if (startH < 6 || endH > 22 || (endH === 22 && endM > 0)) {
-      setToast({ type: 'error', text: 'Giờ đặt sân phải từ 06:00 đến 22:00' });
+    if (startTime < openTimeStr || endTime > closeTimeStr) {
+      setToast({ type: 'error', text: `Giờ đặt sân phải từ ${openTimeStr} đến ${closeTimeStr}` });
       return;
     }
 
@@ -84,15 +103,11 @@ const FieldDetail = () => {
 
     setIsBooking(true);
     try {
-      const pad = (n) => n.toString().padStart(2, '0');
-      const sH = startTime.includes(':') ? startTime.split(':')[0] : startTime;
-      const eH = endTime.includes(':') ? endTime.split(':')[0] : endTime;
-
       const payload = {
         fieldId: id.trim(),
         date: selectedDate,
-        startTime: `${pad(sH)}:00`,
-        endTime: `${pad(eH)}:00`
+        startTime: startTime,
+        endTime: endTime
       };
 
       const result = await createBooking(payload);
@@ -104,7 +119,12 @@ const FieldDetail = () => {
         requestError.response?.data?.error?.message ||
         requestError.message ||
         'Không thể đặt sân';
-      setToast({ type: 'error', text: errorMsg });
+
+      if (requestError.response?.status === 409) {
+        setToast({ type: 'error', text: 'Khung giờ này vừa có người đặt mất rồi, bạn chọn giờ khác nhé!' });
+      } else {
+        setToast({ type: 'error', text: errorMsg });
+      }
     } finally {
       setIsBooking(false);
     }
@@ -239,6 +259,25 @@ const FieldDetail = () => {
               />
             </div>
 
+            {/* Booked Intervals */}
+            {field?.bookedIntervals && field.bookedIntervals.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: '#f43f5e', textTransform: 'uppercase', marginBottom: '12px' }}>
+                  <AlertCircle size={14} /> CÁC KHUNG GIỜ ĐÃ ĐẶT (HẾT CHỖ)
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {field.bookedIntervals.map((b, idx) => {
+                    const formatTime = (t) => t ? (t.includes('T') ? t.split('T')[1].slice(0, 5) : t.slice(0, 5)) : '';
+                    return (
+                      <div key={idx} style={{ padding: '8px 12px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '8px', color: '#fda4af', fontSize: '13px', fontWeight: '700' }}>
+                        {formatTime(b.start_time || b.startTime)} - {formatTime(b.end_time || b.endTime)}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', marginBottom: '12px' }}>
@@ -247,9 +286,9 @@ const FieldDetail = () => {
                 <input
                   type="time"
                   value={startTime}
-                  min="06:00"
-                  max="21:00"
-                  step="3600"
+                  min={openTimeStr}
+                  max={closeTimeStr}
+                  step="1800"
                   onChange={(e) => setStartTime(e.target.value)}
                   onClick={(e) => e.target.showPicker?.()}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px', color: '#fff', fontSize: '15px', fontWeight: '700', outline: 'none', cursor: 'pointer' }}
@@ -262,9 +301,9 @@ const FieldDetail = () => {
                 <input
                   type="time"
                   value={endTime}
-                  min="07:00"
-                  max="22:00"
-                  step="3600"
+                  min={openTimeStr}
+                  max={closeTimeStr}
+                  step="1800"
                   onChange={(e) => setEndTime(e.target.value)}
                   onClick={(e) => e.target.showPicker?.()}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px', color: '#fff', fontSize: '15px', fontWeight: '700', outline: 'none', cursor: 'pointer' }}
@@ -273,8 +312,12 @@ const FieldDetail = () => {
             </div>
 
             <div style={{ padding: '20px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '20px', border: '1px solid rgba(245, 158, 11, 0.1)', marginBottom: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#a7f3d0', fontWeight: '700' }}>GIÁ DỰ KIẾN:</span>
+                <span style={{ fontSize: '20px', color: '#F59E0B', fontWeight: '950' }}>{formatCurrency(estimatedPrice)}</span>
+              </div>
               <p style={{ margin: 0, fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Info size={16} /> Giờ hoạt động: 06:00 - 22:00
+                <Info size={16} /> Giờ hoạt động: {openTimeStr} - {closeTimeStr}
               </p>
             </div>
 

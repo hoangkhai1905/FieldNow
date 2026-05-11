@@ -23,6 +23,18 @@ const formatDate = (dateStr) => {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleString('vi-VN', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
 const redirectToSePay = (checkoutUrl, formFields) => {
   const form = document.createElement('form');
   form.method = 'POST';
@@ -177,10 +189,15 @@ const MyBookings = () => {
                         <MapPin size={32} color="#F59E0B" />
                       </div>
                       <div>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900' }}>{booking.slot?.field?.name || 'Sân bóng'}</h3>
-                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <MapPin size={14} /> {booking.slot?.field?.location || 'Vị trí chưa cập nhật'}
-                        </p>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900' }}>{booking.slot?.field?.name || booking.field?.name || 'Sân bóng'}</h3>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                          <p style={{ margin: 0, fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <MapPin size={12} /> {booking.slot?.field?.location || booking.field?.location || 'Vị trí chưa cập nhật'}
+                          </p>
+                          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(245, 158, 11, 0.6)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Zap size={12} /> Đặt lúc: {formatDateTime(booking.created_at || booking.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -188,14 +205,14 @@ const MyBookings = () => {
                       <div>
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Ngày</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
-                          <Calendar size={16} color="#10b981" /> {formatDate(booking.slot?.date)}
+                          <Calendar size={16} color="#10b981" /> {formatDate(booking.date || booking.slot?.date)}
                         </div>
                       </div>
                       <div>
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Khung giờ</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                           <Clock size={16} color="#10b981" /> 
-                          {booking.slot?.startTime?.includes('T') ? booking.slot.startTime.split('T')[1].slice(0, 5) : booking.slot?.startTime?.slice(0, 5)} - {booking.slot?.endTime?.includes('T') ? booking.slot.endTime.split('T')[1].slice(0, 5) : booking.slot?.endTime?.slice(0, 5)}
+                          {(booking.startTime || booking.slot?.startTime)?.includes('T') ? (booking.startTime || booking.slot.startTime).split('T')[1].slice(0, 5) : (booking.startTime || booking.slot?.startTime)?.slice(0, 5)} - {(booking.endTime || booking.slot?.endTime)?.includes('T') ? (booking.endTime || booking.slot.endTime).split('T')[1].slice(0, 5) : (booking.endTime || booking.slot?.endTime)?.slice(0, 5)}
                         </div>
                       </div>
                     </div>
@@ -203,7 +220,7 @@ const MyBookings = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Tổng chi phí</p>
-                        <p style={{ margin: 0, fontSize: '24px', fontWeight: '950', color: '#F59E0B' }}>{formatCurrency(booking.slot?.priceOverride || booking.slot?.field?.pricePerHour || 0)}</p>
+                        <p style={{ margin: 0, fontSize: '24px', fontWeight: '950', color: '#F59E0B' }}>{formatCurrency(booking.totalPrice || 0)}</p>
                       </div>
 
                       {payment && (

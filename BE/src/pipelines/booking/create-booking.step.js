@@ -16,6 +16,12 @@ class CreateBookingStep {
       });
 
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      // Calculate duration in hours
+      const durationMs = ctx.reqEnd.getTime() - ctx.reqStart.getTime();
+      const durationHours = durationMs / (1000 * 60 * 60);
+      const totalPrice = Math.round(durationHours * Number(field.price_per_hour));
+
       const newBooking = await ctx.bookingRepository.createBooking({
         userId: ctx.userId,
         fieldId: ctx.fieldId,
@@ -23,8 +29,19 @@ class CreateBookingStep {
         date: new Date(ctx.date),
         startTime: ctx.reqStart,
         endTime: ctx.reqEnd,
+        totalPrice,
         expiresAt,
       }, tx);
+
+      // Create initial payment record
+      await tx.payment.create({
+        data: {
+          booking_id: newBooking.id,
+          amount: totalPrice,
+          provider: 'SEPAY', // Mặc định ban đầu
+          status: 'PENDING',
+        }
+      });
 
       return ctx.normalizeBookingSlot({ ...newBooking, slot: slot ?? null });
     });
