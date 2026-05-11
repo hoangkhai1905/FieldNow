@@ -62,7 +62,7 @@ class SePayProvider {
    * @param {object} headers - Express request headers
    * @returns {boolean}
    */
-  verifyIpn(headers) {
+  verifyIpn(headers, _body) {
     logger.info('--- Received IPN Headers ---');
     console.log(JSON.stringify(headers, null, 2));
 

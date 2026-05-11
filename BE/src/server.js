@@ -1,6 +1,7 @@
 const config = require('./config');
 const app = require('./app');
 const { startWorkers, expirationWorker, emailWorker } = require('./workers');
+const registerBookingListeners = require('./listeners/booking.listener');
 const prisma = require('./infrastructure/prisma');
 const { redisClient } = require('./infrastructure/redis');
 const { logger } = require('./infrastructure/logger');
@@ -8,6 +9,7 @@ const { logger } = require('./infrastructure/logger');
 const PORT = config.port;
 
 startWorkers();
+registerBookingListeners();
 
 const server = app.listen(PORT, () => {
   logger.info(`[FieldNow] Server running on port ${PORT} (${config.nodeEnv})`);

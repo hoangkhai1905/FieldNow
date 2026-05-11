@@ -32,13 +32,14 @@ const getOwnerFields = async (req, res, next) => {
 const searchFields = async (req, res, next) => {
   try {
     const { location, minPrice, maxPrice, page, limit } = req.query;
-    const result = await fieldService.searchFields({
+    const { result, cacheHit } = await fieldService.searchFields({
       location,
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
     });
+    res.set('X-Cache', cacheHit ? 'HIT' : 'MISS');
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -47,7 +48,8 @@ const searchFields = async (req, res, next) => {
 
 const getFieldDetail = async (req, res, next) => {
   try {
-    const field = await fieldService.getFieldWithSlots(req.params.id, req.query.date);
+    const { field, cacheHit } = await fieldService.getFieldWithSlots(req.params.id, req.query.date);
+    res.set('X-Cache', cacheHit ? 'HIT' : 'MISS');
     res.status(200).json({ success: true, data: field });
   } catch (error) {
     next(error);

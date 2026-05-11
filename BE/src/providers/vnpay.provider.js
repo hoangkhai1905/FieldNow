@@ -112,6 +112,20 @@ class VNPayProvider {
   isSuccess(vnp_Params) {
     return vnp_Params['vnp_ResponseCode'] === '00';
   }
+
+  createCheckoutFields(bookingId, amount, description = 'Payment for booking') {
+    const checkoutUrl = this.createPaymentUrl(bookingId, amount, null, description);
+    return { checkoutUrl, formFields: {} };
+  }
+
+  verifyIpn(_headers, body) {
+    if (!body) return false;
+    return this.verifySignature({ ...body });
+  }
+
+  extractBookingId(body) {
+    return body?.vnp_TxnRef || null;
+  }
 }
 
 module.exports = new VNPayProvider();

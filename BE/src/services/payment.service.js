@@ -1,10 +1,13 @@
 const prisma = require('../infrastructure/prisma');
 const paymentRepository = require('../repositories/payment.repository');
 const bookingRepository = require('../repositories/booking.repository');
-const sepayProvider = require('../providers/sepay.provider');
+const config = require('../config');
+const { getPaymentProvider } = require('../providers/payment-factory');
 const { errors } = require('../utils/errors');
 const { logger } = require('../infrastructure/logger');
 const { emailQueue } = require('../infrastructure/queue');
+
+const paymentProvider = getPaymentProvider();
 
 const initiatePayment = async (bookingId, userId) => {
   // 1. Get booking
@@ -22,18 +25,20 @@ const initiatePayment = async (bookingId, userId) => {
   // 2. Check if a pending payment already exists
   let payment = await paymentRepository.findByBookingId(bookingId);
 
-  // Calculate amount from slot priceOverride or field price
-  const amount = booking.slot.price_override || booking.slot.field.price_per_hour;
+  const durationHours = (booking.end_time - booking.start_time) / (1000 * 60 * 60);
+  const amount = booking.slot?.price_override != null
+    ? Number(booking.slot.price_override)
+    : Number(booking.field.price_per_hour) * durationHours;
 
   if (!payment) {
     // 3. Create payment record
-    payment = await paymentRepository.createPayment(bookingId, amount, 'sepay');
+    payment = await paymentRepository.createPayment(bookingId, amount, config.paymentProvider);
   } else if (payment.status !== 'PENDING') {
     throw errors.conflict(`Payment is already ${payment.status}`);
   }
 
-  // 4. Generate SePay checkout URL + signed form fields
-  const { checkoutUrl, formFields } = sepayProvider.createCheckoutFields(
+  // 4. Generate checkout URL + signed form fields
+  const { checkoutUrl, formFields } = paymentProvider.createCheckoutFields(
     bookingId,
     amount,
     `${bookingId} - FieldNow Payment`,
@@ -48,12 +53,12 @@ const initiatePayment = async (bookingId, userId) => {
  */
 const handleSepayIpn = async (headers, body) => {
   // 1. Verify secret key
-  const isValidKey = sepayProvider.verifyIpn(headers);
+  const isValidKey = paymentProvider.verifyIpn(headers, body);
   if (!isValidKey) {
     if (process.env.NODE_ENV === 'development') {
-      logger.warn('[SePay IPN] Invalid Secret Key, but allowing it because NODE_ENV=development');
+      logger.warn('[Payment IPN] Invalid Secret Key, but allowing it because NODE_ENV=development');
     } else {
-      throw errors.forbidden('Invalid SePay IPN secret key');
+      throw errors.forbidden('Invalid payment IPN secret key');
     }
   }
 
@@ -61,7 +66,7 @@ const handleSepayIpn = async (headers, body) => {
   logger.info(`[SePay IPN] Body: ${JSON.stringify(body, null, 2)}`);
 
   // 2. Extract booking ID and check success
-  const bookingId = sepayProvider.extractBookingId(body);
+  const bookingId = paymentProvider.extractBookingId(body);
   logger.info(`[SePay IPN] Extracted bookingId: ${bookingId}`);
 
   if (!bookingId) {
@@ -93,7 +98,7 @@ const handleSepayIpn = async (headers, body) => {
           if (pendingPayments.length > 0 && pendingPayments[0].booking.status === 'PENDING') {
             const fallbackId = pendingPayments[0].booking_id;
             logger.info(`[SePay IPN] Fallback MATCH FOUND: ${fallbackId}. Confirming...`);
-            await processPaymentCallback(fallbackId, sepayProvider.isSuccess(body), 'sepay');
+            await processPaymentCallback(fallbackId, paymentProvider.isSuccess(body), config.paymentProvider);
             return { success: true, matched_by: 'amount_fallback' };
           } else {
             logger.warn(`[SePay IPN] Fallback failed: found 0 pending payments for amount ${amount}`);
@@ -107,11 +112,11 @@ const handleSepayIpn = async (headers, body) => {
     return { success: true };
   }
 
-  const isSuccess = sepayProvider.isSuccess(body);
+  const isSuccess = paymentProvider.isSuccess(body);
   logger.info(`[SePay IPN] bookingId=${bookingId} | success=${isSuccess} | notification_type=${body?.notification_type}`);
 
   try {
-    await processPaymentCallback(bookingId, isSuccess, 'sepay');
+    await processPaymentCallback(bookingId, isSuccess, config.paymentProvider);
     return { success: true };
   } catch (error) {
     if (error.code === 'CONFLICT' && error.message.includes('already')) {

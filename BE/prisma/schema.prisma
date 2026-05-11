@@ -41,6 +41,7 @@ model Field {
   description    String?
   images         String[]
   price_per_hour Decimal     @db.Decimal
+  search_vector  Unsupported("tsvector")?
   type           FieldType   @default(FUTSAL)
   is_active      Boolean     @default(false)
   created_at     DateTime    @default(now()) @db.Timestamptz
@@ -48,9 +49,11 @@ model Field {
 
   owner          User        @relation(fields: [owner_id], references: [id])
   slots          FieldSlot[]
+  bookings       Booking[]
 
   @@index([owner_id])
   @@index([location, is_active])
+  @@index([search_vector], type: Gin, map: "idx_field_search_vector")
 }
 
 model FieldSlot {
@@ -73,18 +76,24 @@ model FieldSlot {
 model Booking {
   id         String        @id @default(uuid()) @db.Uuid
   user_id    String        @db.Uuid
-  slot_id    String        @db.Uuid
+  field_id   String        @db.Uuid
+  slot_id    String?       @db.Uuid
+  date       DateTime      @db.Date
+  start_time DateTime      @db.Time
+  end_time   DateTime      @db.Time
   status     BookingStatus @default(PENDING)
   created_at DateTime      @default(now()) @db.Timestamptz
   updated_at DateTime      @updatedAt
   expires_at DateTime      @db.Timestamptz
 
   user       User          @relation(fields: [user_id], references: [id])
-  slot       FieldSlot     @relation(fields: [slot_id], references: [id])
+  field      Field         @relation(fields: [field_id], references: [id])
+  slot       FieldSlot?    @relation(fields: [slot_id], references: [id])
   payments   Payment[]
 
   @@index([user_id, created_at])
   @@index([slot_id, status])
+  @@index([field_id, date])
 }
 
 model Payment {

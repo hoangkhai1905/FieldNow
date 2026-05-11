@@ -1,3 +1,4 @@
+const { Prisma } = require('@prisma/client');
 const prisma = require('../infrastructure/prisma');
 
 /**
@@ -24,28 +25,53 @@ const findByOwner = async (ownerId) => {
 };
 
 const findPublicWithFilters = async ({ location, minPrice, maxPrice, page = 1, limit = 10 }) => {
-  const where = { is_active: true };
+  let whereSql = Prisma.sql`"Field"."is_active" = true`;
 
   if (location) {
-    where.location = { contains: location, mode: 'insensitive' };
+    whereSql = Prisma.sql`${whereSql} AND "Field"."search_vector" @@ plainto_tsquery('simple', ${location})`;
   }
-  if (minPrice !== undefined || maxPrice !== undefined) {
-    where.price_per_hour = {};
-    if (minPrice !== undefined) where.price_per_hour.gte = minPrice;
-    if (maxPrice !== undefined) where.price_per_hour.lte = maxPrice;
+  if (minPrice !== undefined) {
+    whereSql = Prisma.sql`${whereSql} AND "Field"."price_per_hour" >= ${minPrice}`;
   }
-
+  if (maxPrice !== undefined) {
+    whereSql = Prisma.sql`${whereSql} AND "Field"."price_per_hour" <= ${maxPrice}`;
+  }
   const skip = (page - 1) * limit;
+  const orderBySql = location
+    ? Prisma.sql`ORDER BY ts_rank("Field"."search_vector", plainto_tsquery('simple', ${location})) DESC`
+    : Prisma.sql`ORDER BY "Field"."created_at" DESC`;
 
-  const [fields, total] = await Promise.all([
-    prisma.field.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { created_at: 'desc' },
-    }),
-    prisma.field.count({ where }),
+  const [fields, countRows] = await Promise.all([
+    prisma.$queryRaw(
+      Prisma.sql`
+        SELECT
+          "id",
+          "owner_id",
+          "name",
+          "location",
+          "description",
+          "images",
+          "price_per_hour",
+          "type",
+          "is_active",
+          "created_at",
+          "updated_at"
+        FROM "Field"
+        WHERE ${whereSql}
+        ${orderBySql}
+        LIMIT ${limit} OFFSET ${skip}
+      `
+    ),
+    prisma.$queryRaw(
+      Prisma.sql`
+        SELECT COUNT(*)::int AS total
+        FROM "Field"
+        WHERE ${whereSql}
+      `
+    ),
   ]);
+
+  const total = countRows[0]?.total ?? 0;
 
   return {
     fields,
