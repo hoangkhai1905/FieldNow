@@ -5,8 +5,8 @@ const { roleMiddleware } = require('../middlewares/role.middleware');
 
 const router = express.Router();
 
-// All admin routes require authentication and ADMIN role
-router.use(authMiddleware, roleMiddleware(['ADMIN']));
+// All management routes require authentication and OWNER role (Admin and Owner merged)
+router.use(authMiddleware, roleMiddleware(['OWNER', 'ADMIN']));
 
 /**
  * @swagger

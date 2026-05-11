@@ -17,7 +17,7 @@ const createField = async (ownerId, data) => {
     images: data.images || [],
     price_per_hour: data.pricePerHour,
     type: data.type,
-    is_active: false, // Fields require admin approval
+    is_active: true, // Merged Admin/Owner: Fields are active by default
   });
 
   return field;
@@ -108,6 +108,19 @@ const rejectField = async (fieldId) => {
   return fieldRepository.update(fieldId, { is_active: false });
 };
 
+const toggleFieldStatus = async (fieldId, ownerId) => {
+  const field = await fieldRepository.findById(fieldId);
+  if (!field) {
+    throw errors.notFound('Field');
+  }
+  if (field.owner_id !== ownerId) {
+    throw errors.forbidden('You do not own this field');
+  }
+
+  const newStatus = !field.is_active;
+  return fieldRepository.update(fieldId, { is_active: newStatus });
+};
+
 module.exports = {
   createField,
   updateField,
@@ -117,4 +130,5 @@ module.exports = {
   getFieldWithSlots,
   approveField,
   rejectField,
+  toggleFieldStatus,
 };

@@ -37,7 +37,8 @@ app.use(cors(corsOptions));
 app.use(compression());
 
 // --- Body parsing ---
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // --- Structured logging (pino-http) ---
 app.use(

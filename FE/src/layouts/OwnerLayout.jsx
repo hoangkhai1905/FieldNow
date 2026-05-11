@@ -11,11 +11,14 @@ const OwnerLayout = () => {
 			color: '#fff'
 		}}>
 			<Sidebar
-				title="Quản trị chủ sân"
-				description="Điều hành kinh doanh và quản lý tài nguyên sân bóng."
+				title="Owner Studio"
+				description="Bảng điều khiển tích hợp: Quản lý kinh doanh và quản trị hệ thống."
 				links={[
 					{ to: '/owner', label: 'Bảng điều khiển', meta: 'Overview', icon: 'Layout' },
 					{ to: '/owner/fields', label: 'Sân của tôi', meta: 'My Fields', icon: 'Trophy' },
+					{ to: '/owner/bookings', label: 'Lịch đặt sân', meta: 'Bookings', icon: 'Calendar' },
+					{ to: '/owner/approvals', label: 'Duyệt sân', meta: 'Approvals', icon: 'ShieldCheck' },
+					{ to: '/owner/users', label: 'Người dùng', meta: 'Users', icon: 'Users' },
 				]}
 			/>
 

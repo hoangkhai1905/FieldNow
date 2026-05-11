@@ -1,11 +1,12 @@
 const express = require('express');
 const fieldController = require('../controllers/field.controller');
 const slotController = require('../controllers/slot.controller');
+const ownerController = require('../controllers/owner.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { roleMiddleware } = require('../middlewares/role.middleware');
 const { validate } = require('../middlewares/validate.middleware');
 const { createFieldSchema, updateFieldSchema } = require('../validators/field.validator');
-const { createSlotSchema, batchCreateSlotsSchema, updateSlotSchema } = require('../validators/slot.validator');
+const { batchCreateSlotsSchema, updateSlotSchema } = require('../validators/slot.validator');
 
 const router = express.Router();
 
@@ -55,6 +56,7 @@ router.post('/fields', validate(createFieldSchema), fieldController.createField)
  *         description: Forbidden
  */
 router.get('/fields', fieldController.getOwnerFields);
+router.get('/fields/:id', fieldController.getFieldDetail);
 
 /**
  * @swagger
@@ -93,7 +95,70 @@ router.patch('/fields/:id', validate(updateFieldSchema), fieldController.updateF
 
 /**
  * @swagger
- * /owner/fields/{id}/slots/batch:
+ * /owner/fields/{id}/toggle-status:
+ *   patch:
+ *     summary: Toggle field activation status
+ *     tags: [Owner]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Field status toggled successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Field not found
+ */
+router.patch('/fields/:id/toggle-status', ownerController.toggleFieldStatus);
+
+/**
+ * @swagger
+ * /owner/bookings:
+ *   get:
+ *     summary: Get all bookings for fields owned by the user
+ *     tags: [Owner]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of bookings for owned fields
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/bookings', ownerController.getOwnerBookings);
+
+/**
+ * @swagger
+ * /owner/stats:
+ *   get:
+ *     summary: Get owner dashboard statistics
+ *     tags: [Owner]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Owner statistics (revenue, booking counts, etc.)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/stats', ownerController.getOwnerStats);
+
+/**
+ * @swagger
+ * /owner/fields/{fieldId}/slots/batch:
  *   post:
  *     summary: Batch create slots for a field
  *     tags: [Owner]
@@ -101,7 +166,7 @@ router.patch('/fields/:id', validate(updateFieldSchema), fieldController.updateF
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: fieldId
  *         required: true
  *         schema:
  *           type: string
@@ -126,6 +191,7 @@ router.patch('/fields/:id', validate(updateFieldSchema), fieldController.updateF
  *       409:
  *         description: Slot overlap conflict
  */
+router.get('/fields/:fieldId/slots', slotController.getSlotsByFieldAndDate);
 router.post('/fields/:fieldId/slots/batch', validate(batchCreateSlotsSchema), slotController.batchCreateSlots);
 
 /**

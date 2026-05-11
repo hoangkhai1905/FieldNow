@@ -188,14 +188,14 @@ const MyBookings = () => {
                       <div>
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Ngày</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
-                          <Calendar size={16} color="#10b981" /> {formatDate(booking.slot?.date)}
+                          <Calendar size={16} color="#10b981" /> {booking.date ? new Date(booking.date).toLocaleDateString('vi-VN') : 'N/A'}
                         </div>
                       </div>
                       <div>
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Khung giờ</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                           <Clock size={16} color="#10b981" /> 
-                          {booking.slot?.startTime?.includes('T') ? booking.slot.startTime.split('T')[1].slice(0, 5) : booking.slot?.startTime?.slice(0, 5)} - {booking.slot?.endTime?.includes('T') ? booking.slot.endTime.split('T')[1].slice(0, 5) : booking.slot?.endTime?.slice(0, 5)}
+                          {booking.startTime?.slice(0, 5) || '--:--'} - {booking.endTime?.slice(0, 5) || '--:--'}
                         </div>
                       </div>
                     </div>

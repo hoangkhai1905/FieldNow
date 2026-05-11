@@ -42,6 +42,9 @@ export const apiPaths = {
 		batchSlots: (fieldId) => `/owner/fields/${fieldId}/slots/batch`,
 		slot: (slotId) => `/owner/slots/${slotId}`,
 		slotsByField: (fieldId) => `/owner/fields/${fieldId}/slots`,
+		toggleStatus: (fieldId) => `/owner/fields/${fieldId}/toggle-status`,
+		bookings: '/owner/bookings',
+		stats: '/owner/stats',
 	},
 	admin: {
 		approveField: (fieldId) => `/admin/fields/${fieldId}/approve`,
@@ -81,8 +84,8 @@ export const normalizeSlot = (slot) => ({
 	id: slot.id,
 	fieldId: slot.field_id ?? slot.fieldId ?? null,
 	date: formatDateValue(slot.date),
-	startTime: slot.start_time ?? slot.startTime ?? '',
-	endTime: slot.end_time ?? slot.endTime ?? '',
+	startTime: formatTimeValue(slot.start_time ?? slot.startTime ?? ''),
+	endTime: formatTimeValue(slot.end_time ?? slot.endTime ?? ''),
 	priceOverride: slot.price_override ?? slot.priceOverride ?? null,
 	isLocked: slot.is_locked ?? slot.isLocked ?? false,
 	createdAt: slot.created_at ?? slot.createdAt ?? null,
@@ -98,21 +101,43 @@ export const normalizeField = (field) => ({
 	slots: Array.isArray(field.slots) ? field.slots.map(normalizeSlot) : [],
 });
 
-export const normalizeBooking = (booking) => ({
-	id: booking.id,
-	userId: booking.user_id ?? booking.userId ?? null,
-	slotId: booking.slot_id ?? booking.slotId ?? null,
-	status: booking.status,
-	createdAt: booking.created_at ?? booking.createdAt ?? null,
-	updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
-	expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
-	slot: booking.slot
-		? {
-				...normalizeSlot(booking.slot),
-				field: booking.slot.field ? normalizeFieldBrief(booking.slot.field) : null,
-			}
-		: null,
-});
+const formatTimeValue = (value) => {
+	if (!value) return '';
+	// If it's a simple HH:mm or HH:mm:ss string (not an ISO date)
+	if (typeof value === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(value)) return value;
+	try {
+		const date = new Date(value);
+		if (isNaN(date.getTime())) return '';
+		return date.toLocaleTimeString('vi-VN', { 
+			hour: '2-digit', 
+			minute: '2-digit', 
+			hour12: false,
+			timeZone: 'UTC' // Essential for the 1970 UTC dates from BE
+		});
+	} catch {
+		return '';
+	}
+};
+
+export const normalizeBooking = (booking) => {
+	const slot = booking.slot ? normalizeSlot(booking.slot) : null;
+	return {
+		id: booking.id,
+		userId: booking.user_id ?? booking.userId ?? null,
+		slotId: booking.slot_id ?? booking.slotId ?? null,
+		status: booking.status,
+		createdAt: booking.created_at ?? booking.createdAt ?? null,
+		updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
+		expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
+		// Flattened fields for UI convenience, prioritizing booking fields
+		startTime: formatTimeValue(booking.start_time ?? booking.startTime ?? slot?.startTime),
+		endTime: formatTimeValue(booking.end_time ?? booking.endTime ?? slot?.endTime),
+		date: formatDateValue(booking.date ?? booking.date ?? slot?.date),
+		field: slot?.field || (booking.field ? normalizeFieldBrief(booking.field) : null),
+		user: booking.user ? normalizeUser(booking.user) : null,
+		slot,
+	};
+};
 
 export const normalizePayment = (payment) => ({
 	id: payment.id,
@@ -251,6 +276,11 @@ export const getOwnerFields = async () => {
 	return (Array.isArray(data) ? data : []).map(normalizeField);
 };
 
+export const getOwnerField = async (fieldId) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.field(fieldId) });
+	return normalizeField(data);
+};
+
 export const createOwnerField = async (payload) => {
 	const data = await apiRequest({ method: 'POST', url: apiPaths.owner.fields, data: payload });
 	return normalizeField(data);
@@ -263,6 +293,33 @@ export const updateOwnerField = async (fieldId, payload) => {
 
 export const deleteOwnerField = async (fieldId) =>
 	apiRequest({ method: 'DELETE', url: apiPaths.owner.field(fieldId) });
+
+export const toggleOwnerFieldStatus = async (fieldId) =>
+	apiRequest({ method: 'PATCH', url: apiPaths.owner.toggleStatus(fieldId) });
+
+export const uploadImages = async (files) => {
+	const formData = new FormData();
+	files.forEach((file) => {
+		formData.append('images', file);
+	});
+	const data = await apiRequest({
+		method: 'POST',
+		url: '/upload/images',
+		data: formData,
+		headers: { 'Content-Type': 'multipart/form-data' },
+	});
+	return data.urls;
+};
+
+export const getOwnerBookings = async () => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.bookings });
+	return (Array.isArray(data) ? data : []).map(normalizeBooking);
+};
+
+export const getOwnerStats = async () => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.stats });
+	return data;
+};
 
 export const createBatchSlots = async (fieldId, slots) => {
 	const data = await apiRequest({
@@ -295,3 +352,6 @@ export const getAdminUsers = async () => {
 
 export const updateUserRole = async (userId, role) =>
 	apiRequest({ method: 'PATCH', url: apiPaths.admin.userRole(userId), data: { role } });
+
+export const deleteOwnerSlot = async (slotId) =>
+	apiRequest({ method: 'DELETE', url: apiPaths.owner.slot(slotId) });

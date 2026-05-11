@@ -15,6 +15,8 @@ import OwnerLayout from '../layouts/OwnerLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import OwnerDashboard from '../pages/owner/Dashboard';
 import FieldManagement from '../pages/owner/FieldManagement';
+import BookingManagement from '../pages/owner/BookingManagement';
+import FieldSlots from '../pages/owner/FieldSlots';
 import Approvals from '../pages/admin/Approvals';
 import UserManagement from '../pages/admin/UserManagement';
 
@@ -82,24 +84,16 @@ const AppRoutes = () => {
         <Route
           path="/owner"
           element={
-            <ProtectedRoute allowedRoles={['OWNER']}>
+            <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
               <OwnerLayout />
             </ProtectedRoute>
           }
         >
           <Route index element={<OwnerDashboard />} />
           <Route path="fields" element={<FieldManagement />} />
-        </Route>
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Approvals />} />
+          <Route path="fields/:fieldId/slots" element={<FieldSlots />} />
+          <Route path="bookings" element={<BookingManagement />} />
+          <Route path="approvals" element={<Approvals />} />
           <Route path="users" element={<UserManagement />} />
         </Route>
 

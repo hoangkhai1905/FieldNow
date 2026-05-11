@@ -14,7 +14,8 @@ import {
   X,
   Loader2,
   Activity,
-  Award
+  Award,
+  ChevronRight
 } from 'lucide-react';
 import { getAdminUsers, updateUserRole } from '../../api/endpoints';
 
@@ -94,7 +95,9 @@ const UserManagement = () => {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div style={{ marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '950', margin: 0, letterSpacing: '-1px' }}>HỆ THỐNG QUẢN TRỊ NGƯỜI DÙNG</h1>
+          <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', margin: 0, letterSpacing: '-2px', lineHeight: 1 }}>
+            HỆ THỐNG QUẢN TRỊ NGƯỜI DÙNG
+          </h1>
           <p style={{ color: '#64748b', marginTop: '8px', fontSize: '16px' }}>Quản lý phân quyền và giám sát hoạt động tài khoản.</p>
         </div>
 
@@ -135,68 +138,91 @@ const UserManagement = () => {
         </div>
 
         {/* User Table (Modern Card List) */}
-        <div style={{ ...glassStyle, overflow: 'hidden' }}>
-          <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 0.5fr', color: '#64748b', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            <span>Thông tin người dùng</span>
-            <span>Liên hệ</span>
+        <div style={{ ...glassStyle, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 1.2fr 0.5fr', color: '#64748b', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(255,255,255,0.02)' }}>
+            <span>Người dùng</span>
+            <span>Thông tin liên hệ</span>
             <span>Vai trò</span>
-            <span>Ngày tham gia</span>
-            <span style={{ textAlign: 'right' }}>Hành động</span>
+            <span>Ngày gia nhập</span>
+            <span style={{ textAlign: 'right' }}>#</span>
           </div>
 
-          <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+          <div style={{ maxHeight: '650px', overflowY: 'auto' }}>
             {loading ? (
               <div style={{ padding: '100px', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} color="#F59E0B" /></div>
-            ) : filteredUsers.map((user, idx) => (
-              <motion.div 
-                key={user.id} 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 0.5fr', alignItems: 'center', transition: 'background 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(45deg, #3b82f6, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '18px' }}>
-                    {(user.full_name || user.fullName || 'U').charAt(0).toUpperCase()}
+            ) : filteredUsers.length > 0 ? (
+              filteredUsers.map((user, idx) => (
+                <motion.div 
+                  key={user.id} 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  style={{ padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 1.2fr 0.5fr', alignItems: 'center', transition: 'all 0.3s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'linear-gradient(135deg, #3b82f6 0%, #10b981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '18px', color: '#fff', boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }}>
+                      {(user.full_name || user.fullName || user.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: '900', fontSize: '15px', color: '#fff' }}>{user.full_name || user.fullName || user.email}</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>{user.id}</p>
+                    </div>
                   </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '13px', fontWeight: '600' }}>
+                      <Mail size={14} color="#10b981" /> {user.email}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
+                      <Phone size={14} /> {user.phone_number || user.phoneNumber || '---'}
+                    </div>
+                  </div>
+
                   <div>
-                    <p style={{ margin: 0, fontWeight: '800', fontSize: '15px' }}>{user.full_name || user.fullName || 'User #' + user.id.slice(0,4)}</p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>ID: {user.id.slice(0, 12)}...</p>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <select 
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        style={{ 
+                          appearance: 'none',
+                          background: user.role === 'ADMIN' ? 'rgba(244, 63, 94, 0.1)' : user.role === 'OWNER' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', 
+                          border: `1px solid ${user.role === 'ADMIN' ? '#f43f5e30' : user.role === 'OWNER' ? '#10b98130' : '#F59E0B30'}`, 
+                          borderRadius: '10px', 
+                          padding: '8px 32px 8px 16px', 
+                          color: user.role === 'ADMIN' ? '#f43f5e' : user.role === 'OWNER' ? '#10b981' : '#F59E0B', 
+                          fontSize: '11px', 
+                          fontWeight: '900', 
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="USER">USER</option>
+                        <option value="OWNER">OWNER</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                      <ChevronRight size={12} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none', opacity: 0.5 }} />
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '13px' }}>
-                    <Mail size={14} /> {user.email}
+                  <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>
+                    {new Date(user.created_at || user.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
-                    <Phone size={14} /> {user.phone || user.phoneNumber || 'N/A'}
+
+                  <div style={{ textAlign: 'right' }}>
+                    <button style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#64748b', cursor: 'pointer', padding: '10px', borderRadius: '12px' }}>
+                      <MoreVertical size={18} />
+                    </button>
                   </div>
-                </div>
-
-                <div>
-                  <select 
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px 12px', color: '#fff', fontSize: '13px', fontWeight: '700', outline: 'none' }}
-                  >
-                    <option value="USER">USER</option>
-                    <option value="OWNER">OWNER</option>
-                    <option value="ADMIN">ADMIN</option>
-                  </select>
-                </div>
-
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  {new Date(user.created_at || user.createdAt).toLocaleDateString('vi-VN')}
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
-                    <MoreVertical size={20} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))
+            ) : (
+              <div style={{ padding: '80px', textAlign: 'center' }}>
+                <Users size={48} color="#64748b" style={{ opacity: 0.2, marginBottom: '20px' }} />
+                <p style={{ color: '#64748b', fontWeight: '800' }}>KHÔNG TÌM THẤY NGƯỜI DÙNG NÀO</p>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

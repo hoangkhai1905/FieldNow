@@ -1,4 +1,5 @@
 import { createContext, useState } from 'react';
+import { loginRequest } from '../api/endpoints';
 
 export const AuthContext = createContext();
 
@@ -25,11 +26,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(initialAuth.user);
   const [isAuthenticated, setIsAuthenticated] = useState(initialAuth.isAuthenticated);
 
-  const login = (token, userData) => {
+  const login = async (email, password) => {
+    const response = await loginRequest({ email, password });
+    const { token, user: userData } = response;
+
     localStorage.setItem('access_token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setIsAuthenticated(true);
+    return userData;
   };
 
   const logout = () => {

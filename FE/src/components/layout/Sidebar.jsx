@@ -5,7 +5,10 @@ import {
   Trophy, 
   Settings, 
   ChevronRight,
-  Zap
+  Zap,
+  Calendar,
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 
 const Sidebar = ({ title, description, links = [] }) => {
@@ -14,7 +17,10 @@ const Sidebar = ({ title, description, links = [] }) => {
   const iconMap = {
     Layout: <Layout size={18} />,
     Trophy: <Trophy size={18} />,
-    Settings: <Settings size={18} />
+    Settings: <Settings size={18} />,
+    Calendar: <Calendar size={18} />,
+    ShieldCheck: <ShieldCheck size={18} />,
+    Users: <Users size={18} />
   };
 
   const glassStyle = {

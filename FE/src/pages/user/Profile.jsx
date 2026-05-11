@@ -342,7 +342,7 @@ const Profile = () => {
                <span style={{ color: '#64748b', fontSize: '13px', fontWeight: '700' }}>#{profile?.id?.slice(0, 8)}</span>
             </div>
             <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', margin: 0, letterSpacing: '-2px', lineHeight: 1 }}>
-              {profile?.fullName || profile?.full_name || 'Cầu thủ Pro'}
+              {profile?.fullName || profile?.full_name || profile?.email || 'Người dùng'}
             </h1>
             <p style={{ color: '#a7f3d0', fontSize: '18px', marginTop: '12px', opacity: 0.8 }}>Thành viên từ tháng {new Date(profile?.createdAt || profile?.created_at || Date.now()).getMonth() + 1}, {new Date(profile?.createdAt || profile?.created_at || Date.now()).getFullYear()}</p>
           </div>
