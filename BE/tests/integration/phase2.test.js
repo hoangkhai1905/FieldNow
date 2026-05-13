@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../../src/config');
 
 describe('Phase 2 Integration Tests', () => {
-  let userToken, ownerToken, adminToken;
+  let userToken, ownerToken, _adminToken;
   let ownerId, fieldId;
 
   const ensureUser = async (email, role) => {
@@ -29,7 +29,7 @@ describe('Phase 2 Integration Tests', () => {
 
     ownerToken = jwt.sign({ userId: owner.id, role: owner.role, email: owner.email }, config.jwtSecret, { expiresIn: '1h' });
     userToken = jwt.sign({ userId: user.id, role: user.role, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
-    adminToken = jwt.sign({ userId: admin.id, role: admin.role, email: admin.email }, config.jwtSecret, { expiresIn: '1h' });
+    _adminToken = jwt.sign({ userId: admin.id, role: admin.role, email: admin.email }, config.jwtSecret, { expiresIn: '1h' });
 
     const field = await prisma.field.findFirst({ where: { owner_id: ownerId } });
     if (field) {

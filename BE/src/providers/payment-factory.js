@@ -1,5 +1,3 @@
-const config = require('../config');
-
 const getPaymentProvider = (providerName = 'sepay') => {
   const target = (providerName || 'sepay').toLowerCase();
   

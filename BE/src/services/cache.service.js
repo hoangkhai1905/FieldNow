@@ -6,7 +6,7 @@ const cacheService = {
     try {
       const data = await redisClient.get(key);
       return data ? JSON.parse(data) : null;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   },
@@ -14,7 +14,7 @@ const cacheService = {
   async set(key, value, ttlSeconds = 300) {
     try {
       await redisClient.set(key, JSON.stringify(value), 'EX', ttlSeconds);
-    } catch (error) {
+    } catch (_error) {
       // Intentionally ignore cache write errors
     }
   },
@@ -25,7 +25,7 @@ const cacheService = {
       if (keys.length) {
         await redisClient.del(...keys);
       }
-    } catch (error) {
+    } catch (_error) {
       // Intentionally ignore cache invalidate errors
     }
   },

@@ -5,7 +5,7 @@ const { authMiddleware } = require('../middlewares/auth.middleware');
 const { roleMiddleware } = require('../middlewares/role.middleware');
 const { validate } = require('../middlewares/validate.middleware');
 const { createFieldSchema, updateFieldSchema } = require('../validators/field.validator');
-const { createSlotSchema, batchCreateSlotsSchema, updateSlotSchema } = require('../validators/slot.validator');
+const { batchCreateSlotsSchema, updateSlotSchema } = require('../validators/slot.validator');
 
 const router = express.Router();
 

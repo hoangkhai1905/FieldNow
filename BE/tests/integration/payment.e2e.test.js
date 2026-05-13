@@ -3,7 +3,6 @@ const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
 const jwt = require('jsonwebtoken');
 const config = require('../../src/config');
-const { emailQueue } = require('../../src/infrastructure/queue');
 const vnpayProvider = require('../../src/providers/vnpay.provider');
 
 // Mock Queue
@@ -158,7 +157,7 @@ describe('Payment E2E Flow', () => {
     
     const newBookingId = bookRes.body.data.id;
 
-    const initRes = await request(app)
+    await request(app)
       .post('/api/v1/payments/initiate')
       .set('Authorization', `Bearer ${userToken}`)
       .send({ bookingId: newBookingId });

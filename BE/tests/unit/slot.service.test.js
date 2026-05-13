@@ -1,7 +1,7 @@
 const slotService = require('../../src/services/slot.service');
 const slotRepository = require('../../src/repositories/slot.repository');
 const fieldRepository = require('../../src/repositories/field.repository');
-const { errors } = require('../../src/utils/errors');
+const { errors: _errors } = require('../../src/utils/errors');
 
 jest.mock('../../src/repositories/slot.repository');
 jest.mock('../../src/repositories/field.repository');

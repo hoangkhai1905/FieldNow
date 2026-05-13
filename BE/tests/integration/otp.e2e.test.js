@@ -43,7 +43,7 @@ describe('OTP Integration Tests', () => {
         await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
       }
       await prisma.user.delete({ where: { email: testUser.email } });
-    } catch (err) {
+    } catch (_err) {
       // User might not exist if test failed during registration
     }
     await prisma.$disconnect();

@@ -5,7 +5,7 @@ class CashProvider {
    * For cash payments, we don't need a redirect.
    * We just return instructions to the user.
    */
-  createCheckoutFields(bookingId, amount, description = 'Thanh toán trực tiếp tại sân') {
+  createCheckoutFields(bookingId, amount, _description = 'Thanh toán trực tiếp tại sân') {
     logger.info(`[CashPayment] Initialized for booking: ${bookingId}`);
     
     return {

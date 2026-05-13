@@ -15,7 +15,7 @@ const initiatePayment = async (req, res, next) => {
  * Server-to-server callback from SePay after each transaction.
  * SePay expects HTTP 200 with { success: true } to acknowledge receipt.
  */
-const handleSepayIpn = async (req, res, next) => {
+const handleSepayIpn = async (req, res, _next) => {
   try {
     const result = await paymentService.handleSepayIpn(req.headers, req.body);
     res.status(200).json(result);

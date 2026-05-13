@@ -101,7 +101,7 @@ const testEmail = async () => {
       if (preview) {
         console.log(`  - Preview URL: ${preview}`);
       }
-    } catch (err) {
+  } catch (_err) {
       // Not ethereal, no preview URL
     }
 

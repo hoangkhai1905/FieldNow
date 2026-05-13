@@ -27,7 +27,7 @@ async function uploadTestImage() {
 
   console.log(`Target path: ${storagePath}`);
 
-  const { data, error } = await supabase.storage
+  const { data: _data, error } = await supabase.storage
     .from(bucket)
     .upload(storagePath, fileBuffer, {
       contentType: 'image/png',

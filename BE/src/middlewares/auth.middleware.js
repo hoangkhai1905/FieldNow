@@ -25,7 +25,7 @@ const authMiddleware = async (req, res, next) => {
 
     req.user = decoded; // Contains userId, role, email
     next();
-  } catch (error) {
+  } catch (_error) {
     return res.status(401).json({
       success: false,
       error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' },

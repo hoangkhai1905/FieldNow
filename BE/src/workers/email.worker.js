@@ -79,9 +79,9 @@ const processEmailJob = async (job) => {
 
   const transport = await getTransporter();
 
-  let subject = '';
-  let text = '';
-  let htmlBody = '';
+  let subject;
+  let text;
+  let htmlBody;
 
   const createHtmlEmail = (title, content, actionBtn = null) => `
     <!DOCTYPE html>
@@ -214,7 +214,7 @@ const processEmailJob = async (job) => {
   try {
     const preview = nodemailer.getTestMessageUrl(info);
     if (preview) logger.info(`[Email Worker] Preview URL: ${preview}`);
-  } catch (err) {
+  } catch (_err) {
     // getTestMessageUrl throws if not ethereal; ignore
   }
 };

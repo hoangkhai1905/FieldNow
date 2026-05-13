@@ -15,7 +15,7 @@ jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => {
     return {
       on: jest.fn(),
-      set: jest.fn((key, value, mode, px, ttl) => {
+      set: jest.fn((key, value, mode, _px, _ttl) => {
         if (mode === 'NX' && !globalLocks[key]) {
           globalLocks[key] = value;
           return Promise.resolve('OK');

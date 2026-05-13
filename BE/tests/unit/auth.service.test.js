@@ -1,6 +1,6 @@
 const authService = require('../../src/services/auth.service');
 const userRepository = require('../../src/repositories/user.repository');
-const refreshTokenRepository = require('../../src/repositories/refresh-token.repository');
+const _refreshTokenRepository = require('../../src/repositories/refresh-token.repository');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
