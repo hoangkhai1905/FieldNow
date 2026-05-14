@@ -37,7 +37,7 @@ router.use(authMiddleware);
  *       401:
  *         description: Unauthorized
  *       409:
- *         description: Conflict (Slot locked or taken)
+ *         description: Conflict (slot locked, taken, or overlaps an active booking)
  */
 router.post('/', validate(createBookingSchema), bookingController.createBooking);
 

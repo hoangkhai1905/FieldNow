@@ -25,6 +25,22 @@ const findByBookingId = async (bookingId, tx = prisma) => {
   });
 };
 
+const findLatestPendingByBookingId = async (bookingId, provider, tx = prisma) => {
+  const where = {
+    booking_id: bookingId,
+    status: 'PENDING',
+  };
+
+  if (provider) {
+    where.provider = { equals: provider, mode: 'insensitive' };
+  }
+
+  return tx.payment.findFirst({
+    where,
+    orderBy: { created_at: 'desc' },
+  });
+};
+
 const updateStatus = async (paymentId, status, tx = prisma) => {
   return tx.payment.update({
     where: { id: paymentId },
@@ -36,5 +52,6 @@ module.exports = {
   createPayment,
   findById,
   findByBookingId,
+  findLatestPendingByBookingId,
   updateStatus,
 };

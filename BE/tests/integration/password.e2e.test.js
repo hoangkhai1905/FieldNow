@@ -39,6 +39,8 @@ const createVerifiedUser = async (email, password) => {
     .send({ email, password, fullName: 'Test User', role: 'USER' })
     .expect(201);
 
+  await allowResend(email);
+
   await request(app)
     .post('/api/v1/otp/send')
     .send({ email })
@@ -64,6 +66,7 @@ describe('Password Reset and Change Password Tests', () => {
       .expect(201);
 
     // Verify email via OTP
+    await allowResend(testUser.email);
     await request(app)
       .post('/api/v1/otp/send')
       .send({ email: testUser.email })
@@ -457,6 +460,7 @@ describe('Password Reset and Change Password Tests', () => {
         .expect(201);
 
       // Step 2: Verify email
+      await allowResend(flowEmail);
       await request(app)
         .post('/api/v1/otp/send')
         .send({ email: flowEmail })
@@ -507,6 +511,6 @@ describe('Password Reset and Change Password Tests', () => {
         await prisma.refreshToken.deleteMany({ where: { user_id: cleanupUser.id } });
       }
       await prisma.user.delete({ where: { email: flowEmail } });
-    });
+    }, 10000);
   });
 });

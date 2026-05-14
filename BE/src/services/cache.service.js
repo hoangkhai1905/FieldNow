@@ -21,10 +21,14 @@ const cacheService = {
 
   async invalidate(pattern) {
     try {
-      const keys = await redisClient.keys(pattern);
-      if (keys.length) {
-        await redisClient.del(...keys);
-      }
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = nextCursor;
+        if (keys.length) {
+          await redisClient.del(...keys);
+        }
+      } while (cursor !== '0');
     } catch (_error) {
       // Intentionally ignore cache invalidate errors
     }

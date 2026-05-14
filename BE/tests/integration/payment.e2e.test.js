@@ -3,183 +3,168 @@ const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
 const jwt = require('jsonwebtoken');
 const config = require('../../src/config');
-const vnpayProvider = require('../../src/providers/vnpay.provider');
+const sepayProvider = require('../../src/providers/sepay.provider');
 
-// Mock Queue
-jest.mock('bullmq', () => ({
-  Queue: jest.fn().mockImplementation(() => ({
-    add: jest.fn(),
-    close: jest.fn(),
-  })),
-  Worker: jest.fn().mockImplementation(() => ({
-    on: jest.fn(),
-    close: jest.fn(),
-  })),
+jest.spyOn(sepayProvider, 'createCheckoutFields').mockImplementation(() => ({
+  checkoutUrl: 'https://checkout.test/fieldnow',
+  formFields: { signed: 'yes' },
 }));
-
-// Mock VNPay Verification
-jest.spyOn(vnpayProvider, 'verifySignature').mockImplementation(() => true);
-jest.spyOn(vnpayProvider, 'isSuccess').mockImplementation((params) => params['vnp_ResponseCode'] === '00');
-
-const timeAt = (hours, minutes) => new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+jest.spyOn(sepayProvider, 'verifyIpn').mockImplementation(() => true);
+jest.spyOn(sepayProvider, 'isSuccess').mockImplementation((body) => body?.order?.order_status === 'CAPTURED');
+jest.spyOn(sepayProvider, 'extractBookingId').mockImplementation((body) => body?.order?.order_invoice_number);
 
 describe('Payment E2E Flow', () => {
-  let userToken, userId, fieldId, slotId, bookingId;
+  let userToken;
+  let userId;
+  let ownerId;
+  let fieldId;
+  const bookingIds = [];
+  const bookingDate = '2031-05-15';
+
+  const createBooking = async (startTime, endTime) => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ fieldId, date: bookingDate, startTime, endTime });
+
+    expect(res.status).toBe(201);
+    bookingIds.push(res.body.data.id);
+    return res.body.data.id;
+  };
+
+  const postSepayIpn = (bookingId, success) => {
+    return request(app)
+      .post('/api/v1/payments/sepay-ipn')
+      .send({
+        notification_type: 'ORDER_PAID',
+        order: {
+          order_invoice_number: bookingId,
+          order_status: success ? 'CAPTURED' : 'FAILED',
+        },
+        transaction: {
+          transaction_status: success ? 'APPROVED' : 'DECLINED',
+        },
+      });
+  };
 
   beforeAll(async () => {
-    // 1. Create a user
+    const suffix = Date.now();
     const user = await prisma.user.create({
       data: {
-        email: 'payment_tester@test.com',
+        email: `payment-user-${suffix}@fieldnow.dev`,
         password: 'hash',
         full_name: 'Payment Tester',
         role: 'USER',
+        is_email_verified: true,
       },
     });
     userId = user.id;
-    userToken = jwt.sign({ userId, role: user.role }, config.jwtSecret, { expiresIn: '1h' });
+    userToken = jwt.sign({ userId, role: user.role, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
 
-    // 2. Create owner and field
     const owner = await prisma.user.create({
       data: {
-        email: 'payment_owner@test.com',
+        email: `payment-owner-${suffix}@fieldnow.dev`,
         password: 'hash',
         role: 'OWNER',
+        is_email_verified: true,
       },
     });
+    ownerId = owner.id;
 
     const field = await prisma.field.create({
       data: {
         owner_id: owner.id,
-        name: 'Payment Field',
+        name: `Payment Field ${suffix}`,
         location: 'Test Loc',
         price_per_hour: 500000,
         is_active: true,
       },
     });
     fieldId = field.id;
-
-    // 3. Create a slot
-    const slot = await prisma.fieldSlot.create({
-      data: {
-        field_id: fieldId,
-        date: new Date(Date.now() + 86400000), // tomorrow
-        start_time: timeAt(18, 0),
-        end_time: timeAt(19, 0),
-        is_locked: false,
-      },
-    });
-    slotId = slot.id;
   });
 
   afterAll(async () => {
-    await prisma.payment.deleteMany({ where: { booking_id: bookingId } });
-    await prisma.booking.deleteMany({ where: { id: bookingId } });
-    await prisma.fieldSlot.deleteMany({ where: { id: slotId } });
+    await prisma.payment.deleteMany({ where: { booking_id: { in: bookingIds } } });
+    await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
     await prisma.field.deleteMany({ where: { id: fieldId } });
-    await prisma.user.deleteMany({
-      where: { email: { in: ['payment_tester@test.com', 'payment_owner@test.com'] } },
-    });
+    await prisma.user.deleteMany({ where: { id: { in: [userId, ownerId] } } });
     await prisma.$disconnect();
     jest.restoreAllMocks();
   });
 
-  it('should complete full E2E flow: Book -> Initiate Payment -> VNPay IPN Confirm', async () => {
-    // Step 1: Book the slot
-    const bookRes = await request(app)
-      .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${userToken}`)
-      .send({ slotId });
-    
-    expect(bookRes.status).toBe(201);
-    expect(bookRes.body.data.status).toBe('PENDING');
-    bookingId = bookRes.body.data.id;
+  it('completes book -> initiate payment -> SePay IPN confirmation', async () => {
+    const bookingId = await createBooking('18:00', '19:00');
 
-    // Step 2: Initiate Payment
     const initRes = await request(app)
       .post('/api/v1/payments/initiate')
       .set('Authorization', `Bearer ${userToken}`)
-      .send({ bookingId });
-    
+      .send({ bookingId, provider: 'sepay' });
+
     expect(initRes.status).toBe(200);
-    expect(initRes.body.data).toHaveProperty('paymentUrl');
+    expect(initRes.body.data).toHaveProperty('checkoutUrl');
     expect(initRes.body.data).toHaveProperty('paymentId');
 
-    // Verify payment record in DB
-    const payment = await prisma.payment.findUnique({ where: { id: initRes.body.data.paymentId } });
-    expect(payment.status).toBe('PENDING');
-
-    // Step 3: VNPay IPN Callback (Success)
-    const ipnRes = await request(app)
-      .get('/api/v1/payments/vnpay-ipn')
-      .query({
-        vnp_TxnRef: bookingId,
-        vnp_ResponseCode: '00',
-        vnp_SecureHash: 'mocked_signature'
-      });
-    
+    const ipnRes = await postSepayIpn(bookingId, true);
     expect(ipnRes.status).toBe(200);
-    expect(ipnRes.body.RspCode).toBe('00');
+    expect(ipnRes.body.success).toBe(true);
 
-    // Verify DB states updated
-    const updatedBooking = await prisma.booking.findUnique({ where: { id: bookingId } });
-    expect(updatedBooking.status).toBe('CONFIRMED');
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    expect(booking.status).toBe('CONFIRMED');
 
-    const updatedPayment = await prisma.payment.findFirst({ where: { booking_id: bookingId } });
-    expect(updatedPayment.status).toBe('COMPLETED');
+    const payment = await prisma.payment.findFirst({ where: { booking_id: bookingId }, orderBy: { created_at: 'desc' } });
+    expect(payment.status).toBe('COMPLETED');
   });
 
-  it('should reject payment initiation if booking is not PENDING', async () => {
-    const initRes = await request(app)
+  it('treats duplicate terminal callbacks as idempotent provider acknowledgements', async () => {
+    const bookingId = bookingIds[0];
+
+    const duplicate = await postSepayIpn(bookingId, true);
+
+    expect(duplicate.status).toBe(200);
+    expect(duplicate.body.success).toBe(true);
+  });
+
+  it('allows retry after a failed payment by creating a new pending payment attempt', async () => {
+    const bookingId = await createBooking('20:00', '21:00');
+
+    const firstInit = await request(app)
       .post('/api/v1/payments/initiate')
       .set('Authorization', `Bearer ${userToken}`)
-      .send({ bookingId });
-    
-    expect(initRes.status).toBe(409); // Conflict: Booking is already CONFIRMED
-  });
+      .send({ bookingId, provider: 'sepay' });
+    expect(firstInit.status).toBe(200);
 
-  it('should handle VNPay IPN callback with failed payment code', async () => {
-    // We need a fresh pending booking for this test
-    const newSlot = await prisma.fieldSlot.create({
-      data: {
-        field_id: fieldId,
-        date: new Date(Date.now() + 86400000), // tomorrow
-        start_time: timeAt(20, 0),
-        end_time: timeAt(21, 0),
-        is_locked: false,
-      },
+    const failedIpn = await postSepayIpn(bookingId, false);
+    expect(failedIpn.status).toBe(200);
+
+    const retryInit = await request(app)
+      .post('/api/v1/payments/initiate')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ bookingId, provider: 'sepay' });
+    expect(retryInit.status).toBe(200);
+
+    const attempts = await prisma.payment.findMany({
+      where: { booking_id: bookingId },
+      orderBy: { created_at: 'asc' },
     });
 
-    const bookRes = await request(app)
-      .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${userToken}`)
-      .send({ slotId: newSlot.id });
-    
-    const newBookingId = bookRes.body.data.id;
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0].status).toBe('FAILED');
+    expect(attempts[1].status).toBe('PENDING');
+    expect(retryInit.body.data.paymentId).toBe(attempts[1].id);
 
-    await request(app)
-      .post('/api/v1/payments/initiate')
-      .set('Authorization', `Bearer ${userToken}`)
-      .send({ bookingId: newBookingId });
-    
-    // VNPay IPN Callback (Failed payment - e.g. cancelled by user)
-    const ipnRes = await request(app)
-      .get('/api/v1/payments/vnpay-ipn')
-      .query({
-        vnp_TxnRef: newBookingId,
-        vnp_ResponseCode: '24', // e.g. Transaction cancelled
-        vnp_SecureHash: 'mocked_signature'
-      });
-    
-    expect(ipnRes.status).toBe(200); // IPN always returns 200 HTTP
+    const detailRes = await request(app)
+      .get(`/api/v1/payments/${bookingId}`)
+      .set('Authorization', `Bearer ${userToken}`);
 
-    // Verify DB states updated to FAILED
-    const updatedPayment = await prisma.payment.findFirst({ where: { booking_id: newBookingId } });
-    expect(updatedPayment.status).toBe('FAILED');
-    
-    // Clean up
-    await prisma.payment.deleteMany({ where: { booking_id: newBookingId } });
-    await prisma.booking.deleteMany({ where: { id: newBookingId } });
-    await prisma.fieldSlot.deleteMany({ where: { id: newSlot.id } });
-  });
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body).toEqual({
+      success: true,
+      data: expect.objectContaining({
+        id: attempts[1].id,
+        booking_id: bookingId,
+        status: 'PENDING',
+        provider: 'sepay',
+      }),
+    });
+  }, 10000);
 });

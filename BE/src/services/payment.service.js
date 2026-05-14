@@ -35,6 +35,8 @@ const initiatePayment = async (bookingId, userId, providerName = 'sepay') => {
   if (!payment) {
     // 4. Create payment record
     payment = await paymentRepository.createPayment(bookingId, amount, targetProvider);
+  } else if (payment.status === 'FAILED') {
+    payment = await paymentRepository.createPayment(bookingId, amount, targetProvider);
   } else if (payment.status !== 'PENDING') {
     throw errors.conflict(`Payment is already ${payment.status}`);
   } else if (payment.provider.toLowerCase() !== targetProvider) {
@@ -95,7 +97,7 @@ const handleSepayIpn = async (headers, body) => {
   }
 
   // Validate if bookingId is a valid UUID
-  const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+  const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
   if (!uuidRegex.test(bookingId)) {
     logger.warn(`[SePay IPN] bookingId '${bookingId}' is not a valid UUID. Attempting fallback matching...`);
     
@@ -156,14 +158,13 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
       throw errors.notFound('Booking');
     }
 
-    const payment = await paymentRepository.findByBookingId(bookingId, tx);
+    const payment = await paymentRepository.findLatestPendingByBookingId(bookingId, provider, tx);
     if (!payment) {
-      throw errors.notFound('Payment');
-    }
-
-    // Idempotency check
-    if (payment.status === 'COMPLETED' || payment.status === 'FAILED') {
-      throw errors.conflict(`Payment is already ${payment.status}`);
+      const latestPayment = await paymentRepository.findByBookingId(bookingId, tx);
+      if (latestPayment?.status === 'COMPLETED' || latestPayment?.status === 'FAILED') {
+        throw errors.conflict(`Payment is already ${latestPayment.status}`);
+      }
+      throw errors.notFound('Pending payment');
     }
 
     if (isSuccess) {
