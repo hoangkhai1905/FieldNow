@@ -44,6 +44,7 @@ export const apiPaths = {
 		slotsByField: (fieldId) => `/owner/fields/${fieldId}/slots`,
 	},
 	admin: {
+		fields: '/admin/fields',
 		approveField: (fieldId) => `/admin/fields/${fieldId}/approve`,
 		rejectField: (fieldId) => `/admin/fields/${fieldId}/reject`,
 		users: '/admin/users',
@@ -187,9 +188,13 @@ export const createBooking = async (payload) => {
 	return normalizeBooking(data);
 };
 
-export const getMyBookings = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.bookings.me });
-	return (Array.isArray(data) ? data : []).map(normalizeBooking);
+export const getMyBookings = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.bookings.me, params });
+	const rawBookings = Array.isArray(data) ? data : data.bookings ?? [];
+	return {
+		bookings: rawBookings.map(normalizeBooking),
+		pagination: data.pagination ?? null,
+	};
 };
 
 export const getBookingDetail = async (bookingId) => {
@@ -259,9 +264,14 @@ export const verifyVnPayReturn = async (queryParams) => {
 	return data;
 };
 
-export const getOwnerFields = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.fields });
-	return (Array.isArray(data) ? data : []).map(normalizeField);
+export const getOwnerFields = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.fields, params });
+	const rawFields = Array.isArray(data) ? data : data.fields ?? [];
+	return {
+		fields: rawFields.map(normalizeField),
+		pagination: data.pagination ?? null,
+		summary: data.summary ?? null,
+	};
 };
 
 export const createOwnerField = async (payload) => {
@@ -301,9 +311,23 @@ export const approveField = async (fieldId) => apiRequest({ method: 'PATCH', url
 
 export const rejectField = async (fieldId) => apiRequest({ method: 'PATCH', url: apiPaths.admin.rejectField(fieldId) });
 
-export const getAdminUsers = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.users });
-	return (Array.isArray(data) ? data : []).map(normalizeUser);
+export const getAdminFields = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.fields, params });
+	const rawFields = Array.isArray(data) ? data : data.fields ?? [];
+	return {
+		fields: rawFields.map(normalizeField),
+		pagination: data.pagination ?? null,
+	};
+};
+
+export const getAdminUsers = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.users, params });
+	const rawUsers = Array.isArray(data) ? data : data.users ?? [];
+	return {
+		users: rawUsers.map(normalizeUser),
+		pagination: data.pagination ?? null,
+		summary: data.summary ?? null,
+	};
 };
 
 export const updateUserRole = async (userId, role) =>

@@ -46,8 +46,8 @@ const updateField = async (fieldId, ownerId, data) => {
   return updatedField;
 };
 
-const getOwnerFields = async (ownerId) => {
-  return fieldRepository.findByOwner(ownerId);
+const getOwnerFields = async (ownerId, pagination) => {
+  return fieldRepository.findByOwner(ownerId, pagination);
 };
 
 const getFieldById = async (fieldId) => {
@@ -101,6 +101,10 @@ const getFieldWithSlots = async (fieldId, date) => {
 };
 
 // --- Admin actions ---
+const getAdminFields = async (filters) => {
+  return fieldRepository.findForAdmin(filters);
+};
+
 const approveField = async (fieldId) => {
   const field = await fieldRepository.findById(fieldId);
   if (!field) {
@@ -124,6 +128,7 @@ module.exports = {
   getFieldById,
   searchFields,
   getFieldWithSlots,
+  getAdminFields,
   approveField,
   rejectField,
 };

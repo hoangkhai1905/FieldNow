@@ -80,9 +80,12 @@ const createBooking = async (userId, { fieldId, date, startTime, endTime }) => {
   });
 };
 
-const getUserBookings = async (userId) => {
-  const bookings = await bookingRepository.findUserBookings(userId);
-  return bookings.map((booking) => normalizeBookingSlot(booking));
+const getUserBookings = async (userId, filters) => {
+  const result = await bookingRepository.findUserBookings(userId, filters);
+  return {
+    bookings: result.bookings.map((booking) => normalizeBookingSlot(booking)),
+    pagination: result.pagination,
+  };
 };
 
 const getBookingById = async (bookingId, userId) => {

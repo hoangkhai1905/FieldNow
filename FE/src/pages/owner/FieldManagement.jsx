@@ -43,11 +43,13 @@ const FieldManagement = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [pagination, setPagination] = useState(null);
 
-  const loadFields = async () => {
+  const loadFields = async (page = 1) => {
     try {
-      const data = await getOwnerFields();
-      setFields(data);
+      const data = await getOwnerFields({ page, limit: 8 });
+      setFields(data.fields);
+      setPagination(data.pagination);
     } catch (e) {
       setToast({ type: 'error', text: e.message || 'Lỗi tải danh sách sân' });
     }
@@ -58,9 +60,10 @@ const FieldManagement = () => {
     const initialLoad = async () => {
       setLoading(true);
       try {
-        const data = await getOwnerFields();
+        const data = await getOwnerFields({ page: 1, limit: 8 });
         if (!mounted) return;
-        setFields(data);
+        setFields(data.fields);
+        setPagination(data.pagination);
       } catch (requestError) {
         if (mounted) setToast({ type: 'error', text: 'Không tải được danh sách sân' });
       } finally {
@@ -112,7 +115,7 @@ const FieldManagement = () => {
         await createOwnerField(payload);
         setToast({ type: 'success', text: 'Đã tạo sân mới, vui lòng chờ phê duyệt.' });
       }
-      await loadFields();
+      await loadFields(editingFieldId ? pagination?.page || 1 : 1);
       resetFieldForm();
       setActiveTab('list'); // Switch back to list after save
     } catch (requestError) {
@@ -139,7 +142,7 @@ const FieldManagement = () => {
     try {
       await deleteOwnerField(fieldId);
       setToast({ type: 'success', text: 'Đã xóa sân thành công' });
-      await loadFields();
+      await loadFields(pagination?.page || 1);
     } catch (requestError) {
       setToast({ type: 'error', text: requestError.message || 'Lỗi xóa sân' });
     }
@@ -255,6 +258,7 @@ const FieldManagement = () => {
                   {[1,2,3].map(i => <div key={i} style={{ ...glassStyle, height: '180px', animation: 'pulse 2s infinite' }}></div>)}
                </div>
             ) : fields.length > 0 ? (
+              <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px' }}>
                 {fields.map(field => (
                   <motion.div 
@@ -287,6 +291,29 @@ const FieldManagement = () => {
                   </motion.div>
                 ))}
               </div>
+              {pagination && pagination.totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '32px' }}>
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => loadFields(page)}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: page === (pagination.currentPage || pagination.page) ? '#F59E0B' : 'rgba(255,255,255,0.05)',
+                        color: page === (pagination.currentPage || pagination.page) ? '#000' : '#fff',
+                        fontWeight: '900',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+              )}
+              </>
             ) : (
               <div style={{ textAlign: 'center', padding: '100px 0', ...glassStyle }}>
                 <Trophy size={64} color="#64748b" style={{ marginBottom: '24px', opacity: 0.2 }} />

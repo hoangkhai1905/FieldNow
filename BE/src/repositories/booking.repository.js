@@ -1,4 +1,5 @@
 const prisma = require('../infrastructure/prisma');
+const { buildPagination } = require('../utils/pagination');
 
 /**
  * Booking repository — encapsulates all Prisma queries for the Booking model.
@@ -78,17 +79,32 @@ const checkActiveBookingsForSlot = async (slotId, tx = prisma) => {
   });
 };
 
-const findUserBookings = async (userId) => {
-  return prisma.booking.findMany({
-    where: { user_id: userId },
-    include: {
-      field: {
-        select: { name: true, location: true },
+const findUserBookings = async (userId, { page = 1, limit = 6, skip = 0, status } = {}) => {
+  const where = { user_id: userId };
+  if (['PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+    where.status = status;
+  }
+
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      include: {
+        field: {
+          select: { name: true, location: true },
+        },
+        slot: true,
       },
-      slot: true,
-    },
-    orderBy: { created_at: 'desc' },
-  });
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  return {
+    bookings,
+    pagination: buildPagination({ page, limit, total }),
+  };
 };
 
 const findActiveIntervals = async (fieldId, date, tx = prisma) => {

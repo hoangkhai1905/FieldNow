@@ -61,16 +61,18 @@ const MyBookings = () => {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [toast, setToast] = useState(null);
+  const [pagination, setPagination] = useState(null);
 
-  const loadBookings = async () => {
+  const loadBookings = async (page = 1) => {
     setLoading(true);
     setError('');
     try {
-      const data = await getMyBookings();
-      setBookings(data);
+      const data = await getMyBookings({ page, limit: 6 });
+      setBookings(data.bookings);
+      setPagination(data.pagination);
 
       const paymentResults = await Promise.all(
-        data.map(async (booking) => {
+        data.bookings.map(async (booking) => {
           try {
             const payment = await getPaymentStatus(booking.id);
             return [booking.id, payment];
@@ -106,7 +108,7 @@ const MyBookings = () => {
     try {
       await cancelBooking(bookingId);
       setToast({ type: 'success', text: 'Đã hủy lịch đặt sân' });
-      await loadBookings();
+      await loadBookings(pagination?.page || 1);
     } catch (requestError) {
       setToast({ type: 'error', text: requestError.message || 'Lỗi khi hủy lịch' });
     }
@@ -163,6 +165,7 @@ const MyBookings = () => {
             {[1, 2, 3].map(i => <div key={i} style={{ ...glassStyle, height: '300px', animation: 'pulse 2s infinite' }}></div>)}
           </div>
         ) : bookings.length ? (
+          <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '32px' }}>
             <AnimatePresence>
               {bookings.map((booking, idx) => {
@@ -262,6 +265,29 @@ const MyBookings = () => {
               })}
             </AnimatePresence>
           </div>
+        {pagination && pagination.totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '32px' }}>
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => loadBookings(page)}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: page === (pagination.currentPage || pagination.page) ? '#F59E0B' : 'rgba(255,255,255,0.05)',
+                  color: page === (pagination.currentPage || pagination.page) ? '#000' : '#fff',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+          </>
         ) : (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>

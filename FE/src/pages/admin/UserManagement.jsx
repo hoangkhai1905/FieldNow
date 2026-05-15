@@ -23,12 +23,16 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState(null);
+  const [userSummary, setUserSummary] = useState({ total: 0, USER: 0, OWNER: 0, ADMIN: 0 });
 
-  const loadUsers = async () => {
+  const loadUsers = async (page = 1) => {
     setLoading(true);
     try {
-      const data = await getAdminUsers();
-      setUsers(data);
+      const data = await getAdminUsers({ page, limit: 10, search: searchTerm });
+      setUsers(data.users);
+      setPagination(data.pagination);
+      setUserSummary(data.summary || { total: data.users.length, USER: 0, OWNER: 0, ADMIN: 0 });
     } catch (requestError) {
       setToast({ type: 'error', text: requestError.message || 'Lỗi tải dữ liệu' });
       setUsers([]);
@@ -38,32 +42,26 @@ const UserManagement = () => {
   };
 
   useEffect(() => {
-    void loadUsers();
-  }, []);
-
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => 
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [users, searchTerm]);
+    const timer = setTimeout(() => {
+      void loadUsers(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const stats = useMemo(() => {
-    return users.reduce(
-      (acc, user) => {
-        acc[user.role] = (acc[user.role] || 0) + 1;
-        return acc;
-      },
-      { USER: 0, OWNER: 0, ADMIN: 0 }
-    );
-  }, [users]);
+    return {
+      USER: userSummary.USER || 0,
+      OWNER: userSummary.OWNER || 0,
+      ADMIN: userSummary.ADMIN || 0,
+      total: userSummary.total || 0,
+    };
+  }, [userSummary]);
 
   const handleRoleChange = async (userId, role) => {
     try {
       await updateUserRole(userId, role);
       setToast({ type: 'success', text: `Đã cập nhật vai trò người dùng thành ${role}` });
-      await loadUsers();
+      await loadUsers(pagination?.page || 1);
     } catch (requestError) {
       setToast({ type: 'error', text: requestError.message || 'Không thể cập nhật' });
     }
@@ -101,7 +99,7 @@ const UserManagement = () => {
         {/* Stats Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
           {[
-            { label: 'Tổng người dùng', value: users.length, icon: Users, color: '#3b82f6' },
+            { label: 'Tổng người dùng', value: stats.total, icon: Users, color: '#3b82f6' },
             { label: 'Cầu thủ (USER)', value: stats.USER, icon: Activity, color: '#F59E0B' },
             { label: 'Chủ sân (OWNER)', value: stats.OWNER, icon: Award, color: '#10b981' },
             { label: 'Quản trị (ADMIN)', value: stats.ADMIN, icon: ShieldCheck, color: '#f43f5e' }
@@ -147,7 +145,7 @@ const UserManagement = () => {
           <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
             {loading ? (
               <div style={{ padding: '100px', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} color="#F59E0B" /></div>
-            ) : filteredUsers.map((user, idx) => (
+            ) : users.map((user) => (
               <motion.div 
                 key={user.id} 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -199,6 +197,29 @@ const UserManagement = () => {
             ))}
           </div>
         </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '24px' }}>
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => loadUsers(page)}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: page === (pagination.currentPage || pagination.page) ? '#F59E0B' : 'rgba(255,255,255,0.05)',
+                  color: page === (pagination.currentPage || pagination.page) ? '#000' : '#fff',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>
   );

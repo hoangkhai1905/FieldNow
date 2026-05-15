@@ -15,14 +15,18 @@ import { getOwnerFields, formatCurrency } from '../../api/endpoints';
 
 const Dashboard = () => {
   const [fields, setFields] = useState([]);
+  const [summary, setSummary] = useState({ total: 0, active: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const data = await getOwnerFields();
-        if (mounted) setFields(data);
+        const data = await getOwnerFields({ page: 1, limit: 2 });
+        if (mounted) {
+          setFields(data.fields);
+          setSummary(data.summary || { total: data.fields.length, active: 0, pending: 0 });
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -31,8 +35,8 @@ const Dashboard = () => {
     return () => { mounted = false; };
   }, []);
 
-  const activeFields = fields.filter((field) => field.isActive).length;
-  const pendingFields = fields.length - activeFields;
+  const activeFields = summary.active;
+  const pendingFields = summary.pending;
 
   const glassStyle = {
     background: 'rgba(255, 255, 255, 0.05)',
@@ -74,7 +78,7 @@ const Dashboard = () => {
       {/* Metrics Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '48px' }}>
         {[
-          { label: 'Tổng số sân', value: fields.length, icon: Trophy, color: '#F59E0B', sub: 'Tài nguyên sở hữu' },
+          { label: 'Tổng số sân', value: summary.total, icon: Trophy, color: '#F59E0B', sub: 'Tài nguyên sở hữu' },
           { label: 'Đang hoạt động', value: activeFields, icon: ShieldCheck, color: '#10b981', sub: 'Sẵn sàng đặt lịch' },
           { label: 'Đang chờ duyệt', value: pendingFields, icon: Clock, color: '#3b82f6', sub: 'Cần admin kiểm tra' }
         ].map((metric, idx) => (

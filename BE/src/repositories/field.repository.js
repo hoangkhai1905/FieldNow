@@ -1,5 +1,6 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../infrastructure/prisma');
+const { buildPagination } = require('../utils/pagination');
 
 /**
  * Field repository — encapsulates all Prisma queries for the Field model.
@@ -17,14 +18,32 @@ const update = async (id, data) => {
   return prisma.field.update({ where: { id }, data });
 };
 
-const findByOwner = async (ownerId) => {
-  return prisma.field.findMany({
-    where: { owner_id: ownerId },
-    orderBy: { created_at: 'desc' },
-  });
+const findByOwner = async (ownerId, { page = 1, limit = 8, skip = 0 } = {}) => {
+  const where = { owner_id: ownerId };
+  const [fields, total, active, pending] = await Promise.all([
+    prisma.field.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.field.count({ where }),
+    prisma.field.count({ where: { ...where, is_active: true } }),
+    prisma.field.count({ where: { ...where, is_active: false } }),
+  ]);
+
+  return {
+    fields,
+    pagination: buildPagination({ page, limit, total }),
+    summary: {
+      total,
+      active,
+      pending,
+    },
+  };
 };
 
-const findPublicWithFilters = async ({ location, minPrice, maxPrice, page = 1, limit = 10 }) => {
+const findPublicWithFilters = async ({ location, type, minPrice, maxPrice, page = 1, limit = 10 }) => {
   let whereSql = Prisma.sql`"Field"."is_active" = true`;
 
   if (location) {
@@ -35,6 +54,9 @@ const findPublicWithFilters = async ({ location, minPrice, maxPrice, page = 1, l
   }
   if (maxPrice !== undefined) {
     whereSql = Prisma.sql`${whereSql} AND "Field"."price_per_hour" <= ${maxPrice}`;
+  }
+  if (['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS'].includes(type)) {
+    whereSql = Prisma.sql`${whereSql} AND "Field"."type" = ${type}::"FieldType"`;
   }
   const skip = (page - 1) * limit;
   const orderBySql = location
@@ -79,10 +101,32 @@ const findPublicWithFilters = async ({ location, minPrice, maxPrice, page = 1, l
     fields,
     pagination: {
       page,
+      currentPage: page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
     },
+  };
+};
+
+const findForAdmin = async ({ status = 'pending', page = 1, limit = 10, skip = 0 } = {}) => {
+  const where = {};
+  if (status === 'pending') where.is_active = false;
+  if (status === 'active') where.is_active = true;
+
+  const [fields, total] = await Promise.all([
+    prisma.field.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.field.count({ where }),
+  ]);
+
+  return {
+    fields,
+    pagination: buildPagination({ page, limit, total }),
   };
 };
 
@@ -109,5 +153,6 @@ module.exports = {
   update,
   findByOwner,
   findPublicWithFilters,
+  findForAdmin,
   findByIdWithSlots,
 };
