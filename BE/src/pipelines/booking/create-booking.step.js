@@ -4,19 +4,18 @@ class CreateBookingStep {
 
     try {
       booking = await ctx.prisma.$transaction(async (tx) => {
-        const field = await tx.field.findUnique({ where: { id: ctx.fieldId } });
+        const field = await ctx.fieldRepository.findById(ctx.fieldId, tx);
         if (!field) {
           throw ctx.errors.notFound('Field');
         }
 
-        const slot = await tx.fieldSlot.findFirst({
-          where: {
-            field_id: ctx.fieldId,
-            date: new Date(ctx.date),
-            start_time: ctx.reqStart,
-            end_time: ctx.reqEnd,
-          },
-        });
+        const slot = await ctx.slotRepository.findExact(
+          ctx.fieldId,
+          ctx.date,
+          ctx.reqStart,
+          ctx.reqEnd,
+          tx
+        );
 
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 

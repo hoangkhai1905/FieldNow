@@ -2,16 +2,9 @@ const express = require('express');
 const bookingController = require('../controllers/booking.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { validate } = require('../middlewares/validate.middleware');
-const { z } = require('zod');
+const { createBookingSchema } = require('../validators/booking.validator');
 
 const router = express.Router();
-
-const createBookingSchema = z.object({
-  fieldId: z.string().uuid('Invalid field ID format'),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid start time format (HH:mm)'),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid end time format (HH:mm)'),
-});
 
 router.use(authMiddleware);
 

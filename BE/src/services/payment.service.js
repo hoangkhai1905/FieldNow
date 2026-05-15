@@ -40,21 +40,26 @@ const initiatePayment = async (bookingId, userId, providerName = 'sepay') => {
   } else if (payment.status !== 'PENDING') {
     throw errors.conflict(`Payment is already ${payment.status}`);
   } else if (payment.provider.toLowerCase() !== targetProvider) {
-    console.log(`[PaymentService] Changing provider from ${payment.provider} to ${targetProvider}`);
-    payment = await prisma.payment.update({
-      where: { id: payment.id },
-      data: { provider: targetProvider }
-    });
-    console.log(`[PaymentService] Update success. New provider in DB: ${payment.provider}`);
+    logger.info(`[PaymentService] Changing provider from ${payment.provider} to ${targetProvider}`);
+    payment = await paymentRepository.updateProvider(payment.id, targetProvider);
   }
 
-  // 5. If strategy is 'cash', just return success instructions
+  // 5. Cash bookings are confirmed immediately; payment is collected at the venue.
   if (targetProvider === 'cash') {
+    await bookingRepository.updateStatus(bookingId, 'CONFIRMED');
+    await emailQueue.add('email.booking_confirmed', {
+      userId: booking.user_id,
+      bookingId,
+    }, {
+      jobId: `email-booking-confirmed:${bookingId}`,
+    });
+
     return {
       success: true,
-      message: 'Yêu cầu đặt sân đã được gửi! Vui lòng chờ chủ sân xác nhận và thanh toán tại sân.',
+      message: 'Đặt sân đã được xác nhận. Vui lòng thanh toán trực tiếp tại sân.',
       isDirect: true,
-      status: 'PENDING'
+      status: 'CONFIRMED',
+      paymentId: payment.id,
     };
   }
 
@@ -176,6 +181,8 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
       await emailQueue.add('email.booking_confirmed', {
         userId: booking.user_id,
         bookingId: bookingId,
+      }, {
+        jobId: `email-booking-confirmed:${bookingId}`,
       });
     } else {
       // Keep booking PENDING so user can retry until expiration

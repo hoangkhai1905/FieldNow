@@ -52,15 +52,15 @@ const FieldDetail = () => {
   }, [field, startTime, endTime]);
 
   const openTimeStr = useMemo(() => {
-    if (!field?.open_time) return '06:00';
-    const t = field.open_time;
+    if (!field?.openTime && !field?.open_time) return '06:00';
+    const t = field.openTime || field.open_time;
     // If it's an ISO string from Backend (e.g. 1970-01-01T06:00:00.000Z)
     return t.includes('T') ? t.split('T')[1].slice(0, 5) : t.slice(0, 5);
   }, [field]);
 
   const closeTimeStr = useMemo(() => {
-    if (!field?.close_time) return '22:00';
-    const t = field.close_time;
+    if (!field?.closeTime && !field?.close_time) return '22:00';
+    const t = field.closeTime || field.close_time;
     return t.includes('T') ? t.split('T')[1].slice(0, 5) : t.slice(0, 5);
   }, [field]);
 

@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: fieldnow
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: ${FIELDNOW_DB_PASS:-fieldnow_local_dev_pass}
       POSTGRES_DB: fieldnow
     ports:
       - "5432:5432"
@@ -50,9 +50,9 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=5000
-      - DATABASE_URL=postgresql://fieldnow:password123@db:5432/fieldnow?schema=public
+      - DATABASE_URL=postgresql://fieldnow:${FIELDNOW_DB_PASS:-fieldnow_local_dev_pass}@db:5432/fieldnow?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=supersecretjwtkeyforlocaldev
+      - JWT_SECRET=${JWT_SECRET:-fieldnow_local_dev_secret_change_me}
       - JWT_EXPIRES_IN=1d
       - EMAIL_PROVIDER=ethereal
       - PAYMENT_PROVIDER=vnpay

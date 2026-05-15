@@ -10,8 +10,8 @@ const create = async (data) => {
   return prisma.field.create({ data });
 };
 
-const findById = async (id) => {
-  return prisma.field.findUnique({ where: { id } });
+const findById = async (id, tx = prisma) => {
+  return tx.field.findUnique({ where: { id } });
 };
 
 const update = async (id, data) => {

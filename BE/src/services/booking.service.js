@@ -1,5 +1,7 @@
 const prisma = require('../infrastructure/prisma');
 const bookingRepository = require('../repositories/booking.repository');
+const fieldRepository = require('../repositories/field.repository');
+const slotRepository = require('../repositories/slot.repository');
 const bookingEvents = require('../events/booking.events');
 const { redisClient } = require('../infrastructure/redis');
 const { errors } = require('../utils/errors');
@@ -71,6 +73,8 @@ const createBooking = async (userId, { fieldId, date, startTime, endTime }) => {
     endTime,
     prisma,
     bookingRepository,
+    fieldRepository,
+    slotRepository,
     bookingEvents,
     errors,
     acquireBookingLock,

@@ -13,11 +13,16 @@ const registerBookingListeners = () => {
         bookingId,
         slotId,
         expectedStatus: 'PENDING',
-      }, { delay: 15 * 60 * 1000 });
+      }, {
+        delay: 15 * 60 * 1000,
+        jobId: `booking-expire:${bookingId}`,
+      });
 
       await emailQueue.add('email.booking_created', {
         userId,
         bookingId,
+      }, {
+        jobId: `email-booking-created:${bookingId}`,
       });
     } catch (error) {
       logger.error({ err: error, bookingId }, '[BookingEvents] Failed to handle BOOKING_CREATED');
@@ -29,6 +34,8 @@ const registerBookingListeners = () => {
       await emailQueue.add('email.booking_cancelled', {
         userId,
         bookingId,
+      }, {
+        jobId: `email-booking-cancelled:${bookingId}`,
       });
     } catch (error) {
       logger.error({ err: error, bookingId }, '[BookingEvents] Failed to handle BOOKING_CANCELLED');

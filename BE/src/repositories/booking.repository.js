@@ -79,6 +79,18 @@ const checkActiveBookingsForSlot = async (slotId, tx = prisma) => {
   });
 };
 
+const findOverlappingActive = async (fieldId, date, startTime, endTime, tx = prisma) => {
+  return tx.booking.findFirst({
+    where: {
+      field_id: fieldId,
+      date: new Date(date),
+      status: { in: ['PENDING', 'CONFIRMED'] },
+      start_time: { lt: endTime },
+      end_time: { gt: startTime },
+    },
+  });
+};
+
 const findUserBookings = async (userId, { page = 1, limit = 6, skip = 0, status } = {}) => {
   const where = { user_id: userId };
   if (['PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
@@ -138,6 +150,7 @@ module.exports = {
   lockSlot,
   unlockSlot,
   checkActiveBookingsForSlot,
+  findOverlappingActive,
   findActiveIntervals,
   findUserBookings,
 };

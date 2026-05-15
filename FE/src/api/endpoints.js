@@ -66,6 +66,12 @@ const formatDateValue = (value) => {
 	return date.slice(0, 10);
 };
 
+const formatTimeValue = (value) => {
+	if (!value) return '';
+	const time = typeof value === 'string' ? value : new Date(value).toISOString();
+	return time.includes('T') ? time.split('T')[1].slice(0, 5) : time.slice(0, 5);
+};
+
 export const formatCurrency = (value) => `${new Intl.NumberFormat('vi-VN').format(toNumber(value))}đ`;
 
 export const normalizeFieldBrief = (field) => ({
@@ -73,6 +79,7 @@ export const normalizeFieldBrief = (field) => ({
 	name: field.name,
 	location: field.location,
 	pricePerHour: toNumber(field.price_per_hour ?? field.pricePerHour),
+	type: field.type ?? 'FUTSAL',
 	isActive: field.is_active ?? field.isActive ?? false,
 	images: Array.isArray(field.images) ? field.images : [],
 	image: Array.isArray(field.images) && field.images.length ? field.images[0] : fallbackFieldImage,
@@ -94,6 +101,10 @@ export const normalizeField = (field) => ({
 	...normalizeFieldBrief(field),
 	ownerId: field.owner_id ?? field.ownerId ?? null,
 	description: field.description ?? '',
+	openTime: formatTimeValue(field.open_time ?? field.openTime),
+	closeTime: formatTimeValue(field.close_time ?? field.closeTime),
+	open_time: formatTimeValue(field.open_time ?? field.openTime),
+	close_time: formatTimeValue(field.close_time ?? field.closeTime),
 	createdAt: field.created_at ?? field.createdAt ?? null,
 	updatedAt: field.updated_at ?? field.updatedAt ?? null,
 	slots: Array.isArray(field.slots) ? field.slots.map(normalizeSlot) : [],
@@ -103,12 +114,17 @@ export const normalizeField = (field) => ({
 export const normalizeBooking = (booking) => ({
 	id: booking.id,
 	userId: booking.user_id ?? booking.userId ?? null,
+	fieldId: booking.field_id ?? booking.fieldId ?? null,
 	slotId: booking.slot_id ?? booking.slotId ?? null,
+	date: formatDateValue(booking.date ?? booking.slot?.date),
+	startTime: formatTimeValue(booking.start_time ?? booking.startTime ?? booking.slot?.start_time ?? booking.slot?.startTime),
+	endTime: formatTimeValue(booking.end_time ?? booking.endTime ?? booking.slot?.end_time ?? booking.slot?.endTime),
 	status: booking.status,
 	totalPrice: toNumber(booking.total_price ?? booking.totalPrice),
 	createdAt: booking.created_at ?? booking.createdAt ?? null,
 	updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
 	expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
+	field: booking.field ? normalizeFieldBrief(booking.field) : null,
 	slot: booking.slot
 		? {
 				...normalizeSlot(booking.slot),

@@ -48,10 +48,18 @@ const updateStatus = async (paymentId, status, tx = prisma) => {
   });
 };
 
+const updateProvider = async (paymentId, provider, tx = prisma) => {
+  return tx.payment.update({
+    where: { id: paymentId },
+    data: { provider },
+  });
+};
+
 module.exports = {
   createPayment,
   findById,
   findByBookingId,
   findLatestPendingByBookingId,
   updateStatus,
+  updateProvider,
 };
