@@ -32,8 +32,7 @@ const Login = () => {
     setShowResend(false);
 
     try {
-      const data = await loginRequest({ email, password });
-      login(data.token, normalizeUser(data.user));
+      await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
       const errorMessage = err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';

@@ -62,6 +62,62 @@ const FieldDetail = () => {
     return t.includes('T') ? t.split('T')[1].slice(0, 5) : t.slice(0, 5);
   }, [field]);
 
+  const isTimeOverlap = useMemo(() => {
+    return (start, end, bookedList) => {
+      if (!bookedList || bookedList.length === 0) return false;
+
+      const toMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        const actualStr = timeStr.includes('T') ? timeStr.split('T')[1].slice(0, 5) : timeStr.slice(0, 5);
+        const [h, m] = actualStr.split(':').map(Number);
+        return h * 60 + m;
+      };
+
+      const startM = toMinutes(start);
+      const endM = toMinutes(end);
+
+      return bookedList.some((b) => {
+        const bStart = toMinutes(b.start_time || b.startTime);
+        const bEnd = toMinutes(b.end_time || b.endTime);
+        return startM < bEnd && endM > bStart;
+      });
+    };
+  }, []);
+
+  const suggestedSlots = useMemo(() => {
+    if (!openTimeStr || !closeTimeStr) return [];
+
+    const toMinutes = (timeStr) => {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const fromMinutes = (totalMin) => {
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+
+    const openMin = toMinutes(openTimeStr);
+    const closeMin = toMinutes(closeTimeStr);
+    const duration = 60; // 60 minutes duration
+
+    const list = [];
+    let current = openMin;
+    while (current + duration <= closeMin) {
+      const start = fromMinutes(current);
+      const end = fromMinutes(current + duration);
+      list.push({
+        id: `suggested-${start}-${end}`,
+        startTime: start,
+        endTime: end,
+        isSuggested: true,
+      });
+      current += duration;
+    }
+    return list;
+  }, [openTimeStr, closeTimeStr]);
+
   const primaryImage = useMemo(() => field?.images?.[0] || field?.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80', [field]);
 
   useEffect(() => {
@@ -275,6 +331,126 @@ const FieldDetail = () => {
                 </div>
               </div>
             )}
+
+            {/* Interactive Time Slots */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '900', color: '#a7f3d0', textTransform: 'uppercase', marginBottom: '16px' }}>
+                <Clock size={16} color="#F59E0B" /> KHUNG GIỜ ĐẶT SÂN
+              </label>
+
+              {/* Owner Slots if available */}
+              {field?.slots && field.slots.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    LỊCH DO CHỦ SÂN THIẾT LẬP
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    {field.slots.map((slot) => {
+                      const isBooked = isTimeOverlap(slot.startTime, slot.endTime, field.bookedIntervals);
+                      const isSelected = startTime === slot.startTime && endTime === slot.endTime;
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          disabled={isBooked}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log('[Owner Slot] Selected slot:', slot.startTime, '-', slot.endTime);
+                            setStartTime(slot.startTime);
+                            setEndTime(slot.endTime);
+                          }}
+                          style={{
+                            padding: '12px',
+                            background: isSelected
+                              ? '#F59E0B'
+                              : isBooked
+                              ? 'rgba(244, 63, 94, 0.05)'
+                              : 'rgba(255, 255, 255, 0.03)',
+                            border: isSelected
+                              ? '2px solid #F59E0B'
+                              : isBooked
+                              ? '1px solid rgba(244, 63, 94, 0.15)'
+                              : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '12px',
+                            color: isSelected ? '#000' : isBooked ? '#f43f5e' : '#fff',
+                            cursor: isBooked ? 'not-allowed' : 'pointer',
+                            textAlign: 'center',
+                            transition: 'all 0.2s',
+                            opacity: isBooked ? 0.6 : 1,
+                            transform: isSelected ? 'scale(1.02)' : 'none',
+                            boxShadow: isSelected ? '0 4px 12px rgba(245, 158, 11, 0.3)' : 'none'
+                          }}
+                        >
+                          <div style={{ fontSize: '13px', fontWeight: '800' }}>
+                            {slot.startTime} - {slot.endTime}
+                          </div>
+                          <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, marginTop: '2px' }}>
+                            {isBooked ? 'Đã đặt' : slot.priceOverride ? formatCurrency(slot.priceOverride) : formatCurrency(field.pricePerHour)}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Suggested Slots */}
+              <div>
+                <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {field?.slots && field.slots.length > 0 ? 'MỐC GIỜ GỢI Ý KHÁC' : 'MỐC GIỜ GỢI Ý'}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {suggestedSlots.map((slot) => {
+                    const isDuplicate = field?.slots?.some(os => os.startTime === slot.startTime && os.endTime === slot.endTime);
+                    if (isDuplicate) return null;
+
+                    const isBooked = isTimeOverlap(slot.startTime, slot.endTime, field.bookedIntervals);
+                    const isSelected = startTime === slot.startTime && endTime === slot.endTime;
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        disabled={isBooked}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log('[Suggested Slot] Selected slot:', slot.startTime, '-', slot.endTime);
+                          setStartTime(slot.startTime);
+                          setEndTime(slot.endTime);
+                        }}
+                        style={{
+                          padding: '12px',
+                          background: isSelected
+                            ? '#F59E0B'
+                            : isBooked
+                            ? 'rgba(244, 63, 94, 0.05)'
+                            : 'rgba(255, 255, 255, 0.03)',
+                          border: isSelected
+                            ? '2px solid #F59E0B'
+                            : isBooked
+                            ? '1px solid rgba(244, 63, 94, 0.15)'
+                            : '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '12px',
+                          color: isSelected ? '#000' : isBooked ? '#f43f5e' : '#fff',
+                          cursor: isBooked ? 'not-allowed' : 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.2s',
+                          opacity: isBooked ? 0.6 : 1,
+                          transform: isSelected ? 'scale(1.02)' : 'none',
+                          boxShadow: isSelected ? '0 4px 12px rgba(245, 158, 11, 0.3)' : 'none'
+                        }}
+                      >
+                        <div style={{ fontSize: '13px', fontWeight: '800' }}>
+                          {slot.startTime} - {slot.endTime}
+                        </div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, marginTop: '2px' }}>
+                          {isBooked ? 'Đã đặt' : 'Gợi ý'}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
               <div>

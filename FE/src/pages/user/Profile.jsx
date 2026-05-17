@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Shield, 
-  Settings, 
+import {
+  User,
+  Mail,
+  Phone,
+  Shield,
+  Settings,
   Heart,
   UserCheck,
   ChevronRight,
@@ -23,11 +23,11 @@ import {
   Save
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
-import { 
-  getCurrentUser, 
-  updateProfile, 
-  requestChangePassword, 
-  changePassword 
+import {
+  getCurrentUser,
+  updateProfile,
+  requestChangePassword,
+  changePassword
 } from '../../api/endpoints';
 
 const ChangePasswordModal = ({ isOpen, onClose, setToast }) => {
@@ -72,12 +72,12 @@ const ChangePasswordModal = ({ isOpen, onClose, setToast }) => {
   if (!isOpen) return null;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(2, 44, 34, 0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
       onClick={onClose}
     >
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
         style={{ background: '#022c22', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '32px', padding: '40px', maxWidth: '450px', width: '100%', position: 'relative' }}
         onClick={e => e.stopPropagation()}
@@ -97,7 +97,7 @@ const ChangePasswordModal = ({ isOpen, onClose, setToast }) => {
         </div>
 
         {step === 1 ? (
-          <button 
+          <button
             onClick={handleRequestOTP}
             disabled={loading}
             style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#F59E0B', color: '#000', fontWeight: '900', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
@@ -106,27 +106,27 @@ const ChangePasswordModal = ({ isOpen, onClose, setToast }) => {
           </button>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <input 
-              placeholder="Mã OTP" 
-              value={formData.otp} 
-              onChange={e => setFormData({...formData, otp: e.target.value})}
+            <input
+              placeholder="Mã OTP"
+              value={formData.otp}
+              onChange={e => setFormData({ ...formData, otp: e.target.value })}
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', outline: 'none' }}
             />
-            <input 
-              type="password" 
-              placeholder="Mật khẩu mới" 
-              value={formData.newPassword} 
-              onChange={e => setFormData({...formData, newPassword: e.target.value})}
+            <input
+              type="password"
+              placeholder="Mật khẩu mới"
+              value={formData.newPassword}
+              onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', outline: 'none' }}
             />
-            <input 
-              type="password" 
-              placeholder="Xác nhận mật khẩu" 
-              value={formData.confirmPassword} 
-              onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+            <input
+              type="password"
+              placeholder="Xác nhận mật khẩu"
+              value={formData.confirmPassword}
+              onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', outline: 'none' }}
             />
-            <button 
+            <button
               onClick={handleChangePassword}
               disabled={loading}
               style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#10b981', color: '#fff', fontWeight: '900', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
@@ -169,12 +169,12 @@ const EditProfileModal = ({ isOpen, onClose, initialData, setToast, onUpdate }) 
   if (!isOpen) return null;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(2, 44, 34, 0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
       onClick={onClose}
     >
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
         style={{ background: '#022c22', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '32px', padding: '40px', maxWidth: '450px', width: '100%', position: 'relative' }}
         onClick={e => e.stopPropagation()}
@@ -194,21 +194,21 @@ const EditProfileModal = ({ isOpen, onClose, initialData, setToast, onUpdate }) 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label style={{ display: 'block', color: '#64748b', fontSize: '12px', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase' }}>Họ và tên</label>
-            <input 
-              value={formData.fullName} 
-              onChange={e => setFormData({...formData, fullName: e.target.value})}
+            <input
+              value={formData.fullName}
+              onChange={e => setFormData({ ...formData, fullName: e.target.value })}
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', outline: 'none' }}
             />
           </div>
           <div>
             <label style={{ display: 'block', color: '#64748b', fontSize: '12px', fontWeight: '800', marginBottom: '8px', textTransform: 'uppercase' }}>Số điện thoại</label>
-            <input 
-              value={formData.phoneNumber} 
-              onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
+            <input
+              value={formData.phoneNumber}
+              onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
               style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', outline: 'none' }}
             />
           </div>
-          <button 
+          <button
             onClick={handleSave}
             disabled={loading}
             style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#F59E0B', color: '#000', fontWeight: '900', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px' }}
@@ -274,7 +274,6 @@ const Profile = () => {
     { label: 'Trận đã đấu', value: '12', icon: Trophy, color: '#F59E0B' },
     { label: 'Số giờ chơi', value: '24h', icon: Activity, color: '#10b981' },
     { label: 'Sân yêu thích', value: '03', icon: Heart, color: '#fb7185' },
-    { label: 'Tỉ lệ thắng', value: '75%', icon: Target, color: '#3b82f6' },
   ];
 
   return (
@@ -296,10 +295,10 @@ const Profile = () => {
           <ChangePasswordModal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} setToast={setToast} />
         )}
         {showEditModal && (
-          <EditProfileModal 
-            isOpen={showEditModal} 
-            onClose={() => setShowEditModal(false)} 
-            initialData={formData} 
+          <EditProfileModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            initialData={formData}
             setToast={setToast}
             onUpdate={(updated) => {
               const updatedUser = updated.user || updated;
@@ -315,7 +314,7 @@ const Profile = () => {
       </AnimatePresence>
 
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 24px' }}>
-        <motion.section 
+        <motion.section
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           style={{ ...glassStyle, padding: '48px', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '40px', position: 'relative', overflow: 'hidden' }}
         >
@@ -326,16 +325,16 @@ const Profile = () => {
               <User size={80} color="#fff" />
             </div>
             <div style={{ position: 'absolute', bottom: '4px', right: '4px', width: '36px', height: '36px', background: '#F59E0B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px solid #022c22' }}>
-               <Zap size={18} color="#000" fill="#000" />
+              <Zap size={18} color="#000" fill="#000" />
             </div>
           </div>
 
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-               <span style={{ padding: '6px 16px', borderRadius: '100px', background: currentRole.bg, color: currentRole.color, fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', border: `1px solid ${currentRole.color}30` }}>
-                 <UserCheck size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> {currentRole.label}
-               </span>
-               <span style={{ color: '#64748b', fontSize: '13px', fontWeight: '700' }}>#{profile?.id?.slice(0, 8)}</span>
+              <span style={{ padding: '6px 16px', borderRadius: '100px', background: currentRole.bg, color: currentRole.color, fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', border: `1px solid ${currentRole.color}30` }}>
+                <UserCheck size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> {currentRole.label}
+              </span>
+              <span style={{ color: '#64748b', fontSize: '13px', fontWeight: '700' }}>#{profile?.id?.slice(0, 8)}</span>
             </div>
             <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', margin: 0, letterSpacing: '-2px', lineHeight: 1 }}>
               {profile?.fullName || profile?.full_name || profile?.email || 'Người dùng'}
@@ -344,7 +343,7 @@ const Profile = () => {
           </div>
 
           <div style={{ position: 'relative', zIndex: 10 }}>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => setShowEditModal(true)}
               style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '20px', padding: '16px 24px', color: '#fff', fontSize: '14px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', backdropFilter: 'blur(10px)' }}
@@ -354,7 +353,7 @@ const Profile = () => {
           </div>
         </motion.section>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
           {stats.map((stat, idx) => (
             <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} style={{ ...glassStyle, padding: '24px', textAlign: 'center' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: `${stat.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
@@ -410,7 +409,7 @@ const Profile = () => {
                 <Shield size={24} color="#F59E0B" /> BẢO MẬT & TÀI KHOẢN
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <motion.button 
+                <motion.button
                   whileHover={{ x: 10, background: 'rgba(255,255,255,0.08)' }}
                   onClick={() => setShowPasswordModal(true)}
                   style={{ width: '100%', padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.3s' }}
@@ -423,8 +422,8 @@ const Profile = () => {
                   </div>
                   <ChevronRight size={20} color="#64748b" />
                 </motion.button>
-                
-                <motion.button 
+
+                <motion.button
                   whileHover={{ x: 10, background: 'rgba(244, 63, 94, 0.08)' }}
                   onClick={logout}
                   style={{ width: '100%', padding: '20px', borderRadius: '20px', background: 'rgba(244, 63, 94, 0.03)', border: '1px solid rgba(244, 63, 94, 0.1)', color: '#f43f5e', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.3s' }}
@@ -439,10 +438,10 @@ const Profile = () => {
                 </motion.button>
               </div>
             </div>
-            
+
             <div style={{ ...glassStyle, padding: '32px', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%)', display: 'flex', alignItems: 'center', gap: '20px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                 <Trophy size={32} color="#F59E0B" />
+                <Trophy size={32} color="#F59E0B" />
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: '16px', fontWeight: '900' }}>HẠNG THÀNH VIÊN: VÀNG</p>

@@ -12,9 +12,9 @@ const OTP_MAX_ATTEMPTS = 5;
  * OTP Service — handles OTP generation, sending, and verification
  */
 
-const sendOTP = async (email) => {
+const sendOTP = async (emailOrPhone) => {
   // Check if user exists
-  const user = await userRepository.findByEmail(email);
+  const user = await userRepository.findByEmailOrPhone(emailOrPhone);
   if (!user) {
     throw errors.notFound('User not found');
   }
@@ -24,12 +24,12 @@ const sendOTP = async (email) => {
   }
 
   // Generate and save OTP
-  const { otpCode, otpExpiresAt } = await otpRepository.generateAndSaveOTP(email, {
+  const { otpCode, otpExpiresAt } = await otpRepository.generateAndSaveOTP(user.email, {
     expiresInMs: OTP_EXPIRES_MS,
     resendCooldownMs: OTP_RESEND_COOLDOWN_MS,
   });
 
-  logger.info(`[OTP Service] OTP generated for ${email}: ${otpCode} (expires at ${otpExpiresAt})`);
+  logger.info(`[OTP Service] OTP generated for ${user.email}: ${otpCode} (expires at ${otpExpiresAt})`);
 
   // Queue email job to send OTP
   await emailQueue.add('email.otp_sent', {
@@ -38,7 +38,7 @@ const sendOTP = async (email) => {
     otpCode,
   });
 
-  logger.info(`[OTP Service] OTP email queued for ${email}`);
+  logger.info(`[OTP Service] OTP email queued for ${user.email}`);
 
   return {
     success: true,
@@ -47,9 +47,15 @@ const sendOTP = async (email) => {
   };
 };
 
-const verifyOTP = async (email, otpCode) => {
+const verifyOTP = async (emailOrPhone, otpCode) => {
+  // Check if user exists
+  const user = await userRepository.findByEmailOrPhone(emailOrPhone);
+  if (!user) {
+    throw errors.unauthorized('User not found');
+  }
+
   // Verify OTP
-  const result = await otpRepository.verifyOTP(email, otpCode, {
+  const result = await otpRepository.verifyOTP(user.email, otpCode, {
     maxAttempts: OTP_MAX_ATTEMPTS,
   });
 
@@ -57,7 +63,7 @@ const verifyOTP = async (email, otpCode) => {
     throw errors.unauthorized(result.message);
   }
 
-  logger.info(`[OTP Service] OTP verified for ${email}`);
+  logger.info(`[OTP Service] OTP verified for ${user.email}`);
 
   return {
     success: true,
@@ -72,9 +78,9 @@ const verifyOTP = async (email, otpCode) => {
   };
 };
 
-const resendOTP = async (email) => {
+const resendOTP = async (emailOrPhone) => {
   // Check if user exists
-  const user = await userRepository.findByEmail(email);
+  const user = await userRepository.findByEmailOrPhone(emailOrPhone);
   if (!user) {
     throw errors.notFound('User not found');
   }
@@ -89,7 +95,7 @@ const resendOTP = async (email) => {
   }
 
   // Resend OTP (same logic as sendOTP)
-  return sendOTP(email);
+  return sendOTP(user.email);
 };
 
 module.exports = {
