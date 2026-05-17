@@ -16,6 +16,9 @@ class CreateBookingStep {
           ctx.reqEnd,
           tx
         );
+        if (slot?.is_locked) {
+          throw ctx.errors.conflict('Khung giờ này đang bị khóa bởi chủ sân');
+        }
 
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 

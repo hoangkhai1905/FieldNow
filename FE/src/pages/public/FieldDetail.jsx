@@ -347,12 +347,13 @@ const FieldDetail = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {field.slots.map((slot) => {
                       const isBooked = isTimeOverlap(slot.startTime, slot.endTime, field.bookedIntervals);
+                      const isUnavailable = isBooked || slot.isLocked;
                       const isSelected = startTime === slot.startTime && endTime === slot.endTime;
                       return (
                         <button
                           key={slot.id}
                           type="button"
-                          disabled={isBooked}
+                          disabled={isUnavailable}
                           onClick={(e) => {
                             e.preventDefault();
                             console.log('[Owner Slot] Selected slot:', slot.startTime, '-', slot.endTime);
@@ -363,20 +364,20 @@ const FieldDetail = () => {
                             padding: '12px',
                             background: isSelected
                               ? '#F59E0B'
-                              : isBooked
+                              : isUnavailable
                               ? 'rgba(244, 63, 94, 0.05)'
                               : 'rgba(255, 255, 255, 0.03)',
                             border: isSelected
                               ? '2px solid #F59E0B'
-                              : isBooked
+                              : isUnavailable
                               ? '1px solid rgba(244, 63, 94, 0.15)'
                               : '1px solid rgba(255, 255, 255, 0.08)',
                             borderRadius: '12px',
-                            color: isSelected ? '#000' : isBooked ? '#f43f5e' : '#fff',
-                            cursor: isBooked ? 'not-allowed' : 'pointer',
+                            color: isSelected ? '#000' : isUnavailable ? '#f43f5e' : '#fff',
+                            cursor: isUnavailable ? 'not-allowed' : 'pointer',
                             textAlign: 'center',
                             transition: 'all 0.2s',
-                            opacity: isBooked ? 0.6 : 1,
+                            opacity: isUnavailable ? 0.6 : 1,
                             transform: isSelected ? 'scale(1.02)' : 'none',
                             boxShadow: isSelected ? '0 4px 12px rgba(245, 158, 11, 0.3)' : 'none'
                           }}
@@ -385,7 +386,7 @@ const FieldDetail = () => {
                             {slot.startTime} - {slot.endTime}
                           </div>
                           <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.8, marginTop: '2px' }}>
-                            {isBooked ? 'Đã đặt' : slot.priceOverride ? formatCurrency(slot.priceOverride) : formatCurrency(field.pricePerHour)}
+                            {isBooked ? 'Đã đặt' : slot.isLocked ? 'Đang khóa' : slot.priceOverride ? formatCurrency(slot.priceOverride) : formatCurrency(field.pricePerHour)}
                           </div>
                         </button>
                       );

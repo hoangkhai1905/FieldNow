@@ -45,6 +45,26 @@ bookings. FieldNow enforces this in two layers:
 Active statuses for overlap checks are `PENDING` and `CONFIRMED`. `CANCELLED`
 bookings no longer block a time interval.
 
+## Owner Scheduling Flow
+
+```text
+Owner field detail
+  -> manual slot / quick daily slots / recurring slots
+  -> POST /api/v1/owner/fields/:fieldId/slots/batch
+  -> owner auth + role middleware
+  -> slot controller
+  -> slot service ownership, time range, overlap checks
+  -> slot repository
+  -> FieldSlot rows
+```
+
+Owner scheduling uses the same backend batch slot API for all three modes:
+manual creation sends one slot, quick setup generates slots for one date, and
+recurring setup generates slots across selected weekdays. The frontend chunks
+recurring requests to respect the API batch limit. Locking a slot updates
+`FieldSlot.is_locked`; booking creation rejects an exact locked owner slot.
+Deleting a slot is rejected when it still has active bookings.
+
 ## Payment and Expiration
 
 Online payment keeps the booking in `PENDING` until a successful payment

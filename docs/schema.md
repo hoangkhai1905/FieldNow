@@ -91,6 +91,11 @@ Notes:
 - The current booking flow can book by `field_id + date + start_time + end_time`.
   `slot_id` is optional to support both exact pre-created slots and flexible time
   intervals.
+- Owner scheduling stores every manually created slot, quick daily generated slot,
+  and recurring generated slot as `FieldSlot` rows. Recurring generation is
+  orchestrated by the frontend through the existing batch slot API.
+- `is_locked = true` means the owner temporarily blocks that exact slot from new
+  bookings without deleting the schedule row.
 
 ### Booking
 
@@ -339,9 +344,24 @@ All API routes use the `/api/v1` prefix.
 - `POST /api/v1/owner/fields`
 - `GET /api/v1/owner/fields`
 - `PATCH /api/v1/owner/fields/:id`
+- `GET /api/v1/owner/fields/:fieldId/slots`
 - `POST /api/v1/owner/fields/:fieldId/slots/batch`
 - `PATCH /api/v1/owner/slots/:slotId`
 - `DELETE /api/v1/owner/slots/:slotId`
+- `GET /api/v1/owner/bookings`
+- `GET /api/v1/owner/stats`
+
+Owner scheduling behavior:
+
+- Manual slot creation sends one slot through the batch endpoint.
+- Quick daily setup generates contiguous slots for one date.
+- Recurring setup generates slots across a date range and selected weekdays, then
+  sends them in batches of at most 50 slots.
+- Backend validates ownership, time range, overlap, and active booking guards
+  before modifying slots.
+- Deleting a slot is rejected when it has an active `PENDING` or `CONFIRMED`
+  booking.
+- Locked slots remain visible to the owner but are unavailable for new bookings.
 
 ### Booking
 

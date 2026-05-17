@@ -12,11 +12,13 @@ import Profile from '../pages/user/Profile';
 import BookingConfirmation from '../pages/user/BookingConfirmation';
 import MainLayout from '../layouts/MainLayout';
 import OwnerLayout from '../layouts/OwnerLayout';
+import AdminLayout from '../layouts/AdminLayout';
 import OwnerDashboard from '../pages/owner/Dashboard';
 import FieldManagement from '../pages/owner/FieldManagement';
 import BookingManagement from '../pages/owner/BookingManagement';
 import FieldSlots from '../pages/owner/FieldSlots';
 import UserManagement from '../pages/admin/UserManagement';
+import FieldApprovals from '../pages/admin/FieldApprovals';
 
 import VerifyOTP from '../pages/auth/VerifyOTP';
 import ScrollToTop from '../components/layout/ScrollToTop';
@@ -94,6 +96,18 @@ const AppRoutes = () => {
           <Route path="fields" element={<FieldManagement />} />
           <Route path="fields/:fieldId/slots" element={<FieldSlots />} />
           <Route path="bookings" element={<BookingManagement />} />
+        </Route>
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<FieldApprovals />} />
+          <Route path="fields" element={<FieldApprovals />} />
           <Route path="users" element={<UserManagement />} />
         </Route>
 

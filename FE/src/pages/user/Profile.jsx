@@ -13,7 +13,6 @@ import {
   Trophy,
   Activity,
   Zap,
-  Target,
   Edit3,
   Check,
   X,

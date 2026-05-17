@@ -61,6 +61,9 @@ Frontend structure:
 - `FE/src/routes`: route config and protected route handling.
 - `FE/src/pages`: public, auth, user, owner, admin pages.
 - `FE/src/components`: common UI and layout components.
+- Owner scheduling UI supports manual slot creation, quick one-day generation,
+  and recurring multi-day generation. The recurring flow is frontend
+  orchestration over the existing owner batch slot API, not a background job.
 
 ## 3. Database and Storage
 
@@ -81,6 +84,10 @@ Frontend structure:
 | **BullMQ booking-expiration** | Hủy booking online còn `PENDING` sau 15 phút. | Đã sử dụng |
 | **BullMQ notification-email** | Gửi email bất đồng bộ. | Đã sử dụng |
 | **Cron cleanup fallback** | Dọn stale pending bookings nếu delayed job bị miss. | Đã sử dụng |
+
+Redis/BullMQ are not responsible for generating owner schedules. Owner manual,
+quick, and recurring schedules are written synchronously through the slot API;
+queues are reserved for booking expiration, notifications, and cleanup safety.
 
 ## 5. Infrastructure and DevOps
 

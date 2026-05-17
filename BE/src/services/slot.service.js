@@ -1,5 +1,6 @@
 const slotRepository = require('../repositories/slot.repository');
 const fieldRepository = require('../repositories/field.repository');
+const bookingRepository = require('../repositories/booking.repository');
 const { errors } = require('../utils/errors');
 
 /**
@@ -23,6 +24,15 @@ const toTimeDate = (value) => {
   if (value instanceof Date) return value;
   const [hours, minutes] = String(value).split(':').map(Number);
   return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+};
+
+const assertValidTimeRange = (startTime, endTime) => {
+  const startMinutes = toMinutes(startTime);
+  const endMinutes = toMinutes(endTime);
+
+  if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || startMinutes >= endMinutes) {
+    throw errors.validation('Start time must be before end time');
+  }
 };
 
 /**
@@ -56,6 +66,7 @@ const checkOverlap = (existingSlots, startTime, endTime) => {
 
 const createSlot = async (fieldId, ownerId, data) => {
   await verifyFieldOwnership(fieldId, ownerId);
+  assertValidTimeRange(data.startTime, data.endTime);
 
   // Check for overlap
   const existing = await slotRepository.findByFieldAndDate(fieldId, data.date);
@@ -74,6 +85,10 @@ const createSlot = async (fieldId, ownerId, data) => {
 
 const batchCreateSlots = async (fieldId, ownerId, slots) => {
   await verifyFieldOwnership(fieldId, ownerId);
+
+  for (const slot of slots) {
+    assertValidTimeRange(slot.startTime, slot.endTime);
+  }
 
   // Group by date for overlap checking
   const slotsByDate = {};
@@ -122,6 +137,10 @@ const updateSlot = async (slotId, ownerId, data) => {
   }
   await verifyFieldOwnership(slot.field_id, ownerId);
 
+  const nextStartTime = data.startTime !== undefined ? data.startTime : slot.start_time;
+  const nextEndTime = data.endTime !== undefined ? data.endTime : slot.end_time;
+  assertValidTimeRange(nextStartTime, nextEndTime);
+
   const updateData = {};
   if (data.startTime !== undefined) updateData.start_time = toTimeDate(data.startTime);
   if (data.endTime !== undefined) updateData.end_time = toTimeDate(data.endTime);
@@ -137,6 +156,11 @@ const deleteSlot = async (slotId, ownerId) => {
     throw errors.notFound('Slot');
   }
   await verifyFieldOwnership(slot.field_id, ownerId);
+
+  const activeBooking = await bookingRepository.checkActiveBookingsForSlot(slotId);
+  if (activeBooking) {
+    throw errors.conflict('Cannot delete slot with active bookings');
+  }
 
   return slotRepository.deleteById(slotId);
 };

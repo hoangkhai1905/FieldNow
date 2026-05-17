@@ -29,7 +29,8 @@ const Dashboard = () => {
         if (mounted) {
           setFields(fieldsData);
           setStats(statsData);
-          setRecentBookings(bookingsData.slice(0, 5));
+          const ownerBookings = Array.isArray(bookingsData) ? bookingsData : bookingsData.bookings ?? [];
+          setRecentBookings(ownerBookings.slice(0, 5));
         }
       } catch (err) {
         console.error('Failed to load dashboard data', err);

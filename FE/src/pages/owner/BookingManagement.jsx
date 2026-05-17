@@ -19,20 +19,33 @@ const BookingManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
+      setLoading(true);
       try {
-        const data = await getOwnerBookings();
-        if (mounted) setBookings(data);
+        const params = {
+          page,
+          limit: 10,
+          ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
+          ...(dateFilter ? { date: dateFilter } : {}),
+        };
+        const data = await getOwnerBookings(params);
+        if (mounted) {
+          setBookings(Array.isArray(data) ? data : data.bookings ?? []);
+          setPagination(data.pagination ?? null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
     };
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [page, statusFilter, dateFilter]);
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
@@ -93,7 +106,7 @@ const BookingManagement = () => {
           </h1>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', width: '400px' }}>
+        <div style={{ display: 'flex', gap: '16px', width: '620px' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <Search size={18} style={{ position: 'absolute', left: '16px', top: '12px', color: '#64748b' }} />
             <input 
@@ -108,7 +121,10 @@ const BookingManagement = () => {
             <select 
               style={{ ...inputStyle, paddingRight: '40px', cursor: 'pointer', appearance: 'none' }}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="ALL">TẤT CẢ</option>
               <option value="PENDING">CHỜ DUYỆT</option>
@@ -116,6 +132,15 @@ const BookingManagement = () => {
               <option value="CANCELLED">ĐÃ HỦY</option>
             </select>
           </div>
+          <input
+            type="date"
+            style={{ ...inputStyle, paddingLeft: '16px', width: '170px' }}
+            value={dateFilter}
+            onChange={(e) => {
+              setDateFilter(e.target.value);
+              setPage(1);
+            }}
+          />
         </div>
       </header>
 
@@ -222,6 +247,27 @@ const BookingManagement = () => {
               </div>
             )}
           </div>
+          {pagination && pagination.totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                style={{ padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: page <= 1 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.08)', color: '#fff', cursor: page <= 1 ? 'not-allowed' : 'pointer', fontWeight: '800' }}
+              >
+                TRƯỚC
+              </button>
+              <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: '800' }}>
+                {pagination.currentPage || page}/{pagination.totalPages}
+              </span>
+              <button
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
+                style={{ padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: page >= pagination.totalPages ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.08)', color: '#fff', cursor: page >= pagination.totalPages ? 'not-allowed' : 'pointer', fontWeight: '800' }}
+              >
+                SAU
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

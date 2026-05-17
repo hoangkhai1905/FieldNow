@@ -128,6 +128,13 @@ export const normalizeBooking = (booking) => ({
 	updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
 	expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
 	field: booking.field ? normalizeFieldBrief(booking.field) : null,
+	user: booking.user
+		? {
+				fullName: booking.user.full_name ?? booking.user.fullName ?? '',
+				phoneNumber: booking.user.phone_number ?? booking.user.phoneNumber ?? '',
+				email: booking.user.email ?? '',
+			}
+		: null,
 	slot: booking.slot
 		? {
 				...normalizeSlot(booking.slot),
@@ -328,9 +335,13 @@ export const uploadImages = async (files) => {
 	return data.urls;
 };
 
-export const getOwnerBookings = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.bookings });
-	return (Array.isArray(data) ? data : []).map(normalizeBooking);
+export const getOwnerBookings = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.bookings, params });
+	const rawBookings = Array.isArray(data) ? data : data.bookings ?? [];
+	return {
+		bookings: rawBookings.map(normalizeBooking),
+		pagination: data.pagination ?? null,
+	};
 };
 
 export const getOwnerStats = async () => {
@@ -386,3 +397,8 @@ export const updateUserRole = async (userId, role) =>
 
 export const deleteOwnerSlot = async (slotId) =>
 	apiRequest({ method: 'DELETE', url: apiPaths.owner.slot(slotId) });
+
+export const updateOwnerSlot = async (slotId, payload) => {
+	const data = await apiRequest({ method: 'PATCH', url: apiPaths.owner.slot(slotId), data: payload });
+	return normalizeSlot(data);
+};

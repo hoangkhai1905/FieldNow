@@ -98,7 +98,7 @@ describe('Auth Service', () => {
     };
 
     it('should return token and user on valid credentials', async () => {
-      userRepository.findByEmail.mockResolvedValue(mockUser);
+      userRepository.findByEmailOrPhone.mockResolvedValue(mockUser);
 
       const result = await authService.login('user@example.com', 'correctpassword');
 
@@ -121,7 +121,7 @@ describe('Auth Service', () => {
     });
 
     it('should throw UNAUTHORIZED if email not found', async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
+      userRepository.findByEmailOrPhone.mockResolvedValue(null);
 
       await expect(
         authService.login('nonexistent@example.com', 'whatever')
@@ -132,7 +132,7 @@ describe('Auth Service', () => {
     });
 
     it('should throw UNAUTHORIZED if password is wrong', async () => {
-      userRepository.findByEmail.mockResolvedValue(mockUser);
+      userRepository.findByEmailOrPhone.mockResolvedValue(mockUser);
 
       await expect(
         authService.login('user@example.com', 'wrongpassword')

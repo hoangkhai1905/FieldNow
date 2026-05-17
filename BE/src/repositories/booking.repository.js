@@ -143,24 +143,51 @@ const findActiveIntervals = async (fieldId, date, tx = prisma) => {
   });
 };
 
-const findByOwnerFields = async (ownerId) => {
-  return prisma.booking.findMany({
-    where: {
-      field: {
-        owner_id: ownerId,
-      },
+const findByOwnerFields = async (
+  ownerId,
+  { page = 1, limit = 10, skip = 0, status, fieldId, date } = {}
+) => {
+  const where = {
+    field: {
+      owner_id: ownerId,
     },
-    include: {
-      field: {
-        select: { name: true, location: true },
+  };
+
+  if (['PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+    where.status = status;
+  }
+
+  if (fieldId) {
+    where.field_id = fieldId;
+  }
+
+  if (date) {
+    where.date = new Date(date);
+  }
+
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      include: {
+        field: {
+          select: { name: true, location: true },
+        },
+        user: {
+          select: { full_name: true, phone_number: true, email: true },
+        },
+        slot: true,
       },
-      user: {
-        select: { full_name: true, phone_number: true, email: true },
-      },
-      slot: true,
-    },
-    orderBy: { created_at: 'desc' },
-  });
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  return {
+    bookings,
+    pagination: buildPagination({ page, limit, total }),
+  };
 };
 
 module.exports = {

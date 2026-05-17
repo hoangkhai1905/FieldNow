@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, AlertCircle, Loader2, Zap, ArrowRight } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
-import { loginRequest, sendOTPRequest, normalizeUser } from '../../api/endpoints';
+import { sendOTPRequest } from '../../api/endpoints';
 
 const Login = () => {
   const [email, setEmail] = useState('');
