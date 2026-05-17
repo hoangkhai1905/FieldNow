@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, LogIn, AlertCircle, Loader2, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Mail, Lock, AlertCircle, Loader2, Zap, ArrowRight } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { loginRequest, sendOTPRequest, normalizeUser } from '../../api/endpoints';

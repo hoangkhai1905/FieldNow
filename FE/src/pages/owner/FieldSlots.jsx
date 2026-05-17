@@ -4,10 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
   Calendar as CalendarIcon, 
-  Plus, 
   Trash2, 
   Check, 
-  X, 
   AlertCircle,
   ArrowLeft,
   Zap,
@@ -49,7 +47,7 @@ const FieldSlots = () => {
       setField(data);
       // Auto set price based on field pricePerHour
       setQuickSetup(prev => ({ ...prev, price: data.pricePerHour.toString() }));
-    } catch (error) {
+    } catch {
       setToast({ type: 'error', text: 'Không tải được thông tin sân' });
     }
   };
@@ -59,7 +57,7 @@ const FieldSlots = () => {
     try {
       const data = await getOwnerSlotsByField(fieldId, selectedDate);
       setSlots(data);
-    } catch (error) {
+    } catch {
       setToast({ type: 'error', text: 'Không tải được danh sách khung giờ' });
     } finally {
       setLoading(false);
@@ -88,7 +86,7 @@ const FieldSlots = () => {
       await deleteOwnerSlot(slotId);
       setToast({ type: 'success', text: 'Đã xóa khung giờ' });
       loadSlots();
-    } catch (error) {
+    } catch {
       setToast({ type: 'error', text: 'Lỗi khi xóa khung giờ' });
     }
   };

@@ -5,7 +5,6 @@ import {
   Calendar,
   Clock,
   MapPin,
-  CreditCard,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -15,13 +14,6 @@ import {
   Zap
 } from 'lucide-react';
 import { cancelBooking, formatCurrency, getMyBookings, getPaymentStatus, initiatePayment } from '../../api/endpoints';
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-};
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
@@ -59,7 +51,6 @@ const MyBookings = () => {
   const [paymentMap, setPaymentMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [actionError, setActionError] = useState('');
   const [toast, setToast] = useState(null);
   const [pagination, setPagination] = useState(null);
 

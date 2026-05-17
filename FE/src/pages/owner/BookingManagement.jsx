@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Calendar, 
   Clock, 
-  User, 
-  Phone, 
   Mail, 
   Search, 
   Filter, 
@@ -12,10 +10,9 @@ import {
   XCircle, 
   Clock4,
   LayoutList,
-  ChevronRight,
   MoreVertical
 } from 'lucide-react';
-import { getOwnerBookings, formatCurrency } from '../../api/endpoints';
+import { getOwnerBookings } from '../../api/endpoints';
 
 const BookingManagement = () => {
   const [bookings, setBookings] = useState([]);

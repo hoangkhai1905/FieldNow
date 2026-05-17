@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,9 +10,7 @@ import {
   X,
   Zap,
   Save,
-  ChevronRight,
   Info,
-  Trash2,
   Check,
   Loader2,
   LayoutGrid,
@@ -72,7 +70,7 @@ const FieldManagement = () => {
         if (!mounted) return;
         setFields(data.fields);
         setPagination(data.pagination);
-      } catch (requestError) {
+      } catch {
         if (mounted) setToast({ type: 'error', text: 'Không tải được danh sách sân' });
       } finally {
         if (mounted) setLoading(false);

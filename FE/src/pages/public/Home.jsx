@@ -6,7 +6,6 @@ import {
   ChevronRight, 
   Trophy, 
   Zap, 
-  Users, 
   MapPin, 
   Star,
   ArrowUpRight,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   CheckCircle2, 
@@ -12,7 +12,7 @@ import {
   CreditCard,
   Zap
 } from 'lucide-react';
-import { getBookingDetail, getPaymentStatus, formatCurrency } from '../../api/endpoints';
+import { getBookingDetail, getPaymentStatus, formatCurrency, initiatePayment } from '../../api/endpoints';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -77,7 +77,7 @@ const PaymentResult = () => {
         try {
           const p = await getPaymentStatus(bookingId);
           setPayment(p);
-        } catch (e) {}
+        } catch {}
 
         if (b.status === 'CONFIRMED') {
           setStatus('success');

@@ -298,11 +298,6 @@ export const getOwnerField = async (fieldId) => {
 	return normalizeField(data);
 };
 
-export const getOwnerField = async (fieldId) => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.field(fieldId) });
-	return normalizeField(data);
-};
-
 export const createOwnerField = async (payload) => {
 	const data = await apiRequest({ method: 'POST', url: apiPaths.owner.fields, data: payload });
 	return normalizeField(data);

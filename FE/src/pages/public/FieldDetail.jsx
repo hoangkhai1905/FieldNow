@@ -7,13 +7,11 @@ import {
   Calendar,
   ChevronRight,
   Star,
-  ShieldCheck,
   Zap,
   CreditCard,
   Info,
   CheckCircle2,
   AlertCircle,
-  ArrowLeft,
   ChevronLeft
 } from 'lucide-react';
 import { getFieldDetail, createBooking, formatCurrency } from '../../api/endpoints';

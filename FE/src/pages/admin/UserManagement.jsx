@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
-  UserCheck, 
-  ShieldAlert, 
   ShieldCheck, 
   Mail, 
   Phone, 
@@ -26,6 +24,7 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [pagination, setPagination] = useState(null);
   const [userSummary, setUserSummary] = useState({ total: 0, USER: 0, OWNER: 0, ADMIN: 0 });
+  const filteredUsers = users;
 
   const loadUsers = async (page = 1) => {
     setLoading(true);

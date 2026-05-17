@@ -9,8 +9,7 @@ import {
   AlertCircle, 
   Loader2,
   Zap,
-  ShieldCheck,
-  Key
+  ShieldCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { forgotPassword, resetPassword } from '../../api/endpoints';

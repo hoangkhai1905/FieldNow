@@ -5,12 +5,9 @@ import {
   Mail, 
   Phone, 
   Shield, 
-  Hash, 
   Settings, 
-  CreditCard, 
   Heart,
   UserCheck,
-  Bell,
   ChevronRight,
   LogOut,
   Trophy,
@@ -28,7 +25,6 @@ import {
 import useAuth from '../../hooks/useAuth';
 import { 
   getCurrentUser, 
-  formatCurrency, 
   updateProfile, 
   requestChangePassword, 
   changePassword 
