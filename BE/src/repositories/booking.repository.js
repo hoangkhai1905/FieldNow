@@ -143,6 +143,26 @@ const findActiveIntervals = async (fieldId, date, tx = prisma) => {
   });
 };
 
+const findByOwnerFields = async (ownerId) => {
+  return prisma.booking.findMany({
+    where: {
+      field: {
+        owner_id: ownerId,
+      },
+    },
+    include: {
+      field: {
+        select: { name: true, location: true },
+      },
+      user: {
+        select: { full_name: true, phone_number: true, email: true },
+      },
+      slot: true,
+    },
+    orderBy: { created_at: 'desc' },
+  });
+};
+
 module.exports = {
   createBooking,
   findById,
@@ -153,4 +173,5 @@ module.exports = {
   findOverlappingActive,
   findActiveIntervals,
   findUserBookings,
+  findByOwnerFields,
 };

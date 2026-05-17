@@ -11,12 +11,14 @@ import {
   ShieldCheck,
   UserCheck,
   Trophy,
-  Activity
+  Activity,
+  Phone
 } from 'lucide-react';
 import { registerRequest, sendOTPRequest } from '../../api/endpoints';
 
 const Register = () => {
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('USER');
@@ -29,7 +31,7 @@ const Register = () => {
     setError('');
     setLoading(true);
     try {
-      await registerRequest({ email, password, fullName, role });
+      await registerRequest({ email, password, fullName, role, phoneNumber });
       try {
         await sendOTPRequest({ email });
       } catch (err) {
@@ -136,6 +138,18 @@ const Register = () => {
                     style={inputStyle}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
+                 />
+              </div>
+
+              <div style={{ position: 'relative' }}>
+                 <Phone size={20} style={{ position: 'absolute', left: '18px', top: '16px', color: '#64748b' }} />
+                 <input 
+                    type="text" 
+                    placeholder="Số điện thoại liên lạc" 
+                    style={inputStyle}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                  />
               </div>

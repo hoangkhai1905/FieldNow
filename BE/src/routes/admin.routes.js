@@ -1,14 +1,18 @@
 const express = require('express');
 const fieldController = require('../controllers/field.controller');
+const adminController = require('../controllers/admin.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { roleMiddleware } = require('../middlewares/role.middleware');
 
 const router = express.Router();
 
-// All management routes require authentication and OWNER role (Admin and Owner merged)
-router.use(authMiddleware, roleMiddleware(['OWNER', 'ADMIN']));
+// Authenticate all routes in this router
+router.use(authMiddleware);
 
-router.get('/fields', fieldController.getAdminFields);
+/**
+ * Field management routes - strictly restricted to ADMIN role only
+ */
+router.get('/fields', roleMiddleware(['ADMIN']), fieldController.getAdminFields);
 
 /**
  * @swagger
@@ -35,7 +39,7 @@ router.get('/fields', fieldController.getAdminFields);
  *       404:
  *         description: Field not found
  */
-router.patch('/fields/:id/approve', fieldController.approveField);
+router.patch('/fields/:id/approve', roleMiddleware(['ADMIN']), fieldController.approveField);
 
 /**
  * @swagger
@@ -62,8 +66,11 @@ router.patch('/fields/:id/approve', fieldController.approveField);
  *       404:
  *         description: Field not found
  */
-router.patch('/fields/:id/reject', fieldController.rejectField);
-const adminController = require('../controllers/admin.controller');
+router.patch('/fields/:id/reject', roleMiddleware(['ADMIN']), fieldController.rejectField);
+
+/**
+ * User management routes - accessible to both OWNER and ADMIN (merged design)
+ */
 
 /**
  * @swagger
@@ -77,7 +84,7 @@ const adminController = require('../controllers/admin.controller');
  *       200:
  *         description: List of users
  */
-router.get('/users', adminController.getUsers);
+router.get('/users', roleMiddleware(['OWNER', 'ADMIN']), adminController.getUsers);
 
 /**
  * @swagger
@@ -110,6 +117,6 @@ router.get('/users', adminController.getUsers);
  *       200:
  *         description: User role updated
  */
-router.patch('/users/:id/role', adminController.updateUserRole);
+router.patch('/users/:id/role', roleMiddleware(['OWNER', 'ADMIN']), adminController.updateUserRole);
 
 module.exports = router;

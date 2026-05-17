@@ -142,8 +142,8 @@ const Login = () => {
             <div style={inputGroupStyle}>
               <Mail size={18} style={{ position: 'absolute', left: '16px', top: '18px', color: '#64748b' }} />
               <input
-                type="email"
-                placeholder="Email của bạn"
+                type="text"
+                placeholder="Email hoặc số điện thoại"
                 style={inputStyle}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

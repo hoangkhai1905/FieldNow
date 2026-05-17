@@ -21,12 +21,17 @@ const registerSchema = z.object({
       errorMap: () => ({ message: 'Role must be USER or OWNER' }),
     })
     .optional(),
+  phoneNumber: z
+    .string()
+    .min(10, 'Phone number must be at least 10 characters')
+    .max(15, 'Phone number must be at most 15 characters')
+    .optional(),
 });
 
 const loginSchema = z.object({
   email: z
-    .string({ required_error: 'Email is required' })
-    .email('Invalid email format'),
+    .string({ required_error: 'Email or Phone number is required' })
+    .min(1, 'Email or Phone number is required'),
   password: z
     .string({ required_error: 'Password is required' })
     .min(1, 'Password is required'),

@@ -3,8 +3,8 @@ const userRepository = require('../repositories/user.repository');
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, fullName, role } = req.body;
-    const user = await authService.register(email, password, fullName, role);
+    const { email, password, fullName, role, phoneNumber } = req.body;
+    const user = await authService.register(email, password, fullName, role, phoneNumber);
     res.status(201).json({ success: true, data: { message: 'User registered successfully', user } });
   } catch (error) {
     next(error); // Delegates to global error handler

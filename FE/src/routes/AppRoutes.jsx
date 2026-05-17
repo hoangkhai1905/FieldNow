@@ -16,7 +16,6 @@ import OwnerDashboard from '../pages/owner/Dashboard';
 import FieldManagement from '../pages/owner/FieldManagement';
 import BookingManagement from '../pages/owner/BookingManagement';
 import FieldSlots from '../pages/owner/FieldSlots';
-import Approvals from '../pages/admin/Approvals';
 import UserManagement from '../pages/admin/UserManagement';
 
 import VerifyOTP from '../pages/auth/VerifyOTP';
@@ -95,7 +94,6 @@ const AppRoutes = () => {
           <Route path="fields" element={<FieldManagement />} />
           <Route path="fields/:fieldId/slots" element={<FieldSlots />} />
           <Route path="bookings" element={<BookingManagement />} />
-          <Route path="approvals" element={<Approvals />} />
           <Route path="users" element={<UserManagement />} />
         </Route>
 

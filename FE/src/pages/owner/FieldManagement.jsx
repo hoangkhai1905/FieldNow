@@ -129,7 +129,7 @@ const FieldManagement = () => {
         setToast({ type: 'success', text: 'Đã cập nhật sân thành công!' });
       } else {
         await createOwnerField(payload);
-        setToast({ type: 'success', text: 'Đã tạo sân mới, vui lòng chờ phê duyệt.' });
+        setToast({ type: 'success', text: 'Đã tạo sân mới thành công và hoạt động ngay!' });
       }
       await loadFields(editingFieldId ? pagination?.page || 1 : 1);
       resetFieldForm();

@@ -18,7 +18,7 @@ const getUsers = async (req, res, next) => {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
         { full_name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
+        { phone_number: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -30,7 +30,7 @@ const getUsers = async (req, res, next) => {
           email: true,
           full_name: true,
           role: true,
-          phone: true,
+          phone_number: true,
           created_at: true,
         },
         orderBy: { created_at: 'desc' },
