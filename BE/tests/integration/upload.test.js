@@ -17,7 +17,7 @@ jest.mock('../../src/infrastructure/supabase', () => ({
 
 describe('Upload Integration Tests', () => {
   let ownerToken;
-  let ownerId;
+  let _ownerId;
 
   beforeAll(async () => {
     // Cleanup and setup test owner
@@ -29,7 +29,7 @@ describe('Upload Integration Tests', () => {
         role: 'OWNER',
       },
     });
-    ownerId = owner.id;
+    _ownerId = owner.id;
     ownerToken = jwt.sign({ userId: owner.id, role: 'OWNER' }, config.jwtSecret);
   });
 

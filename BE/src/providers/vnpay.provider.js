@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const querystring = require('querystring');
 const config = require('../config');
-const { logger } = require('../infrastructure/logger');
 
 // Sort the object properties alphabetically
 const sortObject = (obj) => {
@@ -9,7 +8,7 @@ const sortObject = (obj) => {
   let str = [];
   let key;
   for (key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       str.push(encodeURIComponent(key));
     }
   }

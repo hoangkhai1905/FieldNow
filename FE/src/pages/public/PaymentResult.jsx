@@ -21,6 +21,35 @@ const formatDate = (dateStr) => {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
+const Confetti = () => {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999, overflow: 'hidden' }}>
+      {Array.from({ length: 70 }).map((_, i) => {
+        const style = {
+          position: 'absolute',
+          width: `${Math.random() * 12 + 6}px`,
+          height: `${Math.random() * 12 + 6}px`,
+          backgroundColor: ['#f43f5e', '#F59E0B', '#10b981', '#3b82f6', '#8b5cf6'][Math.floor(Math.random() * 5)],
+          left: `${Math.random() * 100}%`,
+          top: '-20px',
+          borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+          animation: `fall ${Math.random() * 3 + 2}s linear forwards`,
+          animationDelay: `${Math.random() * 0.5}s`
+        };
+        return <div key={i} style={style} />;
+      })}
+      <style>
+        {`
+          @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
 const PaymentResult = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,7 +60,10 @@ const PaymentResult = () => {
 
   useEffect(() => {
     const params = Object.fromEntries(new URLSearchParams(location.search));
-    const queryStatus = params?.status || 'unknown';
+    const pathStatus = location.pathname.includes('/success') ? 'success' : 
+                       location.pathname.includes('/cancel') ? 'cancel' : 
+                       location.pathname.includes('/error') ? 'error' : null;
+    const queryStatus = pathStatus || params?.status || 'unknown';
     const bookingId = params?.bookingId || params?.order_invoice_number;
 
     let pollInterval = null;
@@ -140,6 +172,8 @@ const PaymentResult = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         style={glassStyle}
       >
+        {status === 'success' && <Confetti />}
+        
         <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'center' }}>
           <motion.div
             initial={{ scale: 0 }}
@@ -201,6 +235,38 @@ const PaymentResult = () => {
             XEM LỊCH ĐẶT CỦA TÔI <ChevronRight size={20} />
           </button>
           
+          {(status === 'error' || status === 'cancel') && (
+            <button
+              onClick={() => {
+                if (booking) {
+                  initiatePayment(booking.id).then(res => {
+                    if (res.formFields) {
+                      const form = document.createElement('form');
+                      form.method = 'POST';
+                      form.action = res.checkoutUrl;
+                      Object.entries(res.formFields).forEach(([key, value]) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = value;
+                        form.appendChild(input);
+                      });
+                      document.body.appendChild(form);
+                      form.submit();
+                    } else if (res.paymentUrl || res.checkoutUrl) {
+                      window.location.href = res.paymentUrl || res.checkoutUrl;
+                    }
+                  }).catch(() => navigate(-1));
+                } else {
+                  navigate(-1);
+                }
+              }}
+              style={{ width: '100%', background: '#f43f5e', color: '#fff', border: 'none', padding: '18px', borderRadius: '16px', fontSize: '16px', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 15px 30px rgba(244, 63, 94, 0.2)', transition: 'all 0.3s' }}
+            >
+              THỬ LẠI <ArrowLeft size={20} />
+            </button>
+          )}
+
           <button
             onClick={() => navigate('/')}
             style={{ width: '100%', background: 'transparent', color: '#a7f3d0', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '18px', borderRadius: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s' }}

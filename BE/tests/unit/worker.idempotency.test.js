@@ -1,7 +1,7 @@
 const { processExpirationJob } = require('../../src/workers/expiration.worker');
 const bookingRepository = require('../../src/repositories/booking.repository');
 const { emailQueue } = require('../../src/infrastructure/queue');
-const prisma = require('../../src/infrastructure/prisma');
+const _prisma = require('../../src/infrastructure/prisma');
 
 jest.mock('../../src/infrastructure/prisma', () => ({
   $transaction: jest.fn((callback) => callback('mocked-tx')),

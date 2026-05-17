@@ -46,8 +46,8 @@ const updateField = async (fieldId, ownerId, data) => {
   return updatedField;
 };
 
-const getOwnerFields = async (ownerId) => {
-  return fieldRepository.findByOwner(ownerId);
+const getOwnerFields = async (ownerId, pagination) => {
+  return fieldRepository.findByOwner(ownerId, pagination);
 };
 
 const getFieldById = async (fieldId) => {
@@ -85,6 +85,15 @@ const getFieldWithSlots = async (fieldId, date) => {
   }
 
   const bookedIntervals = await bookingRepository.findActiveIntervals(fieldId, date);
+
+  console.log('[FieldService] Field detail:', {
+    id: field.id,
+    name: field.name,
+    openTime: field.open_time,
+    closeTime: field.close_time,
+    bookedCount: bookedIntervals.length
+  });
+
   return {
     field: { ...field, bookedIntervals },
     cacheHit,
@@ -92,6 +101,10 @@ const getFieldWithSlots = async (fieldId, date) => {
 };
 
 // --- Admin actions ---
+const getAdminFields = async (filters) => {
+  return fieldRepository.findForAdmin(filters);
+};
+
 const approveField = async (fieldId) => {
   const field = await fieldRepository.findById(fieldId);
   if (!field) {
@@ -128,6 +141,7 @@ module.exports = {
   getFieldById,
   searchFields,
   getFieldWithSlots,
+  getAdminFields,
   approveField,
   rejectField,
   toggleFieldStatus,

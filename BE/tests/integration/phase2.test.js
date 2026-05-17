@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../../src/config');
 
 describe('Phase 2 Integration Tests', () => {
-  let userToken, ownerToken, adminToken;
+  let userToken, ownerToken, _adminToken;
   let ownerId, fieldId;
 
   const ensureUser = async (email, role) => {
@@ -29,11 +29,20 @@ describe('Phase 2 Integration Tests', () => {
 
     ownerToken = jwt.sign({ userId: owner.id, role: owner.role, email: owner.email }, config.jwtSecret, { expiresIn: '1h' });
     userToken = jwt.sign({ userId: user.id, role: user.role, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
-    adminToken = jwt.sign({ userId: admin.id, role: admin.role, email: admin.email }, config.jwtSecret, { expiresIn: '1h' });
+    _adminToken = jwt.sign({ userId: admin.id, role: admin.role, email: admin.email }, config.jwtSecret, { expiresIn: '1h' });
 
     const field = await prisma.field.findFirst({ where: { owner_id: ownerId } });
     if (field) {
       fieldId = field.id;
+      await prisma.field.update({
+        where: { id: fieldId },
+        data: {
+          name: 'Seed Field',
+          location: 'Ho Chi Minh',
+          price_per_hour: 100000,
+          is_active: true,
+        },
+      });
     } else {
       const createdField = await prisma.field.create({
         data: {
@@ -75,8 +84,15 @@ describe('Phase 2 Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(Array.isArray(res.body.data.fields)).toBe(true);
-      expect(res.body.data.pagination).toBeDefined();
+      expect(res.body.data).toEqual(expect.objectContaining({
+        fields: expect.any(Array),
+        pagination: expect.objectContaining({
+          page: expect.any(Number),
+          limit: expect.any(Number),
+          total: expect.any(Number),
+          totalPages: expect.any(Number),
+        }),
+      }));
     });
 
     it('should filter by location', async () => {
@@ -84,6 +100,24 @@ describe('Phase 2 Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it('should return public field detail response shape with cache header', async () => {
+      const res = await request(app).get(`/api/v1/fields/${fieldId}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['x-cache']).toMatch(/^(HIT|MISS)$/);
+      expect(res.body).toEqual({
+        success: true,
+        data: expect.objectContaining({
+          id: fieldId,
+          name: expect.any(String),
+          location: expect.any(String),
+          price_per_hour: expect.anything(),
+          slots: expect.any(Array),
+          bookedIntervals: expect.any(Array),
+        }),
+      });
     });
   });
 });

@@ -43,7 +43,7 @@ describe('OTP Integration Tests', () => {
         await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
       }
       await prisma.user.delete({ where: { email: testUser.email } });
-    } catch (err) {
+    } catch (_err) {
       // User might not exist if test failed during registration
     }
     await prisma.$disconnect();
@@ -56,6 +56,8 @@ describe('OTP Integration Tests', () => {
         .post('/api/v1/auth/register')
         .send(testUser)
         .expect(201);
+
+      await allowResend(testUser.email);
 
       // Send OTP
       const res = await request(app)
@@ -157,6 +159,8 @@ describe('OTP Integration Tests', () => {
         .send({ ...testUser, email: newEmail })
         .expect(201);
 
+      await allowResend(newEmail);
+
       // Send OTP
       await request(app)
         .post('/api/v1/otp/send')
@@ -204,6 +208,8 @@ describe('OTP Integration Tests', () => {
         .send({ ...testUser, email: newEmail })
         .expect(201);
 
+      await allowResend(newEmail);
+
       // Send OTP
       await request(app)
         .post('/api/v1/otp/send')
@@ -241,6 +247,8 @@ describe('OTP Integration Tests', () => {
         .send({ ...testUser, email: newEmail })
         .expect(201);
 
+      await allowResend(newEmail);
+
       // Send initial OTP
       await request(app)
         .post('/api/v1/otp/send')
@@ -268,6 +276,8 @@ describe('OTP Integration Tests', () => {
         .post('/api/v1/auth/register')
         .send({ ...testUser, email: verifiedEmail })
         .expect(201);
+
+      await allowResend(verifiedEmail);
 
       await request(app)
         .post('/api/v1/otp/send')
@@ -379,6 +389,7 @@ describe('OTP Integration Tests', () => {
         .expect(401);
 
       // Step 3: Send OTP
+      await allowResend(flowEmail);
       const sendOtpRes = await request(app)
         .post('/api/v1/otp/send')
         .send({ email: flowEmail })

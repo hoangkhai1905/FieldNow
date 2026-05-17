@@ -23,6 +23,18 @@ const formatDate = (dateStr) => {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleString('vi-VN', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
 const redirectToSePay = (checkoutUrl, formFields) => {
   const form = document.createElement('form');
   form.method = 'POST';
@@ -49,16 +61,18 @@ const MyBookings = () => {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [toast, setToast] = useState(null);
+  const [pagination, setPagination] = useState(null);
 
-  const loadBookings = async () => {
+  const loadBookings = async (page = 1) => {
     setLoading(true);
     setError('');
     try {
-      const data = await getMyBookings();
-      setBookings(data);
+      const data = await getMyBookings({ page, limit: 6 });
+      setBookings(data.bookings);
+      setPagination(data.pagination);
 
       const paymentResults = await Promise.all(
-        data.map(async (booking) => {
+        data.bookings.map(async (booking) => {
           try {
             const payment = await getPaymentStatus(booking.id);
             return [booking.id, payment];
@@ -94,7 +108,7 @@ const MyBookings = () => {
     try {
       await cancelBooking(bookingId);
       setToast({ type: 'success', text: 'Đã hủy lịch đặt sân' });
-      await loadBookings();
+      await loadBookings(pagination?.page || 1);
     } catch (requestError) {
       setToast({ type: 'error', text: requestError.message || 'Lỗi khi hủy lịch' });
     }
@@ -151,6 +165,7 @@ const MyBookings = () => {
             {[1, 2, 3].map(i => <div key={i} style={{ ...glassStyle, height: '300px', animation: 'pulse 2s infinite' }}></div>)}
           </div>
         ) : bookings.length ? (
+          <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '32px' }}>
             <AnimatePresence>
               {bookings.map((booking, idx) => {
@@ -177,10 +192,15 @@ const MyBookings = () => {
                         <MapPin size={32} color="#F59E0B" />
                       </div>
                       <div>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900' }}>{booking.slot?.field?.name || 'Sân bóng'}</h3>
-                        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <MapPin size={14} /> {booking.slot?.field?.location || 'Vị trí chưa cập nhật'}
-                        </p>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900' }}>{booking.slot?.field?.name || booking.field?.name || 'Sân bóng'}</h3>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                          <p style={{ margin: 0, fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <MapPin size={12} /> {booking.slot?.field?.location || booking.field?.location || 'Vị trí chưa cập nhật'}
+                          </p>
+                          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(245, 158, 11, 0.6)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Zap size={12} /> Đặt lúc: {formatDateTime(booking.created_at || booking.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -195,7 +215,7 @@ const MyBookings = () => {
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Khung giờ</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
                           <Clock size={16} color="#10b981" /> 
-                          {booking.startTime?.slice(0, 5) || '--:--'} - {booking.endTime?.slice(0, 5) || '--:--'}
+                          {(booking.startTime || booking.slot?.startTime)?.includes('T') ? (booking.startTime || booking.slot.startTime).split('T')[1].slice(0, 5) : (booking.startTime || booking.slot?.startTime)?.slice(0, 5)} - {(booking.endTime || booking.slot?.endTime)?.includes('T') ? (booking.endTime || booking.slot.endTime).split('T')[1].slice(0, 5) : (booking.endTime || booking.slot?.endTime)?.slice(0, 5)}
                         </div>
                       </div>
                     </div>
@@ -203,7 +223,7 @@ const MyBookings = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Tổng chi phí</p>
-                        <p style={{ margin: 0, fontSize: '24px', fontWeight: '950', color: '#F59E0B' }}>{formatCurrency(booking.slot?.priceOverride || booking.slot?.field?.pricePerHour || 0)}</p>
+                        <p style={{ margin: 0, fontSize: '24px', fontWeight: '950', color: '#F59E0B' }}>{formatCurrency(booking.totalPrice || 0)}</p>
                       </div>
 
                       {payment && (
@@ -245,6 +265,29 @@ const MyBookings = () => {
               })}
             </AnimatePresence>
           </div>
+        {pagination && pagination.totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '32px' }}>
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => loadBookings(page)}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: page === (pagination.currentPage || pagination.page) ? '#F59E0B' : 'rgba(255,255,255,0.05)',
+                  color: page === (pagination.currentPage || pagination.page) ? '#000' : '#fff',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+          </>
         ) : (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>

@@ -15,20 +15,30 @@ import {
   Clock,
   ArrowUpRight
 } from 'lucide-react';
-import { approveField, formatCurrency, rejectField, searchFields } from '../../api/endpoints';
+import { approveField, formatCurrency, getAdminFields, rejectField } from '../../api/endpoints';
 
 const Approvals = () => {
   const [fieldId, setFieldId] = useState('');
   const [referenceFields, setReferenceFields] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+
+  const loadReferenceFields = async (page = 1) => {
+    const result = await getAdminFields({ status: 'pending', page, limit: 10 });
+    setReferenceFields(result.fields);
+    setPagination(result.pagination);
+  };
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const result = await searchFields({ page: 1, limit: 10 });
-        if (mounted) setReferenceFields(result.fields);
+        const result = await getAdminFields({ status: 'pending', page: 1, limit: 10 });
+        if (mounted) {
+          setReferenceFields(result.fields);
+          setPagination(result.pagination);
+        }
       } catch {
         if (mounted) setReferenceFields([]);
       }
@@ -43,7 +53,7 @@ const Approvals = () => {
     try {
       await actionFn(id.trim());
       setToast({ type: 'success', text: `Đã ${actionName} sân thành công!` });
-      // Reload list if needed
+      await loadReferenceFields(pagination?.page || 1);
     } catch (error) {
       setToast({ type: 'error', text: error.message || 'Lỗi xử lý yêu cầu' });
     } finally {
@@ -127,7 +137,7 @@ const Approvals = () => {
              <section>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '900' }}>DANH SÁCH THAM CHIẾU</h3>
-                  <span style={{ fontSize: '13px', color: '#64748b' }}>Hiển thị các sân đang hoạt động</span>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>Hiển thị các sân chờ duyệt</span>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
@@ -158,6 +168,28 @@ const Approvals = () => {
                      </motion.div>
                    ))}
                 </div>
+                {pagination && pagination.totalPages > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '24px' }}>
+                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => loadReferenceFields(page)}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          background: page === (pagination.currentPage || pagination.page) ? '#F59E0B' : 'rgba(255,255,255,0.05)',
+                          color: page === (pagination.currentPage || pagination.page) ? '#000' : '#fff',
+                          fontWeight: '900',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                )}
              </section>
           </div>
 

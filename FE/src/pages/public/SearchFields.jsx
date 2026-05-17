@@ -43,7 +43,7 @@ const SearchFields = () => {
       const result = await searchFields({
         page,
         limit: 12,
-        name: searchQuery,
+        location: searchQuery,
         type: typeFilter
       });
       setFields(result.fields);
@@ -58,7 +58,7 @@ const SearchFields = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       loadFields();
-    }, 400);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, typeFilter]);
 
@@ -281,8 +281,8 @@ const SearchFields = () => {
                     height: '40px',
                     borderRadius: '10px',
                     border: '1px solid rgba(255,255,255,0.1)',
-                    background: p === pagination.currentPage ? '#F59E0B' : 'rgba(255,255,255,0.05)',
-                    color: p === pagination.currentPage ? '#000' : '#fff',
+                    background: p === (pagination.currentPage || pagination.page) ? '#F59E0B' : 'rgba(255,255,255,0.05)',
+                    color: p === (pagination.currentPage || pagination.page) ? '#000' : '#fff',
                     fontWeight: '900',
                     cursor: 'pointer'
                   }}

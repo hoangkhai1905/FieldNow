@@ -34,6 +34,17 @@ const findByFieldAndDate = async (fieldId, date) => {
   });
 };
 
+const findExact = async (fieldId, date, startTime, endTime, tx = prisma) => {
+  return tx.fieldSlot.findFirst({
+    where: {
+      field_id: fieldId,
+      date: new Date(date),
+      start_time: startTime,
+      end_time: endTime,
+    },
+  });
+};
+
 const findByFieldDateRange = async (fieldId, startDate, endDate) => {
   return prisma.fieldSlot.findMany({
     where: {
@@ -54,5 +65,6 @@ module.exports = {
   update,
   deleteById,
   findByFieldAndDate,
+  findExact,
   findByFieldDateRange,
 };

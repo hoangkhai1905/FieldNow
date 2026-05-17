@@ -1,21 +1,69 @@
 const prisma = require('../infrastructure/prisma');
 const { errors } = require('../utils/errors');
 const { logger } = require('../infrastructure/logger');
+const { buildPagination, parsePagination } = require('../utils/pagination');
 
 const getUsers = async (req, res, next) => {
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        full_name: true,
-        role: true,
-        phone_number: true,
-        created_at: true,
+    const { page, limit, skip } = parsePagination(req.query, { limit: 10, maxLimit: 100 });
+    const { search, role } = req.query;
+    const roleFilter = ['USER', 'OWNER', 'ADMIN'].includes(role) ? role : undefined;
+    const where = {};
+
+    if (roleFilter) {
+      where.role = roleFilter;
+    }
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { full_name: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [users, total, roleCounts] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          full_name: true,
+          role: true,
+          phone: true,
+          created_at: true,
+        },
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+      prisma.user.groupBy({
+        by: ['role'],
+        where,
+        _count: { role: true },
+      }),
+    ]);
+
+    const summary = roleCounts.reduce(
+      (acc, item) => {
+        acc[item.role] = item._count.role;
+        return acc;
       },
-      orderBy: { created_at: 'desc' },
+      { USER: 0, OWNER: 0, ADMIN: 0 }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        users,
+        pagination: buildPagination({ page, limit, total }),
+        summary: {
+          ...summary,
+          total,
+        },
+      },
     });
-    res.status(200).json({ success: true, data: users });
   } catch (error) {
     next(error);
   }

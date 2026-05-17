@@ -47,6 +47,7 @@ export const apiPaths = {
 		stats: '/owner/stats',
 	},
 	admin: {
+		fields: '/admin/fields',
 		approveField: (fieldId) => `/admin/fields/${fieldId}/approve`,
 		rejectField: (fieldId) => `/admin/fields/${fieldId}/reject`,
 		users: '/admin/users',
@@ -68,6 +69,12 @@ const formatDateValue = (value) => {
 	return date.slice(0, 10);
 };
 
+const formatTimeValue = (value) => {
+	if (!value) return '';
+	const time = typeof value === 'string' ? value : new Date(value).toISOString();
+	return time.includes('T') ? time.split('T')[1].slice(0, 5) : time.slice(0, 5);
+};
+
 export const formatCurrency = (value) => `${new Intl.NumberFormat('vi-VN').format(toNumber(value))}đ`;
 
 export const normalizeFieldBrief = (field) => ({
@@ -75,6 +82,7 @@ export const normalizeFieldBrief = (field) => ({
 	name: field.name,
 	location: field.location,
 	pricePerHour: toNumber(field.price_per_hour ?? field.pricePerHour),
+	type: field.type ?? 'FUTSAL',
 	isActive: field.is_active ?? field.isActive ?? false,
 	images: Array.isArray(field.images) ? field.images : [],
 	image: Array.isArray(field.images) && field.images.length ? field.images[0] : fallbackFieldImage,
@@ -96,48 +104,37 @@ export const normalizeField = (field) => ({
 	...normalizeFieldBrief(field),
 	ownerId: field.owner_id ?? field.ownerId ?? null,
 	description: field.description ?? '',
+	openTime: formatTimeValue(field.open_time ?? field.openTime),
+	closeTime: formatTimeValue(field.close_time ?? field.closeTime),
+	open_time: formatTimeValue(field.open_time ?? field.openTime),
+	close_time: formatTimeValue(field.close_time ?? field.closeTime),
 	createdAt: field.created_at ?? field.createdAt ?? null,
 	updatedAt: field.updated_at ?? field.updatedAt ?? null,
 	slots: Array.isArray(field.slots) ? field.slots.map(normalizeSlot) : [],
+	bookedIntervals: field.bookedIntervals ?? [],
 });
 
-const formatTimeValue = (value) => {
-	if (!value) return '';
-	// If it's a simple HH:mm or HH:mm:ss string (not an ISO date)
-	if (typeof value === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(value)) return value;
-	try {
-		const date = new Date(value);
-		if (isNaN(date.getTime())) return '';
-		return date.toLocaleTimeString('vi-VN', { 
-			hour: '2-digit', 
-			minute: '2-digit', 
-			hour12: false,
-			timeZone: 'UTC' // Essential for the 1970 UTC dates from BE
-		});
-	} catch {
-		return '';
-	}
-};
-
-export const normalizeBooking = (booking) => {
-	const slot = booking.slot ? normalizeSlot(booking.slot) : null;
-	return {
-		id: booking.id,
-		userId: booking.user_id ?? booking.userId ?? null,
-		slotId: booking.slot_id ?? booking.slotId ?? null,
-		status: booking.status,
-		createdAt: booking.created_at ?? booking.createdAt ?? null,
-		updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
-		expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
-		// Flattened fields for UI convenience, prioritizing booking fields
-		startTime: formatTimeValue(booking.start_time ?? booking.startTime ?? slot?.startTime),
-		endTime: formatTimeValue(booking.end_time ?? booking.endTime ?? slot?.endTime),
-		date: formatDateValue(booking.date ?? booking.date ?? slot?.date),
-		field: slot?.field || (booking.field ? normalizeFieldBrief(booking.field) : null),
-		user: booking.user ? normalizeUser(booking.user) : null,
-		slot,
-	};
-};
+export const normalizeBooking = (booking) => ({
+	id: booking.id,
+	userId: booking.user_id ?? booking.userId ?? null,
+	fieldId: booking.field_id ?? booking.fieldId ?? null,
+	slotId: booking.slot_id ?? booking.slotId ?? null,
+	date: formatDateValue(booking.date ?? booking.slot?.date),
+	startTime: formatTimeValue(booking.start_time ?? booking.startTime ?? booking.slot?.start_time ?? booking.slot?.startTime),
+	endTime: formatTimeValue(booking.end_time ?? booking.endTime ?? booking.slot?.end_time ?? booking.slot?.endTime),
+	status: booking.status,
+	totalPrice: toNumber(booking.total_price ?? booking.totalPrice),
+	createdAt: booking.created_at ?? booking.createdAt ?? null,
+	updatedAt: booking.updated_at ?? booking.updatedAt ?? null,
+	expiresAt: booking.expires_at ?? booking.expiresAt ?? null,
+	field: booking.field ? normalizeFieldBrief(booking.field) : null,
+	slot: booking.slot
+		? {
+				...normalizeSlot(booking.slot),
+				field: booking.slot.field ? normalizeFieldBrief(booking.slot.field) : null,
+			}
+		: null,
+});
 
 export const normalizePayment = (payment) => ({
 	id: payment.id,
@@ -210,9 +207,13 @@ export const createBooking = async (payload) => {
 	return normalizeBooking(data);
 };
 
-export const getMyBookings = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.bookings.me });
-	return (Array.isArray(data) ? data : []).map(normalizeBooking);
+export const getMyBookings = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.bookings.me, params });
+	const rawBookings = Array.isArray(data) ? data : data.bookings ?? [];
+	return {
+		bookings: rawBookings.map(normalizeBooking),
+		pagination: data.pagination ?? null,
+	};
 };
 
 export const getBookingDetail = async (bookingId) => {
@@ -233,16 +234,26 @@ export const forgotPassword = async (data) => {
 	return await apiRequest({ method: 'POST', url: apiPaths.password.forgot, data });
 };
 
-export const resetPassword = async (data) => {
-	return await apiRequest({ method: 'POST', url: apiPaths.password.reset, data });
+export const resetPassword = async (payload) => {
+	const { email, otp, newPassword } = payload;
+	return await apiRequest({ 
+		method: 'POST', 
+		url: apiPaths.password.reset, 
+		data: { email, otp_code: otp, new_password: newPassword } 
+	});
 };
 
 export const requestChangePassword = async () => {
 	return await apiRequest({ method: 'POST', url: apiPaths.password.changeRequest });
 };
 
-export const changePassword = async (data) => {
-	return await apiRequest({ method: 'POST', url: apiPaths.password.change, data });
+export const changePassword = async (payload) => {
+	const { otp, newPassword } = payload;
+	return await apiRequest({ 
+		method: 'POST', 
+		url: apiPaths.password.change, 
+		data: { otp_code: otp, new_password: newPassword } 
+	});
 };
 
 export const cancelBooking = async (bookingId) => {
@@ -250,11 +261,12 @@ export const cancelBooking = async (bookingId) => {
 	return data;
 };
 
-export const initiatePayment = async (bookingId) => {
+export const initiatePayment = async (bookingId, provider = 'sepay') => {
+	console.log('[API] initiatePayment called with:', { bookingId, provider });
 	const data = await apiRequest({
 		method: 'POST',
 		url: apiPaths.payments.initiate,
-		data: { bookingId },
+		data: { bookingId, provider },
 	});
 
 	return data;
@@ -271,9 +283,19 @@ export const verifyVnPayReturn = async (queryParams) => {
 	return data;
 };
 
-export const getOwnerFields = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.fields });
-	return (Array.isArray(data) ? data : []).map(normalizeField);
+export const getOwnerFields = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.fields, params });
+	const rawFields = Array.isArray(data) ? data : data.fields ?? [];
+	return {
+		fields: rawFields.map(normalizeField),
+		pagination: data.pagination ?? null,
+		summary: data.summary ?? null,
+	};
+};
+
+export const getOwnerField = async (fieldId) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.field(fieldId) });
+	return normalizeField(data);
 };
 
 export const getOwnerField = async (fieldId) => {
@@ -345,9 +367,23 @@ export const approveField = async (fieldId) => apiRequest({ method: 'PATCH', url
 
 export const rejectField = async (fieldId) => apiRequest({ method: 'PATCH', url: apiPaths.admin.rejectField(fieldId) });
 
-export const getAdminUsers = async () => {
-	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.users });
-	return (Array.isArray(data) ? data : []).map(normalizeUser);
+export const getAdminFields = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.fields, params });
+	const rawFields = Array.isArray(data) ? data : data.fields ?? [];
+	return {
+		fields: rawFields.map(normalizeField),
+		pagination: data.pagination ?? null,
+	};
+};
+
+export const getAdminUsers = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.users, params });
+	const rawUsers = Array.isArray(data) ? data : data.users ?? [];
+	return {
+		users: rawUsers.map(normalizeUser),
+		pagination: data.pagination ?? null,
+		summary: data.summary ?? null,
+	};
 };
 
 export const updateUserRole = async (userId, role) =>

@@ -1,0 +1,82 @@
+npm run test:load
+
+> fieldnow-backend@1.0.0 test:load
+> k6 run tests/load/fieldnow-smoke.k6.js
+
+
+         /\      Grafana   /‾‾/
+    /\  /  \     |\  __   /  /
+   /  \/    \    | |/ /  /   ‾‾\
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/
+
+
+     execution: local
+        script: tests/load/fieldnow-smoke.k6.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 2 max VUs, 1m30s max duration (incl. graceful stop):
+              * smoke: 2 looping VUs for 1m0s (gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS
+
+    checks
+    ✓ 'rate>0.98' rate=100.00%
+
+    field_search_rate_limited
+    ✓ 'count<1' count=0
+
+    http_req_duration
+    ✓ 'p(95)<800' p(95)=482.19ms
+    ✓ 'p(99)<1500' p(99)=878.43ms
+
+    http_req_failed
+    ✓ 'rate<0.02' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 142     2.190848/s
+    checks_succeeded...: 100.00% 142 out of 142
+    checks_failed......: 0.00%   0 out of 142
+
+    ✓ login returns 200
+    ✓ login returns token
+    ✓ field search returns 200
+    ✓ field search returns list
+    ✓ field search has pagination
+    ✓ field type filter matches when used
+    ✓ field detail returns 200
+    ✓ field detail has id
+    ✓ me returns 200
+    ✓ me returns user claims
+    ✓ my bookings returns 200
+    ✓ my bookings has pagination
+
+    CUSTOM
+    field_search_rate_limited......: 0       0/s
+    usable_field_detail............: 100.00% 14 out of 14
+
+    HTTP
+    http_req_duration..............: avg=274.44ms min=2.12ms med=298.92ms max=1.15s p(90)=428.19ms p(95)=482.19ms
+      { expected_response:true }...: avg=274.44ms min=2.12ms med=298.92ms max=1.15s p(90)=428.19ms p(95)=482.19ms
+    http_req_failed................: 0.00%   0 out of 58
+    http_reqs......................: 58      0.894853/s
+
+    EXECUTION
+    iteration_duration.............: avg=9.02s    min=8.81s  med=9.01s    max=9.21s p(90)=9.2s     p(95)=9.2s
+    iterations.....................: 14      0.215999/s
+    vus............................: 2       min=0        max=2
+    vus_max........................: 2       min=2        max=2
+
+    NETWORK
+    data_received..................: 213 kB  3.3 kB/s
+    data_sent......................: 15 kB   225 B/s
+
+
+
+
+running (1m04.8s), 0/2 VUs, 14 complete and 0 interrupted iterations
+smoke ✓ [======================================] 2 VUs  1m0s

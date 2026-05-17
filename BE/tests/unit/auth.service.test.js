@@ -142,4 +142,81 @@ describe('Auth Service', () => {
       });
     });
   });
+
+  describe('refreshToken', () => {
+    const storedToken = {
+      id: 'refresh-1',
+      user_id: 'uuid-456',
+      token_hash: 'hash',
+      revoked_at: null,
+      expires_at: new Date(Date.now() + 60000),
+    };
+
+    const activeUser = {
+      id: 'uuid-456',
+      email: 'user@example.com',
+      role: 'USER',
+      is_active: true,
+    };
+
+    beforeEach(() => {
+      refreshTokenRepository.findByHash.mockResolvedValue(storedToken);
+      refreshTokenRepository.revokeById.mockResolvedValue({});
+      refreshTokenRepository.touchLastUsed.mockResolvedValue({});
+      refreshTokenRepository.create.mockResolvedValue({});
+      refreshTokenRepository.deleteOldestTokens.mockResolvedValue({});
+      userRepository.findById.mockResolvedValue(activeUser);
+    });
+
+    it('rotates refresh tokens and revokes the old token', async () => {
+      const result = await authService.refreshToken('old-refresh-token');
+
+      expect(result).toHaveProperty('token');
+      expect(result).toHaveProperty('refreshToken');
+      expect(refreshTokenRepository.revokeById).toHaveBeenCalledWith(storedToken.id);
+      expect(refreshTokenRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ user_id: activeUser.id })
+      );
+    });
+
+    it('rejects reuse of a revoked refresh token', async () => {
+      refreshTokenRepository.findByHash.mockResolvedValue({
+        ...storedToken,
+        revoked_at: new Date(),
+      });
+
+      await expect(authService.refreshToken('old-refresh-token')).rejects.toMatchObject({
+        code: 'UNAUTHORIZED',
+        statusCode: 401,
+      });
+      expect(refreshTokenRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects refresh for a deactivated user', async () => {
+      userRepository.findById.mockResolvedValue({
+        ...activeUser,
+        is_active: false,
+      });
+
+      await expect(authService.refreshToken('old-refresh-token')).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+        statusCode: 403,
+      });
+    });
+  });
+
+  describe('logout', () => {
+    it('revokes an active refresh token', async () => {
+      refreshTokenRepository.findByHash.mockResolvedValue({
+        id: 'refresh-1',
+        revoked_at: null,
+      });
+      refreshTokenRepository.revokeById.mockResolvedValue({});
+
+      const result = await authService.logout('refresh-token');
+
+      expect(result).toEqual({ success: true });
+      expect(refreshTokenRepository.revokeById).toHaveBeenCalledWith('refresh-1');
+    });
+  });
 });

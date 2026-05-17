@@ -8,6 +8,8 @@ const router = express.Router();
 // All management routes require authentication and OWNER role (Admin and Owner merged)
 router.use(authMiddleware, roleMiddleware(['OWNER', 'ADMIN']));
 
+router.get('/fields', fieldController.getAdminFields);
+
 /**
  * @swagger
  * /admin/fields/{id}/approve:

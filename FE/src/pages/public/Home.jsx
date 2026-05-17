@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   ChevronRight, 
@@ -18,8 +18,49 @@ import useAuth from '../../hooks/useAuth';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [featuredFields, setFeaturedFields] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    
+    setIsSearching(true);
+    setShowDropdown(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await searchFields({ limit: 5, location: searchQuery });
+        setSearchResults(result.fields);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const load = async () => {
@@ -93,13 +134,120 @@ const Home = () => {
             <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: '950', lineHeight: 0.9, letterSpacing: '-3px', marginBottom: '32px', textTransform: 'uppercase', textShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
               Nâng tầm <br /><span style={{ color: '#F59E0B' }}>trải nghiệm</span> <br />đặt sân cỏ.
             </h1>
-            <p style={{ fontSize: '20px', color: '#d1fae5', lineHeight: 1.6, maxWidth: '540px', marginBottom: '48px', fontWeight: '500', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+            <p style={{ fontSize: '20px', color: '#d1fae5', lineHeight: 1.6, maxWidth: '540px', marginBottom: '32px', fontWeight: '500', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
               Hệ thống quản lý và đặt sân bóng đá hiện đại nhất. <br />Tìm sân nhanh, chốt lịch dễ dàng, thanh toán an toàn.
             </p>
+
+            {/* Live Search Bar */}
+            <div ref={dropdownRef} style={{ position: 'relative', maxWidth: '540px', marginBottom: '32px', zIndex: 50 }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={22} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <input
+                  type="text"
+                  placeholder="Tìm sân bóng, khu vực..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '20px',
+                    padding: '22px 22px 22px 56px',
+                    color: '#fff',
+                    fontSize: '16px',
+                    outline: 'none',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                />
+                <button
+                  onClick={() => navigate(`/tim-san?location=${searchQuery}`)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '10px',
+                    bottom: '10px',
+                    background: '#F59E0B',
+                    border: 'none',
+                    borderRadius: '14px',
+                    padding: '0 24px',
+                    color: '#000',
+                    fontWeight: '900',
+                    cursor: 'pointer'
+                  }}
+                >
+                  TÌM
+                </button>
+              </div>
+
+              {/* Dropdown */}
+              <AnimatePresence>
+                {showDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      marginTop: '12px',
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '20px',
+                      overflow: 'hidden',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                      maxHeight: '400px',
+                      overflowY: 'auto'
+                    }}
+                  >
+                    {isSearching ? (
+                      <div style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>Đang tìm kiếm...</div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map(field => (
+                        <Link
+                          key={field.id}
+                          to={`/san/${field.id}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            padding: '16px 20px',
+                            textDecoration: 'none',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <img src={field.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80'} alt={field.name} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} />
+                          <div>
+                            <h4 style={{ margin: '0 0 4px 0', color: '#fff', fontSize: '16px', fontWeight: '800' }}>{field.name}</h4>
+                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <MapPin size={12} color="#F59E0B" /> {field.location}
+                            </p>
+                          </div>
+                          <div style={{ marginLeft: 'auto', color: '#F59E0B', fontWeight: '900' }}>
+                            {formatCurrency(field.pricePerHour)}<span style={{ fontSize: '12px', color: '#64748b', fontWeight: 'normal' }}>/h</span>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>Không tìm thấy sân nào phù hợp.</div>
+                    )}
+                    {searchResults.length > 0 && (
+                      <Link to={`/tim-san?location=${searchQuery}`} style={{ display: 'block', padding: '16px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', color: '#F59E0B', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+                        Xem tất cả kết quả <ChevronRight size={14} style={{ verticalAlign: 'middle' }} />
+                      </Link>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <div style={{ display: 'flex', gap: '20px' }}>
-              <Link to="/tim-san" style={{ background: '#F59E0B', color: '#000', padding: '22px 48px', borderRadius: '20px', fontWeight: '950', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', fontSize: '15px' }}>
-                BẮT ĐẦU TÌM SÂN <ChevronRight size={22} strokeWidth={3} />
-              </Link>
               {!isAuthenticated ? (
                 <Link to="/register" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '22px 48px', borderRadius: '20px', fontWeight: '900', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)', fontSize: '15px', backdropFilter: 'blur(10px)' }}>
                   TẠO TÀI KHOẢN

@@ -13,7 +13,7 @@ import {
   Trophy,
   Activity
 } from 'lucide-react';
-import { registerRequest } from '../../api/endpoints';
+import { registerRequest, sendOTPRequest } from '../../api/endpoints';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -30,6 +30,11 @@ const Register = () => {
     setLoading(true);
     try {
       await registerRequest({ email, password, fullName, role });
+      try {
+        await sendOTPRequest({ email });
+      } catch (err) {
+        console.error('Không thể tự động gửi OTP:', err);
+      }
       navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (error) {
       setError(error.message || 'Đăng ký thất bại');

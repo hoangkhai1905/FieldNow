@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [fields, setFields] = useState([]);
   const [stats, setStats] = useState({ totalFields: 0, activeFields: 0, totalConfirmedBookings: 0, totalRevenue: 0 });
   const [recentBookings, setRecentBookings] = useState([]);
+  const [summary, setSummary] = useState({ total: 0, active: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,6 +41,9 @@ const Dashboard = () => {
     load();
     return () => { mounted = false; };
   }, []);
+
+  const activeFields = summary.active;
+  const pendingFields = summary.pending;
 
   const glassStyle = {
     background: 'rgba(255, 255, 255, 0.05)',

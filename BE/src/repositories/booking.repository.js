@@ -1,4 +1,5 @@
 const prisma = require('../infrastructure/prisma');
+const { buildPagination } = require('../utils/pagination');
 
 /**
  * Booking repository — encapsulates all Prisma queries for the Booking model.
@@ -11,6 +12,7 @@ const createBooking = async ({
   date,
   startTime,
   endTime,
+  totalPrice = 0,
   expiresAt,
 }, tx = prisma) => {
   // Using an optional transaction object (tx) allows this to run inside a managed transaction
@@ -23,6 +25,7 @@ const createBooking = async ({
       start_time: startTime,
       end_time: endTime,
       status: 'PENDING',
+      total_price: totalPrice,
       expires_at: expiresAt,
     },
     include: {
@@ -39,6 +42,7 @@ const findById = async (bookingId, tx = prisma) => {
       field: true,
       slot: true,
       user: true,
+      payments: true,
     },
   });
 };
@@ -75,17 +79,44 @@ const checkActiveBookingsForSlot = async (slotId, tx = prisma) => {
   });
 };
 
-const findUserBookings = async (userId) => {
-  return prisma.booking.findMany({
-    where: { user_id: userId },
-    include: {
-      field: {
-        select: { name: true, location: true },
-      },
-      slot: true,
+const findOverlappingActive = async (fieldId, date, startTime, endTime, tx = prisma) => {
+  return tx.booking.findFirst({
+    where: {
+      field_id: fieldId,
+      date: new Date(date),
+      status: { in: ['PENDING', 'CONFIRMED'] },
+      start_time: { lt: endTime },
+      end_time: { gt: startTime },
     },
-    orderBy: { created_at: 'desc' },
   });
+};
+
+const findUserBookings = async (userId, { page = 1, limit = 6, skip = 0, status } = {}) => {
+  const where = { user_id: userId };
+  if (['PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+    where.status = status;
+  }
+
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      include: {
+        field: {
+          select: { name: true, location: true },
+        },
+        slot: true,
+      },
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  return {
+    bookings,
+    pagination: buildPagination({ page, limit, total }),
+  };
 };
 
 const findActiveIntervals = async (fieldId, date, tx = prisma) => {
@@ -112,26 +143,6 @@ const findActiveIntervals = async (fieldId, date, tx = prisma) => {
   });
 };
 
-const findByOwnerFields = async (ownerId) => {
-  return prisma.booking.findMany({
-    where: {
-      field: {
-        owner_id: ownerId,
-      },
-    },
-    include: {
-      field: {
-        select: { name: true, location: true },
-      },
-      user: {
-        select: { full_name: true, phone_number: true, email: true },
-      },
-      slot: true,
-    },
-    orderBy: { created_at: 'desc' },
-  });
-};
-
 module.exports = {
   createBooking,
   findById,
@@ -139,7 +150,7 @@ module.exports = {
   lockSlot,
   unlockSlot,
   checkActiveBookingsForSlot,
+  findOverlappingActive,
   findActiveIntervals,
   findUserBookings,
-  findByOwnerFields,
 };

@@ -3,6 +3,57 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+const toTimeDate = (timeStr) => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
+};
+
+const demoFieldTypes = [
+  {
+    type: 'FUTSAL',
+    label: 'Futsal',
+    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80',
+    basePrice: 320000,
+  },
+  {
+    type: 'BADMINTON',
+    label: 'Cau long',
+    image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1400&q=80',
+    basePrice: 140000,
+  },
+  {
+    type: 'BASKETBALL',
+    label: 'Bong ro',
+    image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1400&q=80',
+    basePrice: 260000,
+  },
+  {
+    type: 'VOLLEYBALL',
+    label: 'Bong chuyen',
+    image: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=1400&q=80',
+    basePrice: 220000,
+  },
+  {
+    type: 'TENNIS',
+    label: 'Tennis',
+    image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&w=1400&q=80',
+    basePrice: 360000,
+  },
+];
+
+const demoLocations = [
+  'Quan 1, Ho Chi Minh',
+  'Quan 3, Ho Chi Minh',
+  'Quan 7, Ho Chi Minh',
+  'Binh Thanh, Ho Chi Minh',
+  'Thu Duc, Ho Chi Minh',
+  'Go Vap, Ho Chi Minh',
+  'Tan Binh, Ho Chi Minh',
+  'Ha Dong, Ha Noi',
+  'Cau Giay, Ha Noi',
+  'Hai Chau, Da Nang',
+];
+
 /**
  * Seed script — creates baseline users for development and testing.
  * Run with: npm run prisma:seed
@@ -70,6 +121,9 @@ async function main() {
           description: 'A beautiful football field in the heart of the city.',
           images: ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80'],
           price_per_hour: 500000,
+          type: 'FUTSAL',
+          open_time: toTimeDate('05:00'),
+          close_time: toTimeDate('23:00'),
           is_active: true,
         }
       });
@@ -88,6 +142,9 @@ async function main() {
           description: 'Sân bóng dùng để test đặt sân giá rẻ.',
           images: ['https://images.unsplash.com/photo-1529900948638-196987144599?auto=format&fit=crop&w=1400&q=80'],
           price_per_hour: 5000,
+          type: 'FUTSAL',
+          open_time: toTimeDate('08:00'),
+          close_time: toTimeDate('22:00'),
           is_active: true,
         }
       });
@@ -100,15 +157,48 @@ async function main() {
       console.log(`  ✅ Updated Field Price: ${seedField.name} to 5000`);
     }
 
+    console.log('  ⏳ Seeding 100 demo fields across all field types...');
+    let demoFieldsCreated = 0;
+    let demoFieldsUpdated = 0;
+
+    for (const config of demoFieldTypes) {
+      for (let index = 1; index <= 20; index++) {
+        const sequence = String(index).padStart(2, '0');
+        const name = `FieldNow Demo ${config.label} ${sequence}`;
+        const location = demoLocations[(index - 1) % demoLocations.length];
+        const data = {
+          owner_id: ownerId,
+          name,
+          location,
+          description: `${config.label} demo field ${sequence} for FieldNow search, booking, and pagination testing.`,
+          images: [config.image],
+          price_per_hour: config.basePrice + (index % 5) * 25000,
+          type: config.type,
+          open_time: toTimeDate(index % 3 === 0 ? '06:00' : '05:30'),
+          close_time: toTimeDate(index % 4 === 0 ? '23:00' : '22:00'),
+          is_active: true,
+        };
+
+        const existingDemoField = await prisma.field.findFirst({ where: { name } });
+        if (existingDemoField) {
+          await prisma.field.update({
+            where: { id: existingDemoField.id },
+            data,
+          });
+          demoFieldsUpdated++;
+        } else {
+          await prisma.field.create({ data });
+          demoFieldsCreated++;
+        }
+      }
+    }
+
+    console.log(`  ✅ Demo fields done: ${demoFieldsCreated} created, ${demoFieldsUpdated} updated.`);
+
     // Seed slots for the next 7 days
     console.log(`  ⏳ Seeding/Updating slots for the next 7 days...`);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-
-    const toTimeDate = (timeStr) => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
-    };
 
     let slotsCreated = 0;
     let slotsUpdated = 0;

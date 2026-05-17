@@ -43,6 +43,8 @@ model Field {
   price_per_hour Decimal     @db.Decimal
   search_vector  Unsupported("tsvector")?
   type           FieldType   @default(FUTSAL)
+  open_time      DateTime    @db.Time @default(dbgenerated("'06:00:00'"))
+  close_time     DateTime    @db.Time @default(dbgenerated("'22:00:00'"))
   is_active      Boolean     @default(false)
   created_at     DateTime    @default(now()) @db.Timestamptz
   updated_at     DateTime    @updatedAt
@@ -81,7 +83,8 @@ model Booking {
   date       DateTime      @db.Date
   start_time DateTime      @db.Time
   end_time   DateTime      @db.Time
-  status     BookingStatus @default(PENDING)
+  status      BookingStatus @default(PENDING)
+  total_price Decimal       @db.Decimal @default(0)
   created_at DateTime      @default(now()) @db.Timestamptz
   updated_at DateTime      @updatedAt
   expires_at DateTime      @db.Timestamptz

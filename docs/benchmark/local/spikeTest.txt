@@ -1,0 +1,79 @@
+T:\github\FieldNow\BE>npm run test:spike
+
+> fieldnow-backend@1.0.0 test:spike
+> k6 run tests/load/fieldnow-spike.k6.js
+
+
+         /\      Grafana   /‾‾/
+    /\  /  \     |\  __   /  /
+   /  \/    \    | |/ /  /   ‾‾\
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/
+
+
+     execution: local
+        script: tests/load/fieldnow-spike.k6.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 80 max VUs, 3m15s max duration (incl. graceful stop):
+              * spike: Up to 80 looping VUs for 3m0s over 6 stages (gracefulRampDown: 15s, gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS
+
+    checks
+    ✓ 'rate>0.92' rate=100.00%
+
+    http_req_duration
+    ✗ 'p(95)<1500' p(95)=1.94s
+    ✓ 'p(99)<3000' p(99)=1.98s
+
+    http_req_failed
+    ✓ 'rate<0.08' rate=0.00%
+
+    recovery_failures
+    ✓ 'count<1' count=0
+
+    server_errors
+    ✓ 'rate<0.02' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 5123    28.137297/s
+    checks_succeeded...: 100.00% 5123 out of 5123
+    checks_failed......: 0.00%   0 out of 5123
+
+    ✓ login returns 200
+    ✓ login returns token
+    ✓ field detail returns 200
+    ✓ me returns 200
+    ✓ my bookings returns 200
+
+    CUSTOM
+    recovery_failures..............: 0      0/s
+    server_errors..................: 0.00%  0 out of 5251
+
+    HTTP
+    http_req_duration..............: avg=1.14s min=146.98ms med=956.15ms max=2.09s p(90)=1.9s  p(95)=1.94s
+      { expected_response:true }...: avg=1.14s min=146.98ms med=956.15ms max=2.09s p(90)=1.9s  p(95)=1.94s
+    http_req_failed................: 0.00%  0 out of 5251
+    http_reqs......................: 5251   28.840318/s
+
+    EXECUTION
+    iteration_duration.............: avg=3.61s min=895.17ms med=4.69s    max=6.72s p(90)=4.79s p(95)=4.82s
+    iterations.....................: 1707   9.375438/s
+    vus............................: 1      min=0         max=80
+    vus_max........................: 80     min=80        max=80
+
+    NETWORK
+    data_received..................: 15 MB  82 kB/s
+    data_sent......................: 1.6 MB 8.9 kB/s
+
+
+
+
+running (3m02.1s), 00/80 VUs, 1707 complete and 0 interrupted iterations
+spike ✓ [======================================] 00/80 VUs  3m0s
+ERRO[0182] thresholds on metrics 'http_req_duration' have been crossed

@@ -7,9 +7,7 @@ const { errors } = require('../utils/errors');
 const { logger } = require('../infrastructure/logger');
 const { emailQueue } = require('../infrastructure/queue');
 
-const paymentProvider = getPaymentProvider();
-
-const initiatePayment = async (bookingId, userId) => {
+const initiatePayment = async (bookingId, userId, providerName = 'sepay') => {
   // 1. Get booking
   const booking = await bookingRepository.findById(bookingId);
   if (!booking) {
@@ -22,8 +20,12 @@ const initiatePayment = async (bookingId, userId) => {
     throw errors.conflict('Booking is not in PENDING state');
   }
 
-  // 2. Check if a pending payment already exists
+  // 2. Resolve Strategy
+  const provider = getPaymentProvider(providerName);
+
+  // 3. Check if a pending payment already exists
   let payment = await paymentRepository.findByBookingId(bookingId);
+  const targetProvider = providerName.toLowerCase();
 
   const durationHours = (booking.end_time - booking.start_time) / (1000 * 60 * 60);
   const amount = booking.slot?.price_override != null
@@ -31,20 +33,44 @@ const initiatePayment = async (bookingId, userId) => {
     : Number(booking.field.price_per_hour) * durationHours;
 
   if (!payment) {
-    // 3. Create payment record
-    payment = await paymentRepository.createPayment(bookingId, amount, config.paymentProvider);
+    // 4. Create payment record
+    payment = await paymentRepository.createPayment(bookingId, amount, targetProvider);
+  } else if (payment.status === 'FAILED') {
+    payment = await paymentRepository.createPayment(bookingId, amount, targetProvider);
   } else if (payment.status !== 'PENDING') {
     throw errors.conflict(`Payment is already ${payment.status}`);
+  } else if (payment.provider.toLowerCase() !== targetProvider) {
+    logger.info(`[PaymentService] Changing provider from ${payment.provider} to ${targetProvider}`);
+    payment = await paymentRepository.updateProvider(payment.id, targetProvider);
   }
 
-  // 4. Generate checkout URL + signed form fields
-  const { checkoutUrl, formFields } = paymentProvider.createCheckoutFields(
+  // 5. Cash bookings are confirmed immediately; payment is collected at the venue.
+  if (targetProvider === 'cash') {
+    await bookingRepository.updateStatus(bookingId, 'CONFIRMED');
+    await emailQueue.add('email.booking_confirmed', {
+      userId: booking.user_id,
+      bookingId,
+    }, {
+      jobId: `email-booking-confirmed:${bookingId}`,
+    });
+
+    return {
+      success: true,
+      message: 'Đặt sân đã được xác nhận. Vui lòng thanh toán trực tiếp tại sân.',
+      isDirect: true,
+      status: 'CONFIRMED',
+      paymentId: payment.id,
+    };
+  }
+
+  // 6. Generate checkout URL + signed form fields for Online Providers
+  const result = provider.createCheckoutFields(
     bookingId,
     amount,
     `${bookingId} - FieldNow Payment`,
   );
 
-  return { checkoutUrl, formFields, paymentId: payment.id };
+  return { ...result, paymentId: payment.id };
 };
 
 /**
@@ -52,8 +78,9 @@ const initiatePayment = async (bookingId, userId) => {
  * SePay POSTs JSON to this endpoint after every transaction.
  */
 const handleSepayIpn = async (headers, body) => {
+  const provider = getPaymentProvider('sepay');
   // 1. Verify secret key
-  const isValidKey = paymentProvider.verifyIpn(headers, body);
+  const isValidKey = provider.verifyIpn(headers, body);
   if (!isValidKey) {
     if (process.env.NODE_ENV === 'development') {
       logger.warn('[Payment IPN] Invalid Secret Key, but allowing it because NODE_ENV=development');
@@ -66,7 +93,7 @@ const handleSepayIpn = async (headers, body) => {
   logger.info(`[SePay IPN] Body: ${JSON.stringify(body, null, 2)}`);
 
   // 2. Extract booking ID and check success
-  const bookingId = paymentProvider.extractBookingId(body);
+  const bookingId = provider.extractBookingId(body);
   logger.info(`[SePay IPN] Extracted bookingId: ${bookingId}`);
 
   if (!bookingId) {
@@ -98,7 +125,7 @@ const handleSepayIpn = async (headers, body) => {
           if (pendingPayments.length > 0 && pendingPayments[0].booking.status === 'PENDING') {
             const fallbackId = pendingPayments[0].booking_id;
             logger.info(`[SePay IPN] Fallback MATCH FOUND: ${fallbackId}. Confirming...`);
-            await processPaymentCallback(fallbackId, paymentProvider.isSuccess(body), config.paymentProvider);
+            await processPaymentCallback(fallbackId, provider.isSuccess(body), config.paymentProvider);
             return { success: true, matched_by: 'amount_fallback' };
           } else {
             logger.warn(`[SePay IPN] Fallback failed: found 0 pending payments for amount ${amount}`);
@@ -112,7 +139,7 @@ const handleSepayIpn = async (headers, body) => {
     return { success: true };
   }
 
-  const isSuccess = paymentProvider.isSuccess(body);
+  const isSuccess = provider.isSuccess(body);
   logger.info(`[SePay IPN] bookingId=${bookingId} | success=${isSuccess} | notification_type=${body?.notification_type}`);
 
   try {
@@ -136,14 +163,13 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
       throw errors.notFound('Booking');
     }
 
-    const payment = await paymentRepository.findByBookingId(bookingId, tx);
+    const payment = await paymentRepository.findLatestPendingByBookingId(bookingId, provider, tx);
     if (!payment) {
-      throw errors.notFound('Payment');
-    }
-
-    // Idempotency check
-    if (payment.status === 'COMPLETED' || payment.status === 'FAILED') {
-      throw errors.conflict(`Payment is already ${payment.status}`);
+      const latestPayment = await paymentRepository.findByBookingId(bookingId, tx);
+      if (latestPayment?.status === 'COMPLETED' || latestPayment?.status === 'FAILED') {
+        throw errors.conflict(`Payment is already ${latestPayment.status}`);
+      }
+      throw errors.notFound('Pending payment');
     }
 
     if (isSuccess) {
@@ -155,6 +181,8 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
       await emailQueue.add('email.booking_confirmed', {
         userId: booking.user_id,
         bookingId: bookingId,
+      }, {
+        jobId: `email-booking-confirmed:${bookingId}`,
       });
     } else {
       // Keep booking PENDING so user can retry until expiration

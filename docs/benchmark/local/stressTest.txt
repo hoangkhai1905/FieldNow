@@ -1,0 +1,78 @@
+npm run test:stress
+
+> fieldnow-backend@1.0.0 test:stress
+> k6 run tests/load/fieldnow-stress.k6.js
+
+
+         /\      Grafana   /‾‾/
+    /\  /  \     |\  __   /  /
+   /  \/    \    | |/ /  /   ‾‾\
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/
+
+
+     execution: local
+        script: tests/load/fieldnow-stress.k6.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 30 max VUs, 8m50s max duration (incl. graceful stop):
+              * api_stress: Up to 30 looping VUs for 8m30s over 7 stages (gracefulRampDown: 20s, gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS
+
+    checks
+    ✓ 'rate>0.95' rate=100.00%
+
+    http_req_duration
+    ✓ 'p(95)<1000' p(95)=699.54ms
+    ✓ 'p(99)<2000' p(99)=743.06ms
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.00%
+
+    server_errors
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 29237   57.05695/s
+    checks_succeeded...: 100.00% 29237 out of 29237
+    checks_failed......: 0.00%   0 out of 29237
+
+    ✓ login returns 200
+    ✓ login returns token
+    ✓ field detail returns 200
+    ✓ field detail has expected id
+    ✓ me returns 200
+    ✓ my bookings returns 200
+    ✓ my bookings has pagination
+
+    CUSTOM
+    bookings_ok....................: 100.00% 5847 out of 5847
+    field_detail_ok................: 100.00% 5847 out of 5847
+    server_errors..................: 0.00%   0 out of 17543
+
+    HTTP
+    http_req_duration..............: avg=401.83ms min=146.35ms med=362.54ms max=1.21s p(90)=668.02ms p(95)=699.54ms
+      { expected_response:true }...: avg=401.83ms min=146.35ms med=362.54ms max=1.21s p(90)=668.02ms p(95)=699.54ms
+    http_req_failed................: 0.00%   0 out of 17543
+    http_reqs......................: 17543   34.235731/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.4s     min=991.14ms med=1.19s    max=2.13s p(90)=1.85s    p(95)=1.88s
+    iterations.....................: 5847    11.410609/s
+    vus............................: 1       min=0            max=30
+    vus_max........................: 30      min=30           max=30
+
+    NETWORK
+    data_received..................: 50 MB   98 kB/s
+    data_sent......................: 5.4 MB  10 kB/s
+
+
+
+
+running (8m32.4s), 00/30 VUs, 5847 complete and 0 interrupted iterations
+api_stress ✓ [======================================] 00/30 VUs  8m30s
