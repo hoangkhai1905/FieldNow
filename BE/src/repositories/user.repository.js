@@ -9,6 +9,21 @@ const findByEmail = async (email) => {
   return prisma.user.findUnique({ where: { email } });
 };
 
+const findByPhoneNumber = async (phoneNumber) => {
+  return prisma.user.findFirst({ where: { phone_number: phoneNumber } });
+};
+
+const findByEmailOrPhone = async (identifier) => {
+  return prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: identifier },
+        { phone_number: identifier },
+      ],
+    },
+  });
+};
+
 const findById = async (id) => {
   return prisma.user.findUnique({ where: { id } });
 };
@@ -33,6 +48,8 @@ const updateById = async (id, data) => {
 
 module.exports = {
   findByEmail,
+  findByPhoneNumber,
+  findByEmailOrPhone,
   findById,
   create,
   updateByEmail,

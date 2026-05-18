@@ -1,12 +1,21 @@
 const express = require('express');
 const fieldController = require('../controllers/field.controller');
+const adminController = require('../controllers/admin.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { roleMiddleware } = require('../middlewares/role.middleware');
 
 const router = express.Router();
 
-// All admin routes require authentication and ADMIN role
-router.use(authMiddleware, roleMiddleware(['ADMIN']));
+// Authenticate all routes in this router
+router.use(authMiddleware);
+
+/**
+ * Field management routes - strictly restricted to ADMIN role only
+ */
+router.get('/stats', roleMiddleware(['ADMIN']), adminController.getDashboardStats);
+router.get('/fields', roleMiddleware(['ADMIN']), fieldController.getAdminFields);
+router.get('/payments/cash', roleMiddleware(['ADMIN']), adminController.getCashPayments);
+router.patch('/payments/:bookingId/confirm-cash', roleMiddleware(['ADMIN']), adminController.confirmCashPayment);
 
 /**
  * @swagger
@@ -33,7 +42,7 @@ router.use(authMiddleware, roleMiddleware(['ADMIN']));
  *       404:
  *         description: Field not found
  */
-router.patch('/fields/:id/approve', fieldController.approveField);
+router.patch('/fields/:id/approve', roleMiddleware(['ADMIN']), fieldController.approveField);
 
 /**
  * @swagger
@@ -60,8 +69,11 @@ router.patch('/fields/:id/approve', fieldController.approveField);
  *       404:
  *         description: Field not found
  */
-router.patch('/fields/:id/reject', fieldController.rejectField);
-const adminController = require('../controllers/admin.controller');
+router.patch('/fields/:id/reject', roleMiddleware(['ADMIN']), fieldController.rejectField);
+
+/**
+ * User management routes - accessible to both OWNER and ADMIN (merged design)
+ */
 
 /**
  * @swagger
@@ -75,7 +87,7 @@ const adminController = require('../controllers/admin.controller');
  *       200:
  *         description: List of users
  */
-router.get('/users', adminController.getUsers);
+router.get('/users', roleMiddleware(['OWNER', 'ADMIN']), adminController.getUsers);
 
 /**
  * @swagger
@@ -108,6 +120,17 @@ router.get('/users', adminController.getUsers);
  *       200:
  *         description: User role updated
  */
-router.patch('/users/:id/role', adminController.updateUserRole);
+router.patch('/users/:id/role', roleMiddleware(['OWNER', 'ADMIN']), adminController.updateUserRole);
+
+/**
+ * @swagger
+ * /admin/users/{id}/status:
+ *   patch:
+ *     summary: Activate or deactivate a user account
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.patch('/users/:id/status', roleMiddleware(['ADMIN']), adminController.updateUserStatus);
 
 module.exports = router;

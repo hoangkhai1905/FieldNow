@@ -4,12 +4,20 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const userRepository = require('../repositories/user.repository');
 const refreshTokenRepository = require('../repositories/refresh-token.repository');
+const otpService = require('./otp.service');
 const { errors } = require('../utils/errors');
 
-const register = async (email, password, fullName, role) => {
+const register = async (email, password, fullName, role, phoneNumber) => {
   const existingUser = await userRepository.findByEmail(email);
   if (existingUser) {
     throw errors.conflict('Email already in use');
+  }
+
+  const finalPhone = phoneNumber || `09${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+  const existingPhone = await userRepository.findByPhoneNumber(finalPhone);
+  if (existingPhone) {
+    throw errors.conflict('Phone number already in use');
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -19,7 +27,17 @@ const register = async (email, password, fullName, role) => {
     password: hashedPassword,
     full_name: fullName,
     role: role || 'USER',
+    phone_number: finalPhone,
   });
+
+  // Automatically trigger OTP sending after registration
+  try {
+    await otpService.sendOTP(user.email);
+  } catch (error) {
+    console.error(`[Auth] Failed to send initial OTP to ${user.email}: ${error.message}`);
+    // We don't throw the error here so the registration still succeeds,
+    // the user can request a new OTP later if the email failed.
+  }
 
   return { id: user.id, email: user.email, role: user.role };
 };
@@ -53,7 +71,7 @@ const issueRefreshToken = async (userId) => {
 };
 
 const login = async (email, password) => {
-  const user = await userRepository.findByEmail(email);
+  const user = await userRepository.findByEmailOrPhone(email);
   if (!user) {
     throw errors.unauthorized('Invalid email or password');
   }

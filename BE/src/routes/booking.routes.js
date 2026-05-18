@@ -2,13 +2,9 @@ const express = require('express');
 const bookingController = require('../controllers/booking.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { validate } = require('../middlewares/validate.middleware');
-const { z } = require('zod');
+const { createBookingSchema } = require('../validators/booking.validator');
 
 const router = express.Router();
-
-const createBookingSchema = z.object({
-  slotId: z.string().uuid('Invalid slot ID format'),
-});
 
 router.use(authMiddleware);
 
@@ -34,7 +30,7 @@ router.use(authMiddleware);
  *       401:
  *         description: Unauthorized
  *       409:
- *         description: Conflict (Slot locked or taken)
+ *         description: Conflict (slot locked, taken, or overlaps an active booking)
  */
 router.post('/', validate(createBookingSchema), bookingController.createBooking);
 

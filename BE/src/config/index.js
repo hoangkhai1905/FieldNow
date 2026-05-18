@@ -32,6 +32,7 @@ const config = {
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     bucket: process.env.SUPABASE_STORAGE_BUCKET || 'field-images',
   },
+  paymentProvider: process.env.PAYMENT_PROVIDER || 'sepay',
 };
 
 module.exports = config;

@@ -1,6 +1,6 @@
 const fieldService = require('../../src/services/field.service');
 const fieldRepository = require('../../src/repositories/field.repository');
-const { errors } = require('../../src/utils/errors');
+const { errors: _errors } = require('../../src/utils/errors');
 
 jest.mock('../../src/repositories/field.repository');
 

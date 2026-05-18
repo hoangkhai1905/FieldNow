@@ -8,6 +8,7 @@ const router = express.Router();
 
 const initiatePaymentSchema = z.object({
   bookingId: z.string().uuid('Invalid booking ID format'),
+  provider: z.string().optional(),
 });
 
 // --- Public Routes (no auth) ---
@@ -51,6 +52,8 @@ router.use(authMiddleware);
  *     summary: Initiate payment for a booking
  *     description: >
  *       Creates a SePay checkout. Returns `checkoutUrl` and `formFields`.
+ *       If the latest payment attempt failed, calling this endpoint again creates
+ *       a new pending payment attempt for the same booking.
  *       The frontend should build a hidden-field HTML form, POST it to `checkoutUrl`
  *       to redirect the user to the SePay payment page.
  *     tags: [Payment]
@@ -68,9 +71,13 @@ router.use(authMiddleware);
  *               bookingId:
  *                 type: string
  *                 format: uuid
+ *               provider:
+ *                 type: string
+ *                 enum: [sepay, cash]
+ *                 default: sepay
  *     responses:
  *       200:
- *         description: SePay checkout URL and signed form fields
+ *         description: SePay checkout URL and signed form fields for the latest payment attempt
  *         content:
  *           application/json:
  *             schema:
@@ -95,6 +102,7 @@ router.post('/initiate', validate(initiatePaymentSchema), paymentController.init
  * /payments/{bookingId}:
  *   get:
  *     summary: Get payment details for a booking
+ *     description: Returns the latest payment attempt for the booking.
  *     tags: [Payment]
  *     security:
  *       - bearerAuth: []

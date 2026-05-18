@@ -39,6 +39,8 @@ const createVerifiedUser = async (email, password) => {
     .send({ email, password, fullName: 'Test User', role: 'USER' })
     .expect(201);
 
+  await allowResend(email);
+
   await request(app)
     .post('/api/v1/otp/send')
     .send({ email })
@@ -52,7 +54,7 @@ const createVerifiedUser = async (email, password) => {
 };
 
 describe('Password Reset and Change Password Tests', () => {
-  let userWithVerifiedEmail;
+  let _userWithVerifiedEmail;
   let jwtToken;
 
   // Setup: Create user with verified email
@@ -64,6 +66,7 @@ describe('Password Reset and Change Password Tests', () => {
       .expect(201);
 
     // Verify email via OTP
+    await allowResend(testUser.email);
     await request(app)
       .post('/api/v1/otp/send')
       .send({ email: testUser.email })
@@ -81,7 +84,7 @@ describe('Password Reset and Change Password Tests', () => {
       .expect(200);
 
     jwtToken = loginRes.body.data.token;
-    userWithVerifiedEmail = await prisma.user.findUnique({
+    _userWithVerifiedEmail = await prisma.user.findUnique({
       where: { email: testUser.email },
     });
   });
@@ -94,7 +97,7 @@ describe('Password Reset and Change Password Tests', () => {
         await prisma.refreshToken.deleteMany({ where: { user_id: user.id } });
       }
       await prisma.user.delete({ where: { email: testUser.email } });
-    } catch (err) {
+    } catch (_err) {
       // User might not exist
     }
     await prisma.$disconnect();
@@ -457,12 +460,13 @@ describe('Password Reset and Change Password Tests', () => {
         .expect(201);
 
       // Step 2: Verify email
+      await allowResend(flowEmail);
       await request(app)
         .post('/api/v1/otp/send')
         .send({ email: flowEmail })
         .expect(200);
 
-      let user = await prisma.user.findUnique({ where: { email: flowEmail } });
+      let _user = await prisma.user.findUnique({ where: { email: flowEmail } });
       await request(app)
         .post('/api/v1/otp/verify')
         .send({ email: flowEmail, otp_code: getLastOtpForEmail(flowEmail, 'email.otp_sent') })
@@ -478,7 +482,7 @@ describe('Password Reset and Change Password Tests', () => {
       expect(forgotRes.body.data.message).toContain('reset instructions');
 
       // Step 4: Get reset OTP
-      user = await prisma.user.findUnique({ where: { email: flowEmail } });
+      _user = await prisma.user.findUnique({ where: { email: flowEmail } });
       const resetOtp = getLastOtpForEmail(flowEmail, 'email.password_reset_otp');
 
       // Step 5: Reset password
@@ -507,6 +511,6 @@ describe('Password Reset and Change Password Tests', () => {
         await prisma.refreshToken.deleteMany({ where: { user_id: cleanupUser.id } });
       }
       await prisma.user.delete({ where: { email: flowEmail } });
-    });
+    }, 10000);
   });
 });

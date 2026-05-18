@@ -1,28 +1,30 @@
 const prisma = require('../infrastructure/prisma');
 const bookingRepository = require('../repositories/booking.repository');
+const fieldRepository = require('../repositories/field.repository');
 const slotRepository = require('../repositories/slot.repository');
+const bookingEvents = require('../events/booking.events');
+const bookingSideEffects = require('./booking-side-effect.service');
 const { redisClient } = require('../infrastructure/redis');
-const { bookingEventsQueue, bookingExpirationQueue, emailQueue } = require('../infrastructure/queue');
 const { errors } = require('../utils/errors');
-const { logger } = require('../infrastructure/logger');
+const Pipeline = require('../utils/pipeline');
+const ValidateSlotStep = require('../pipelines/booking/validate-slot.step');
+const AcquireLockStep = require('../pipelines/booking/acquire-lock.step');
+const CheckAvailabilityStep = require('../pipelines/booking/check-availability.step');
+const CreateBookingStep = require('../pipelines/booking/create-booking.step');
+const EmitEventStep = require('../pipelines/booking/emit-event.step');
 
 /**
- * Creates a lock on a slot using Redis SET NX PX.
+ * Creates a lock on a field/date/time range using Redis.
  */
-const acquireLock = async (slotId, ttlMs = 5000) => {
-  const lockKey = `lock:slot:${slotId}`;
+const acquireBookingLock = async (fieldId, date, ttlMs = 10000) => {
+  const lockKey = `lock:field:${fieldId}:date:${date}`;
   const lockValue = Math.random().toString(36).substring(2, 15);
-  // NX: Only set if it does not exist
-  // PX: Expiration time in ms
   const acquired = await redisClient.set(lockKey, lockValue, 'NX', 'PX', ttlMs);
   return acquired ? lockValue : null;
 };
 
-/**
- * Releases the Redis lock safely using a Lua script to ensure we only delete our own lock.
- */
-const releaseLock = async (slotId, lockValue) => {
-  const lockKey = `lock:slot:${slotId}`;
+const releaseBookingLock = async (fieldId, date, lockValue) => {
+  const lockKey = `lock:field:${fieldId}:date:${date}`;
   const script = `
     if redis.call("get", KEYS[1]) == ARGV[1] then
       return redis.call("del", KEYS[1])
@@ -33,74 +35,63 @@ const releaseLock = async (slotId, lockValue) => {
   await redisClient.eval(script, 1, lockKey, lockValue);
 };
 
-const createBooking = async (userId, slotId) => {
-  // 1. Validate slot existence and state
-  const slot = await slotRepository.findById(slotId);
-  if (!slot) {
-    throw errors.notFound('Slot');
-  }
-  if (slot.is_locked) {
-    throw errors.conflict('Slot is administratively locked');
-  }
+const normalizeBookingSlot = (booking) => {
+  if (!booking) return booking;
 
-  // 2. Distributed Lock via Redis (Prevent concurrent requests for the same slot)
-  const lockValue = await acquireLock(slotId);
-  if (!lockValue) {
-    throw errors.conflict('Slot is currently being booked by another user. Please try again later.');
+  const slotField = booking.slot?.field ?? booking.field ?? null;
+  if (booking.slot) {
+    if (booking.slot.field) return booking;
+    return { ...booking, slot: { ...booking.slot, field: slotField } };
   }
 
-  try {
-    // 3. Database transaction
-    const booking = await prisma.$transaction(async (tx) => {
-      // Re-verify no active booking exists for this slot
-      const existingActive = await bookingRepository.checkActiveBookingsForSlot(slotId, tx);
-      if (existingActive) {
-        throw errors.conflict('Slot has already been booked');
-      }
-
-      // Expires in 15 minutes
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-      // Create booking
-      const newBooking = await bookingRepository.createBooking(userId, slotId, expiresAt, tx);
-      return newBooking;
-    });
-
-    // 4. Enqueue post-booking jobs
-    // Delay 15 minutes to check expiration
-    await bookingExpirationQueue.add(
-      'booking.expire',
-      {
-        bookingId: booking.id,
-        slotId: booking.slot_id,
-        expectedStatus: 'PENDING',
-      },
-      { delay: 15 * 60 * 1000 }
-    );
-
-    // Enqueue event
-    await bookingEventsQueue.add('booking.created', {
-      bookingId: booking.id,
-      userId: booking.user_id,
-      slotId: booking.slot_id,
-      createdAt: booking.created_at,
-    });
-
-    // Add email job (fire and forget)
-    await emailQueue.add('email.booking_created', {
-      userId,
-      bookingId: booking.id,
-    });
-
-    return booking;
-  } finally {
-    // 5. Always release the lock
-    await releaseLock(slotId, lockValue);
-  }
+  return {
+    ...booking,
+    slot: {
+      id: null,
+      field_id: booking.field_id,
+      date: booking.date,
+      start_time: booking.start_time,
+      end_time: booking.end_time,
+      price_override: null,
+      field: slotField,
+    },
+  };
 };
 
-const getUserBookings = async (userId) => {
-  return bookingRepository.findUserBookings(userId);
+const createBooking = async (userId, { fieldId, date, startTime, endTime }) => {
+  const pipeline = new Pipeline()
+    .use(new ValidateSlotStep())
+    .use(new AcquireLockStep())
+    .use(new CheckAvailabilityStep())
+    .use(new CreateBookingStep())
+    .use(new EmitEventStep());
+
+  return pipeline.execute({
+    userId,
+    fieldId,
+    date,
+    startTime,
+    endTime,
+    prisma,
+    bookingRepository,
+    fieldRepository,
+    slotRepository,
+    bookingEvents,
+    bookingSideEffects,
+    errors,
+    acquireBookingLock,
+    releaseBookingLock,
+    normalizeBookingSlot,
+    cleanup: [],
+  });
+};
+
+const getUserBookings = async (userId, filters) => {
+  const result = await bookingRepository.findUserBookings(userId, filters);
+  return {
+    bookings: result.bookings.map((booking) => normalizeBookingSlot(booking)),
+    pagination: result.pagination,
+  };
 };
 
 const getBookingById = async (bookingId, userId) => {
@@ -111,7 +102,7 @@ const getBookingById = async (bookingId, userId) => {
   if (booking.user_id !== userId) {
     throw errors.forbidden('You do not own this booking');
   }
-  return booking;
+  return normalizeBookingSlot(booking);
 };
 
 const cancelBooking = async (bookingId, userId) => {
@@ -127,10 +118,7 @@ const cancelBooking = async (bookingId, userId) => {
   }
 
   const updatedBooking = await prisma.$transaction(async (tx) => {
-    // 1. Update Booking status to CANCELLED
     const updated = await bookingRepository.updateStatus(bookingId, 'CANCELLED', tx);
-
-    // 2. Automatically update any pending payment records to FAILED
     await tx.payment.updateMany({
       where: {
         booking_id: bookingId,
@@ -138,13 +126,48 @@ const cancelBooking = async (bookingId, userId) => {
       },
       data: { status: 'FAILED' },
     });
-
     return updated;
   });
 
-  await emailQueue.add('email.booking_cancelled', {
-    userId,
+  bookingEvents.emit('BOOKING_CANCELLED', {
     bookingId,
+    userId,
+  });
+
+  return updatedBooking;
+};
+
+const rejectOwnerBooking = async (bookingId, ownerId) => {
+  const booking = await bookingRepository.findById(bookingId);
+  if (!booking) {
+    throw errors.notFound('Booking');
+  }
+  if (booking.field?.owner_id !== ownerId) {
+    throw errors.forbidden('You do not own this booking');
+  }
+  if (booking.status === 'CANCELLED') {
+    throw errors.conflict('Booking is already cancelled');
+  }
+  if (booking.payments?.some((payment) => payment.status === 'COMPLETED')) {
+    throw errors.conflict('Cannot reject a booking with completed payment');
+  }
+
+  const updatedBooking = await prisma.$transaction(async (tx) => {
+    const updated = await bookingRepository.updateStatus(bookingId, 'CANCELLED', tx);
+    await tx.payment.updateMany({
+      where: {
+        booking_id: bookingId,
+        status: 'PENDING',
+      },
+      data: { status: 'FAILED' },
+    });
+    return updated;
+  });
+
+  await bookingSideEffects.removeBookingExpirationJob(bookingId);
+  await bookingSideEffects.scheduleBookingCancelledSideEffects({
+    bookingId,
+    userId: booking.user_id,
   });
 
   return updatedBooking;
@@ -155,4 +178,5 @@ module.exports = {
   getUserBookings,
   getBookingById,
   cancelBooking,
+  rejectOwnerBooking,
 };

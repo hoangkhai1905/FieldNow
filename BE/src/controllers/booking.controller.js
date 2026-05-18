@@ -1,8 +1,15 @@
 const bookingService = require('../services/booking.service');
+const { parsePagination } = require('../utils/pagination');
 
 const createBooking = async (req, res, next) => {
   try {
-    const booking = await bookingService.createBooking(req.user.userId, req.body.slotId);
+    const { fieldId, date, startTime, endTime } = req.body;
+    const booking = await bookingService.createBooking(req.user.userId, { 
+      fieldId, 
+      date, 
+      startTime, 
+      endTime 
+    });
     res.status(201).json({ success: true, data: booking });
   } catch (error) {
     next(error);
@@ -11,8 +18,12 @@ const createBooking = async (req, res, next) => {
 
 const getMyBookings = async (req, res, next) => {
   try {
-    const bookings = await bookingService.getUserBookings(req.user.userId);
-    res.status(200).json({ success: true, data: bookings });
+    const pagination = parsePagination(req.query, { limit: 6, maxLimit: 50 });
+    const result = await bookingService.getUserBookings(req.user.userId, {
+      ...pagination,
+      status: req.query.status,
+    });
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

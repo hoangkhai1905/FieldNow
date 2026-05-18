@@ -1,26 +1,40 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState } from 'react';
+import { loginRequest } from '../api/endpoints';
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
+const readStoredAuth = () => {
+  try {
     const token = localStorage.getItem('access_token');
     const storedUser = localStorage.getItem('user');
 
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+    if (!token || !storedUser) {
+      return { user: null, isAuthenticated: false };
     }
-  }, []);
 
-  const login = (token, userData) => {
+    return {
+      user: JSON.parse(storedUser),
+      isAuthenticated: true,
+    };
+  } catch {
+    return { user: null, isAuthenticated: false };
+  }
+};
+
+export const AuthProvider = ({ children }) => {
+  const initialAuth = readStoredAuth();
+  const [user, setUser] = useState(initialAuth.user);
+  const [isAuthenticated, setIsAuthenticated] = useState(initialAuth.isAuthenticated);
+
+  const login = async (email, password) => {
+    const response = await loginRequest({ email, password });
+    const { token, user: userData } = response;
+
     localStorage.setItem('access_token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setIsAuthenticated(true);
+    return userData;
   };
 
   const logout = () => {
@@ -30,8 +44,13 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const updateUser = (userData) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

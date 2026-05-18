@@ -1,4 +1,6 @@
+const { Prisma } = require('@prisma/client');
 const prisma = require('../infrastructure/prisma');
+const { buildPagination } = require('../utils/pagination');
 
 /**
  * Field repository — encapsulates all Prisma queries for the Field model.
@@ -8,53 +10,123 @@ const create = async (data) => {
   return prisma.field.create({ data });
 };
 
-const findById = async (id) => {
-  return prisma.field.findUnique({ where: { id } });
+const findById = async (id, tx = prisma) => {
+  return tx.field.findUnique({ where: { id } });
 };
 
 const update = async (id, data) => {
   return prisma.field.update({ where: { id }, data });
 };
 
-const findByOwner = async (ownerId) => {
-  return prisma.field.findMany({
-    where: { owner_id: ownerId },
-    orderBy: { created_at: 'desc' },
-  });
+const findByOwner = async (ownerId, { page = 1, limit = 8, skip = 0 } = {}) => {
+  const where = { owner_id: ownerId };
+  const [fields, total, active, pending] = await Promise.all([
+    prisma.field.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.field.count({ where }),
+    prisma.field.count({ where: { ...where, is_active: true } }),
+    prisma.field.count({ where: { ...where, is_active: false } }),
+  ]);
+
+  return {
+    fields,
+    pagination: buildPagination({ page, limit, total }),
+    summary: {
+      total,
+      active,
+      pending,
+    },
+  };
 };
 
-const findPublicWithFilters = async ({ location, minPrice, maxPrice, page = 1, limit = 10 }) => {
-  const where = { is_active: true };
+const findPublicWithFilters = async ({ location, type, minPrice, maxPrice, page = 1, limit = 10 }) => {
+  let whereSql = Prisma.sql`"Field"."is_active" = true`;
 
   if (location) {
-    where.location = { contains: location, mode: 'insensitive' };
+    whereSql = Prisma.sql`${whereSql} AND "Field"."search_vector" @@ plainto_tsquery('simple', ${location})`;
   }
-  if (minPrice !== undefined || maxPrice !== undefined) {
-    where.price_per_hour = {};
-    if (minPrice !== undefined) where.price_per_hour.gte = minPrice;
-    if (maxPrice !== undefined) where.price_per_hour.lte = maxPrice;
+  if (minPrice !== undefined) {
+    whereSql = Prisma.sql`${whereSql} AND "Field"."price_per_hour" >= ${minPrice}`;
   }
-
+  if (maxPrice !== undefined) {
+    whereSql = Prisma.sql`${whereSql} AND "Field"."price_per_hour" <= ${maxPrice}`;
+  }
+  if (['FUTSAL', 'BADMINTON', 'BASKETBALL', 'VOLLEYBALL', 'TENNIS'].includes(type)) {
+    whereSql = Prisma.sql`${whereSql} AND "Field"."type" = ${type}::"FieldType"`;
+  }
   const skip = (page - 1) * limit;
+  const orderBySql = location
+    ? Prisma.sql`ORDER BY ts_rank("Field"."search_vector", plainto_tsquery('simple', ${location})) DESC`
+    : Prisma.sql`ORDER BY "Field"."created_at" DESC`;
+
+  const [fields, countRows] = await Promise.all([
+    prisma.$queryRaw(
+      Prisma.sql`
+        SELECT
+          "id",
+          "owner_id",
+          "name",
+          "location",
+          "description",
+          "images",
+          "price_per_hour",
+          "type",
+          "open_time",
+          "close_time",
+          "is_active",
+          "created_at",
+          "updated_at"
+        FROM "Field"
+        WHERE ${whereSql}
+        ${orderBySql}
+        LIMIT ${limit} OFFSET ${skip}
+      `
+    ),
+    prisma.$queryRaw(
+      Prisma.sql`
+        SELECT COUNT(*)::int AS total
+        FROM "Field"
+        WHERE ${whereSql}
+      `
+    ),
+  ]);
+
+  const total = countRows[0]?.total ?? 0;
+
+  return {
+    fields,
+    pagination: {
+      page,
+      currentPage: page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+const findForAdmin = async ({ status = 'pending', page = 1, limit = 10, skip = 0 } = {}) => {
+  const where = {};
+  if (status === 'pending') where.is_active = false;
+  if (status === 'active') where.is_active = true;
 
   const [fields, total] = await Promise.all([
     prisma.field.findMany({
       where,
+      orderBy: { created_at: 'desc' },
       skip,
       take: limit,
-      orderBy: { created_at: 'desc' },
     }),
     prisma.field.count({ where }),
   ]);
 
   return {
     fields,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    pagination: buildPagination({ page, limit, total }),
   };
 };
 
@@ -81,5 +153,6 @@ module.exports = {
   update,
   findByOwner,
   findPublicWithFilters,
+  findForAdmin,
   findByIdWithSlots,
 };
