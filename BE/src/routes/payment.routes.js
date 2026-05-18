@@ -8,7 +8,7 @@ const router = express.Router();
 
 const initiatePaymentSchema = z.object({
   bookingId: z.string().uuid('Invalid booking ID format'),
-  provider: z.string().optional(),
+  provider: z.enum(['sepay', 'cash']).optional(),
 });
 
 // --- Public Routes (no auth) ---

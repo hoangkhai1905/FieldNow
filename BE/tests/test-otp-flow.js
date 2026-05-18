@@ -49,7 +49,7 @@ const test = async () => {
     
     // In production, you'd fetch this from the email or a test endpoint
     // For this test, we'll use a Prisma query directly
-    const prisma = require('./src/infrastructure/prisma');
+    const prisma = require('../src/infrastructure/prisma');
     const user = await prisma.user.findUnique({ where: { email: testEmail } });
     otpCode = user.otp_code;
     console.log(`✓ OTP retrieved: ${otpCode}\n`);

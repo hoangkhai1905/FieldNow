@@ -34,3 +34,6 @@ Thumbs.db
 .gitnexus
 /plan
 MEMORY.md
+docs/system_design_architecture.md
+docs/deploy_backend_aws_elastic_beanstalk.md
+docs/deploy_frontend_netlify.md

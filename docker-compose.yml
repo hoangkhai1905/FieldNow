@@ -55,11 +55,13 @@ services:
       - JWT_SECRET=${JWT_SECRET:-fieldnow_local_dev_secret_change_me}
       - JWT_EXPIRES_IN=1d
       - EMAIL_PROVIDER=ethereal
-      - PAYMENT_PROVIDER=vnpay
-      - VNP_TMNCODE=TEST1234
-      - VNP_HASHSECRET=TESTSECRET1234567890
-      - VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-      - VNP_RETURN_URL=http://localhost:5000/api/v1/payments/vnpay-return
+      - PAYMENT_PROVIDER=sepay
+      - SEPAY_ENV=sandbox
+      - SEPAY_MERCHANT_ID=${SEPAY_MERCHANT_ID:-demo_merchant_id}
+      - SEPAY_SECRET_KEY=${SEPAY_SECRET_KEY:-demo_secret_key}
+      - SEPAY_SUCCESS_URL=http://localhost:3000/payment/success
+      - SEPAY_ERROR_URL=http://localhost:3000/payment/error
+      - SEPAY_CANCEL_URL=http://localhost:3000/payment/cancel
     command: >
       sh -c "npx prisma migrate deploy &&
              npx prisma db seed &&

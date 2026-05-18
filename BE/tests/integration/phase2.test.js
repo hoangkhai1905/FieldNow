@@ -6,7 +6,7 @@ const config = require('../../src/config');
 
 describe('Phase 2 Integration Tests', () => {
   let userToken, ownerToken, _adminToken;
-  let ownerId, fieldId;
+  let ownerId, userId, fieldId;
 
   const ensureUser = async (email, role) => {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -26,6 +26,7 @@ describe('Phase 2 Integration Tests', () => {
     const admin = await ensureUser('admin@fieldnow.dev', 'ADMIN');
 
     ownerId = owner.id;
+    userId = user.id;
 
     ownerToken = jwt.sign({ userId: owner.id, role: owner.role, email: owner.email }, config.jwtSecret, { expiresIn: '1h' });
     userToken = jwt.sign({ userId: user.id, role: user.role, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
@@ -75,6 +76,20 @@ describe('Phase 2 Integration Tests', () => {
         .set('Authorization', `Bearer ${ownerToken}`);
 
       expect(res.status).toBe(403);
+    });
+
+    it('OWNER should not access admin user management routes', async () => {
+      const listRes = await request(app)
+        .get('/api/v1/admin/users')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      const roleRes = await request(app)
+        .patch(`/api/v1/admin/users/${userId}/role`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ role: 'OWNER' });
+
+      expect(listRes.status).toBe(403);
+      expect(roleRes.status).toBe(403);
     });
   });
 

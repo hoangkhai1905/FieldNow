@@ -87,7 +87,7 @@ router.patch('/fields/:id/reject', roleMiddleware(['ADMIN']), fieldController.re
  *       200:
  *         description: List of users
  */
-router.get('/users', roleMiddleware(['OWNER', 'ADMIN']), adminController.getUsers);
+router.get('/users', roleMiddleware(['ADMIN']), adminController.getUsers);
 
 /**
  * @swagger
@@ -120,7 +120,7 @@ router.get('/users', roleMiddleware(['OWNER', 'ADMIN']), adminController.getUser
  *       200:
  *         description: User role updated
  */
-router.patch('/users/:id/role', roleMiddleware(['OWNER', 'ADMIN']), adminController.updateUserRole);
+router.patch('/users/:id/role', roleMiddleware(['ADMIN']), adminController.updateUserRole);
 
 /**
  * @swagger

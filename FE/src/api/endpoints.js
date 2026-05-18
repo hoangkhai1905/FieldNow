@@ -24,8 +24,6 @@ export const apiPaths = {
 	payments: {
 		initiate: '/payments/initiate',
 		detail: (bookingId) => `/payments/${bookingId}`,
-		returnUrl: '/payments/vnpay-return',
-		ipn: '/payments/vnpay-ipn',
 	},
 	user: {
 		profile: '/users/profile',
@@ -300,12 +298,6 @@ export const initiatePayment = async (bookingId, provider = 'sepay') => {
 export const getPaymentStatus = async (bookingId) => {
 	const data = await apiRequest({ method: 'GET', url: apiPaths.payments.detail(bookingId) });
 	return normalizePayment(data);
-};
-
-export const verifyVnPayReturn = async (queryParams) => {
-	// Forward VNPay return query parameters to backend for verification/processing
-	const data = await apiRequest({ method: 'GET', url: apiPaths.payments.returnUrl, params: queryParams });
-	return data;
 };
 
 export const getOwnerFields = async (params = {}) => {
