@@ -176,6 +176,10 @@ const findByOwnerFields = async (
           select: { full_name: true, phone_number: true, email: true },
         },
         slot: true,
+        payments: {
+          orderBy: { created_at: 'desc' },
+          take: 1,
+        },
       },
       orderBy: { created_at: 'desc' },
       skip,

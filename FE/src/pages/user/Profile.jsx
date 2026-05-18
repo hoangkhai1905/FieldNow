@@ -28,6 +28,7 @@ import {
   requestChangePassword,
   changePassword
 } from '../../api/endpoints';
+import Toast from '../../components/ui/Toast';
 
 const ChangePasswordModal = ({ isOpen, onClose, setToast }) => {
   const [step, setStep] = useState(1);
@@ -277,17 +278,7 @@ const Profile = () => {
 
   return (
     <div style={{ color: '#fff', flex: 1, paddingBottom: '100px' }}>
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 20 }} exit={{ opacity: 0, y: -50 }}
-            style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 4000, padding: '16px 32px', background: toast.type === 'success' ? '#10b981' : '#f43f5e', color: '#fff', borderRadius: '100px', fontWeight: '800', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}
-          >
-            {toast.type === 'success' ? <Check size={20} /> : <X size={20} />}
-            {toast.text}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       <AnimatePresence>
         {showPasswordModal && (

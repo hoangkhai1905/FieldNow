@@ -1,6 +1,7 @@
 jest.mock('bullmq', () => ({
   Queue: jest.fn().mockImplementation(() => ({
     add: jest.fn(),
+    getJob: jest.fn().mockResolvedValue(null),
     close: jest.fn(),
   })),
   Worker: jest.fn().mockImplementation(() => ({

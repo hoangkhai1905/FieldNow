@@ -4,6 +4,7 @@ const prisma = require('../../src/infrastructure/prisma');
 const jwt = require('jsonwebtoken');
 const config = require('../../src/config');
 const sepayProvider = require('../../src/providers/sepay.provider');
+const { emailQueue } = require('../../src/infrastructure/queue');
 
 jest.spyOn(sepayProvider, 'createCheckoutFields').mockImplementation(() => ({
   checkoutUrl: 'https://checkout.test/fieldnow',
@@ -15,6 +16,7 @@ jest.spyOn(sepayProvider, 'extractBookingId').mockImplementation((body) => body?
 
 describe('Payment E2E Flow', () => {
   let userToken;
+  let ownerToken;
   let userId;
   let ownerId;
   let fieldId;
@@ -70,6 +72,7 @@ describe('Payment E2E Flow', () => {
       },
     });
     ownerId = owner.id;
+    ownerToken = jwt.sign({ userId: owner.id, role: owner.role, email: owner.email }, config.jwtSecret, { expiresIn: '1h' });
 
     const field = await prisma.field.create({
       data: {
@@ -94,6 +97,7 @@ describe('Payment E2E Flow', () => {
 
   it('completes book -> initiate payment -> SePay IPN confirmation', async () => {
     const bookingId = await createBooking('18:00', '19:00');
+    emailQueue.add.mockClear();
 
     const initRes = await request(app)
       .post('/api/v1/payments/initiate')
@@ -103,6 +107,11 @@ describe('Payment E2E Flow', () => {
     expect(initRes.status).toBe(200);
     expect(initRes.body.data).toHaveProperty('checkoutUrl');
     expect(initRes.body.data).toHaveProperty('paymentId');
+    expect(emailQueue.add).not.toHaveBeenCalledWith(
+      'email.booking_confirmed',
+      expect.any(Object),
+      expect.any(Object)
+    );
 
     const ipnRes = await postSepayIpn(bookingId, true);
     expect(ipnRes.status).toBe(200);
@@ -113,6 +122,69 @@ describe('Payment E2E Flow', () => {
 
     const payment = await prisma.payment.findFirst({ where: { booking_id: bookingId }, orderBy: { created_at: 'desc' } });
     expect(payment.status).toBe('COMPLETED');
+    expect(emailQueue.add).toHaveBeenCalledWith(
+      'email.booking_confirmed',
+      expect.objectContaining({ userId, bookingId }),
+      expect.objectContaining({ jobId: `email-booking-confirmed-${bookingId}` })
+    );
+  });
+
+  it('confirms cash bookings immediately and sends confirmation email', async () => {
+    const bookingId = await createBooking('19:00', '20:00');
+    emailQueue.add.mockClear();
+
+    const initRes = await request(app)
+      .post('/api/v1/payments/initiate')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ bookingId, provider: 'cash' });
+
+    expect(initRes.status).toBe(200);
+    expect(initRes.body.data).toEqual(expect.objectContaining({
+      isDirect: true,
+      status: 'CONFIRMED',
+    }));
+
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    expect(booking.status).toBe('CONFIRMED');
+
+    const payment = await prisma.payment.findFirst({ where: { booking_id: bookingId }, orderBy: { created_at: 'desc' } });
+    expect(payment.provider.toLowerCase()).toBe('cash');
+    expect(payment.status).toBe('PENDING');
+    expect(emailQueue.add).toHaveBeenCalledWith(
+      'email.booking_confirmed',
+      expect.objectContaining({ userId, bookingId }),
+      expect.objectContaining({ jobId: `email-booking-confirmed-${bookingId}` })
+    );
+
+    const confirmRes = await request(app)
+      .patch(`/api/v1/owner/payments/${bookingId}/confirm-cash`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(confirmRes.status).toBe(200);
+    expect(confirmRes.body.data).toEqual(expect.objectContaining({
+      id: payment.id,
+      status: 'COMPLETED',
+    }));
+  });
+
+  it('allows owner to reject an unpaid booking from their field', async () => {
+    const bookingId = await createBooking('20:00', '21:00');
+    emailQueue.add.mockClear();
+
+    const rejectRes = await request(app)
+      .patch(`/api/v1/owner/bookings/${bookingId}/reject`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(rejectRes.status).toBe(200);
+    expect(rejectRes.body.data).toEqual(expect.objectContaining({
+      id: bookingId,
+      status: 'CANCELLED',
+    }));
+    expect(emailQueue.add).toHaveBeenCalledWith(
+      'email.booking_cancelled',
+      expect.objectContaining({ userId, bookingId }),
+      expect.objectContaining({ jobId: `email-booking-cancelled-${bookingId}` })
+    );
   });
 
   it('treats duplicate terminal callbacks as idempotent provider acknowledgements', async () => {

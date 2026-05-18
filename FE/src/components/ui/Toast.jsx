@@ -32,13 +32,6 @@ export const Toast = ({
 
   if (!isVisible) return null;
 
-  const typeClasses = {
-    success: 'border-success bg-success/10',
-    error: 'border-danger bg-danger/10',
-    warning: 'border-warning bg-warning/10',
-    info: 'border-brand bg-brand/10',
-  };
-
   const iconClasses = {
     success: '✓',
     error: '✕',
@@ -46,56 +39,51 @@ export const Toast = ({
     info: 'ℹ',
   };
 
-  const typeColors = {
-    success: 'text-success',
-    error: 'text-danger',
-    warning: 'text-warning',
-    info: 'text-brand',
+  const colors = {
+    success: '#10b981',
+    error: '#f43f5e',
+    warning: '#F59E0B',
+    info: '#3b82f6',
   };
 
   return (
     <div
-      className={`
-        fixed
-        bottom-6
-        right-6
-        max-w-sm
-        rounded-lg
-        border-l-4
-        padding-4
-        backdrop-blur-sm
-        box-shadow-md
-        animate-slide-in-up
-        z-50
-        transition-all
-        duration-300
-        ${typeClasses[type]}
-      `}
       style={{
-        animation: 'slideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        position: 'fixed',
+        top: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 5000,
+        maxWidth: 'min(520px, calc(100vw - 32px))',
+        padding: '15px 22px',
+        borderRadius: '999px',
+        background: colors[type] || colors.info,
+        color: '#fff',
+        fontWeight: 850,
+        boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        pointerEvents: 'auto',
+        animation: 'slideInDown 0.25s ease-out',
       }}
     >
-      <div className="flex items-start gap-3">
-        {/* Icon */}
-        <div className={`flex-shrink-0 text-lg font-bold ${typeColors[type]}`}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <div style={{ fontSize: '18px', fontWeight: 950, lineHeight: 1 }}>
           {iconClasses[type]}
         </div>
 
-        {/* Message */}
-        <div className="flex-1">
-          <p className="text-sm font-medium text-ink">{message}</p>
-        </div>
+        <p style={{ margin: 0, fontSize: '14px', whiteSpace: 'normal', overflowWrap: 'anywhere' }}>{message}</p>
 
-        {/* Close Button */}
         <button
           onClick={() => {
             setIsVisible(false);
             onClose?.();
           }}
-          className="flex-shrink-0 text-muted hover:text-ink transition-colors"
+          style={{ marginLeft: '4px', border: 'none', background: 'rgba(255,255,255,0.18)', color: '#fff', width: '24px', height: '24px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}
           aria-label="Close notification"
         >
-          ✕
+          ×
         </button>
       </div>
     </div>
@@ -114,9 +102,9 @@ export const Toast = ({
 
 export const ToastContainer = ({ toasts = [] }) => {
   return (
-    <div className="fixed bottom-0 right-0 z-50 flex flex-col gap-2 p-4 pointer-events-none">
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 5000, pointerEvents: 'none' }}>
       {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
+        <div key={toast.id} style={{ pointerEvents: 'auto' }}>
           <Toast
             message={toast.message}
             type={toast.type}

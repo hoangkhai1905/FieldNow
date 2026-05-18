@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   MapPin,
   Clock,
@@ -10,11 +10,11 @@ import {
   Zap,
   CreditCard,
   Info,
-  CheckCircle2,
   AlertCircle,
   ChevronLeft
 } from 'lucide-react';
 import { getFieldDetail, createBooking, formatCurrency } from '../../api/endpoints';
+import Toast from '../../components/ui/Toast';
 
 const FieldDetail = () => {
   const fieldTypes = [
@@ -42,6 +42,15 @@ const FieldDetail = () => {
   // New: Price calculation
   const estimatedPrice = useMemo(() => {
     if (!field || !startTime || !endTime) return 0;
+    const selectedOwnerSlot = field.slots?.find((slot) => (
+      slot.startTime === startTime
+      && slot.endTime === endTime
+      && slot.priceOverride != null
+    ));
+    if (selectedOwnerSlot) {
+      return Number(selectedOwnerSlot.priceOverride);
+    }
+
     const [sH, sM] = startTime.split(':').map(Number);
     const [eH, eM] = endTime.split(':').map(Number);
     const durationHours = (eH + eM / 60) - (sH + sM / 60);
@@ -214,18 +223,7 @@ const FieldDetail = () => {
 
   return (
     <div style={{ color: '#fff', paddingBottom: '100px' }}>
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 20 }} exit={{ opacity: 0, y: -50 }}
-            style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 4000, padding: '16px 32px', background: toast.type === 'success' ? '#10b981' : '#f43f5e', color: '#fff', borderRadius: '100px', fontWeight: '800', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}
-          >
-            {toast.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-            {toast.text}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Back Button */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>

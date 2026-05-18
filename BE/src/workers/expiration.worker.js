@@ -2,6 +2,7 @@ const { Worker } = require('bullmq');
 const { defaultQueueOptions, emailQueue } = require('../infrastructure/queue');
 const prisma = require('../infrastructure/prisma');
 const bookingRepository = require('../repositories/booking.repository');
+const paymentRepository = require('../repositories/payment.repository');
 const { logger } = require('../infrastructure/logger');
 
 const processExpirationJob = async (job) => {
@@ -31,6 +32,7 @@ const processExpirationJob = async (job) => {
         }
 
         await bookingRepository.updateStatus(bookingId, 'CANCELLED', tx);
+        await paymentRepository.expirePendingByBookingId(bookingId, tx);
         logger.info(`[Worker] Booking ${bookingId} expired and cancelled.`);
 
         // Enqueue cancellation email

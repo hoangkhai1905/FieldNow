@@ -1,5 +1,6 @@
 const { processExpirationJob } = require('../../src/workers/expiration.worker');
 const bookingRepository = require('../../src/repositories/booking.repository');
+const paymentRepository = require('../../src/repositories/payment.repository');
 const { emailQueue } = require('../../src/infrastructure/queue');
 const _prisma = require('../../src/infrastructure/prisma');
 
@@ -7,6 +8,7 @@ jest.mock('../../src/infrastructure/prisma', () => ({
   $transaction: jest.fn((callback) => callback('mocked-tx')),
 }));
 jest.mock('../../src/repositories/booking.repository');
+jest.mock('../../src/repositories/payment.repository');
 jest.mock('../../src/infrastructure/queue', () => ({
   emailQueue: {
     add: jest.fn(),
@@ -40,6 +42,7 @@ describe('Worker Idempotency', () => {
       });
 
       expect(bookingRepository.updateStatus).toHaveBeenCalledWith('booking-1', 'CANCELLED', 'mocked-tx');
+      expect(paymentRepository.expirePendingByBookingId).toHaveBeenCalledWith('booking-1', 'mocked-tx');
       expect(emailQueue.add).toHaveBeenCalledWith('email.booking_cancelled', expect.any(Object));
     });
 
@@ -56,6 +59,7 @@ describe('Worker Idempotency', () => {
       });
 
       expect(bookingRepository.updateStatus).not.toHaveBeenCalled();
+      expect(paymentRepository.expirePendingByBookingId).not.toHaveBeenCalled();
       expect(emailQueue.add).not.toHaveBeenCalled();
     });
 
@@ -72,6 +76,7 @@ describe('Worker Idempotency', () => {
       });
 
       expect(bookingRepository.updateStatus).not.toHaveBeenCalled();
+      expect(paymentRepository.expirePendingByBookingId).not.toHaveBeenCalled();
       expect(emailQueue.add).not.toHaveBeenCalled();
     });
 
@@ -88,6 +93,7 @@ describe('Worker Idempotency', () => {
       });
 
       expect(bookingRepository.updateStatus).not.toHaveBeenCalled();
+      expect(paymentRepository.expirePendingByBookingId).not.toHaveBeenCalled();
     });
   });
 });

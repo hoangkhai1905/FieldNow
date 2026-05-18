@@ -235,7 +235,7 @@ const PaymentResult = () => {
             XEM LỊCH ĐẶT CỦA TÔI <ChevronRight size={20} />
           </button>
           
-          {(status === 'error' || status === 'cancel') && (
+          {(status === 'error' || status === 'cancel') && booking?.status !== 'CANCELLED' && payment?.status !== 'EXPIRED' && (
             <button
               onClick={() => {
                 if (booking) {

@@ -14,6 +14,7 @@ import {
   Zap
 } from 'lucide-react';
 import { cancelBooking, formatCurrency, getMyBookings, getPaymentStatus, initiatePayment } from '../../api/endpoints';
+import Toast from '../../components/ui/Toast';
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
@@ -43,6 +44,19 @@ const redirectToSePay = (checkoutUrl, formFields) => {
 
   document.body.appendChild(form);
   form.submit();
+};
+
+const getPaymentStatusConfig = (status) => {
+  switch (status) {
+    case 'COMPLETED':
+      return { label: 'Đã thanh toán', color: '#10b981' };
+    case 'FAILED':
+      return { label: 'Thanh toán lỗi', color: '#f43f5e' };
+    case 'EXPIRED':
+      return { label: 'Đã hết hạn', color: '#f97316' };
+    default:
+      return { label: 'Chưa hoàn tất', color: '#64748b' };
+  }
 };
 
 const MyBookings = () => {
@@ -124,20 +138,7 @@ const MyBookings = () => {
 
   return (
     <div style={{ color: '#fff', paddingBottom: '100px' }}>
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 20 }}
-            exit={{ opacity: 0, y: -50 }}
-            style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, padding: '16px 32px', background: toast.type === 'success' ? '#10b981' : '#f43f5e', color: '#fff', borderRadius: '100px', fontWeight: '800', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}
-          >
-            {toast.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-            {toast.text}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       <section style={{ marginBottom: '48px', textAlign: 'center', marginTop: '40px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: '100px', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '24px' }}>
@@ -162,6 +163,7 @@ const MyBookings = () => {
               {bookings.map((booking, idx) => {
                 const status = getStatusConfig(booking.status);
                 const payment = paymentMap[booking.id];
+                const paymentStatus = payment ? getPaymentStatusConfig(payment.status) : null;
 
                 return (
                   <motion.div
@@ -220,7 +222,7 @@ const MyBookings = () => {
                       {payment && (
                         <div style={{ textAlign: 'right' }}>
                           <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Giao dịch</p>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: payment.status === 'COMPLETED' ? '#10b981' : '#64748b' }}>{payment.status === 'COMPLETED' ? 'Đã thanh toán' : 'Chưa hoàn tất'}</span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: paymentStatus.color }}>{paymentStatus.label}</span>
                         </div>
                       )}
                     </div>

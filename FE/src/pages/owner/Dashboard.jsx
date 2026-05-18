@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Clock,
   ArrowRight,
-  ExternalLink,
   BarChart3
 } from 'lucide-react';
 import { getOwnerFields, formatCurrency, getOwnerStats, getOwnerBookings } from '../../api/endpoints';
@@ -72,9 +71,6 @@ const Dashboard = () => {
         <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
           <Link to="/owner/fields" style={{ textDecoration: 'none', background: '#F59E0B', color: '#000', padding: '16px 28px', borderRadius: '14px', fontWeight: '900', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 20px rgba(245, 158, 11, 0.2)' }}>
             QUẢN LÝ SÂN <ArrowRight size={18} strokeWidth={3} />
-          </Link>
-          <Link to="/tim-san" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: '#fff', padding: '16px 28px', borderRadius: '14px', fontWeight: '800', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-            XEM CÔNG KHAI <ExternalLink size={18} />
           </Link>
         </div>
       </motion.section>

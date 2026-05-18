@@ -12,7 +12,10 @@ router.use(authMiddleware);
 /**
  * Field management routes - strictly restricted to ADMIN role only
  */
+router.get('/stats', roleMiddleware(['ADMIN']), adminController.getDashboardStats);
 router.get('/fields', roleMiddleware(['ADMIN']), fieldController.getAdminFields);
+router.get('/payments/cash', roleMiddleware(['ADMIN']), adminController.getCashPayments);
+router.patch('/payments/:bookingId/confirm-cash', roleMiddleware(['ADMIN']), adminController.confirmCashPayment);
 
 /**
  * @swagger
@@ -118,5 +121,16 @@ router.get('/users', roleMiddleware(['OWNER', 'ADMIN']), adminController.getUser
  *         description: User role updated
  */
 router.patch('/users/:id/role', roleMiddleware(['OWNER', 'ADMIN']), adminController.updateUserRole);
+
+/**
+ * @swagger
+ * /admin/users/{id}/status:
+ *   patch:
+ *     summary: Activate or deactivate a user account
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.patch('/users/:id/status', roleMiddleware(['ADMIN']), adminController.updateUserStatus);
 
 module.exports = router;

@@ -37,15 +37,27 @@ const startCleanupCron = () => {
 
       logger.info(`[Cron] Found ${staleBookings.length} stale bookings. Cancelling...`);
 
-      // Update in batch
-      await prisma.booking.updateMany({
-        where: {
-          id: { in: staleBookings.map((b) => b.id) },
-        },
-        data: {
-          status: 'CANCELLED',
-        },
-      });
+      const staleBookingIds = staleBookings.map((b) => b.id);
+
+      await prisma.$transaction([
+        prisma.booking.updateMany({
+          where: {
+            id: { in: staleBookingIds },
+          },
+          data: {
+            status: 'CANCELLED',
+          },
+        }),
+        prisma.payment.updateMany({
+          where: {
+            booking_id: { in: staleBookingIds },
+            status: 'PENDING',
+          },
+          data: {
+            status: 'EXPIRED',
+          },
+        }),
+      ]);
 
       // Send emails
       for (const booking of staleBookings) {

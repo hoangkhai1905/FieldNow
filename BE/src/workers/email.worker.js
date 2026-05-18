@@ -126,17 +126,6 @@ const processEmailJob = async (job) => {
   const fullName = user.full_name || 'Cầu thủ';
 
   switch (name) {
-    case 'email.booking_created':
-      subject = 'FieldNow - Đơn đặt sân của bạn đang chờ thanh toán';
-      text = `Hi ${fullName},\n\nYour booking (${bookingId}) has been created. Please complete payment within 15 minutes to confirm.`;
-      htmlBody = createHtmlEmail(
-        'Đơn đặt sân đang chờ thanh toán',
-        `<h2>Xin chào ${fullName},</h2>
-         <p>Đơn đặt sân của bạn (Mã: <strong>${bookingId}</strong>) đã được tạo thành công trên hệ thống FieldNow.</p>
-         <p>Vui lòng hoàn tất thanh toán trong vòng <span class="highlight">15 phút</span> để giữ sân. Sau thời gian này, hệ thống sẽ tự động hủy đơn đặt của bạn.</p>`,
-        `<a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/nguoi-dung/dat-san-cua-toi" class="btn">Thanh Toán Ngay</a>`
-      );
-      break;
     case 'email.booking_confirmed':
       subject = 'FieldNow - Đặt sân thành công!';
       text = `Hi ${fullName},\n\nYour booking (${bookingId}) is confirmed!`;

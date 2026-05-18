@@ -17,6 +17,7 @@ const OwnerLayout = () => {
 					{ to: '/owner', label: 'Bảng điều khiển', meta: 'Overview', icon: 'Layout' },
 					{ to: '/owner/fields', label: 'Sân của tôi', meta: 'My Fields', icon: 'Trophy' },
 					{ to: '/owner/bookings', label: 'Lịch đặt sân', meta: 'Bookings', icon: 'Calendar' },
+					{ to: '/owner/cash-payments', label: 'Tiền mặt', meta: 'Cash payments', icon: 'Banknote' },
 				]}
 			/>
 

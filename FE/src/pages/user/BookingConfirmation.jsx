@@ -12,9 +12,10 @@ import {
   List,
   Zap,
   Info,
-  Banknote
+  Banknote,
+  XCircle
 } from 'lucide-react';
-import { formatCurrency, initiatePayment } from '../../api/endpoints';
+import { cancelBooking, formatCurrency, getBookingDetail, getPaymentStatus, initiatePayment } from '../../api/endpoints';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -26,23 +27,64 @@ const formatDate = (dateStr) => {
 const BookingConfirmation = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const booking = state?.booking || null;
+  const [booking, setBooking] = React.useState(state?.booking || null);
+  const [payment, setPayment] = React.useState(null);
   const [paymentMethod, setPaymentMethod] = React.useState('sepay'); // 'sepay' or 'cash'
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [isCancelling, setIsCancelling] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState('');
+
+  const isExpired = booking?.status === 'CANCELLED' || payment?.status === 'EXPIRED';
+
+  React.useEffect(() => {
+    if (!booking?.id || booking.status !== 'PENDING') return undefined;
+
+    let isMounted = true;
+    let fallbackTimeoutId;
+
+    const refreshBookingState = async () => {
+      try {
+        const [freshBooking, freshPayment] = await Promise.all([
+          getBookingDetail(booking.id),
+          getPaymentStatus(booking.id).catch(() => null),
+        ]);
+
+        if (!isMounted) return;
+        setBooking(freshBooking);
+        if (freshPayment) setPayment(freshPayment);
+      } catch {
+        // Keep the existing confirmation data if a transient refresh fails.
+      }
+    };
+
+    const expiresAt = booking.expiresAt || booking.expires_at;
+    const expiresAtMs = expiresAt ? new Date(expiresAt).getTime() : null;
+    const delayMs = expiresAtMs ? Math.max(0, expiresAtMs - Date.now() + 1000) : 0;
+
+    if (delayMs === 0) {
+      void refreshBookingState();
+    } else {
+      fallbackTimeoutId = window.setTimeout(refreshBookingState, delayMs);
+    }
+
+    return () => {
+      isMounted = false;
+      if (fallbackTimeoutId) window.clearTimeout(fallbackTimeoutId);
+    };
+  }, [booking?.expiresAt, booking?.expires_at, booking?.id, booking?.status]);
 
   const getStatusLabel = (status) => {
     switch (status) {
       case 'CONFIRMED': return { label: 'Đã xác nhận', color: '#10b981' };
       case 'PENDING': return { label: 'Chờ thanh toán', color: '#F59E0B' };
-      case 'CANCELLED': return { label: 'Đã hủy', color: '#f43f5e' };
+      case 'CANCELLED': return { label: 'Hết hạn thanh toán', color: '#f43f5e' };
       default: return { label: status, color: '#64748b' };
     }
   };
 
   const handlePayNow = async () => {
-    if (!booking) return;
+    if (!booking || isExpired) return;
     setIsProcessing(true);
     try {
       const response = await initiatePayment(booking.id, paymentMethod);
@@ -80,6 +122,23 @@ const BookingConfirmation = () => {
     }
   };
 
+  const handleCancelBooking = async () => {
+    if (!booking || isCancelling || isExpired) return;
+    if (!window.confirm('Bạn có chắc muốn hủy đặt sân này?')) return;
+
+    setIsCancelling(true);
+    try {
+      await cancelBooking(booking.id);
+      navigate('/nguoi-dung/dat-san-cua-toi', {
+        state: { message: 'Đã hủy đặt sân thành công.' },
+      });
+    } catch (error) {
+      alert(error.message || 'Không thể hủy đặt sân');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const glassStyle = {
     background: 'rgba(255, 255, 255, 0.05)',
     backdropFilter: 'blur(20px)',
@@ -100,11 +159,13 @@ const BookingConfirmation = () => {
           animate={{ opacity: 1, scale: 1 }}
           style={{ textAlign: 'center', marginBottom: '48px' }}
         >
-          <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: '2px solid #10b981' }}>
-            <CheckCircle2 size={56} color="#10b981" />
+          <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: isExpired ? 'rgba(244, 63, 94, 0.12)' : 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: `2px solid ${isExpired ? '#f43f5e' : '#10b981'}` }}>
+            {isExpired ? <XCircle size={56} color="#f43f5e" /> : <CheckCircle2 size={56} color="#10b981" />}
           </div>
-          <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '-2px', margin: 0 }}>ĐẶT SÂN THÀNH CÔNG!</h1>
-          <p style={{ color: '#a7f3d0', fontSize: '18px', marginTop: '12px', opacity: 0.8 }}>Yêu cầu của bạn đã được hệ thống ghi nhận.</p>
+          <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '-2px', margin: 0 }}>{isExpired ? 'THANH TOÁN HẾT HẠN' : 'ĐẶT SÂN THÀNH CÔNG!'}</h1>
+          <p style={{ color: isExpired ? '#fecdd3' : '#a7f3d0', fontSize: '18px', marginTop: '12px', opacity: 0.8 }}>
+            {isExpired ? 'Đơn đặt sân đã quá thời gian thanh toán và được hệ thống hủy.' : 'Yêu cầu của bạn đã được hệ thống ghi nhận.'}
+          </p>
         </motion.div>
 
         {booking ? (
@@ -179,8 +240,15 @@ const BookingConfirmation = () => {
               </div>
             </div>
 
+            {isExpired && (
+              <div style={{ marginTop: '32px', padding: '18px 20px', borderRadius: '18px', background: 'rgba(244, 63, 94, 0.12)', border: '1px solid rgba(244, 63, 94, 0.28)', color: '#fecdd3', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '800' }}>
+                <XCircle size={22} color="#f43f5e" />
+                Đơn này đã hết hạn thanh toán. Vui lòng tạo lịch đặt sân mới nếu bạn vẫn muốn giữ khung giờ này.
+              </div>
+            )}
+
             {/* Payment Method Selection */}
-            <div style={{ marginTop: '40px' }}>
+            {!isExpired && <div style={{ marginTop: '40px' }}>
               <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Chọn phương thức thanh toán</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <motion.div 
@@ -225,10 +293,10 @@ const BookingConfirmation = () => {
                   </div>
                 </motion.div>
               </div>
-            </div>
+            </div>}
 
             <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
-              <motion.button
+              {!isExpired && <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handlePayNow}
@@ -254,7 +322,7 @@ const BookingConfirmation = () => {
                 {paymentMethod === 'cash' ? <Banknote size={20} /> : <CreditCard size={20} />}
                 {isProcessing ? 'ĐANG XỬ LÝ...' : (paymentMethod === 'cash' ? 'XÁC NHẬN ĐẶT SÂN' : 'THANH TOÁN NGAY')} 
                 <ArrowRight size={20} />
-              </motion.button>
+              </motion.button>}
 
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -265,6 +333,34 @@ const BookingConfirmation = () => {
                 <List size={20} /> LỊCH ĐẶT
               </motion.button>
             </div>
+
+            {booking.status === 'PENDING' && !isExpired && (
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCancelBooking}
+                disabled={isCancelling || isProcessing}
+                style={{
+                  marginTop: '16px',
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '18px',
+                  background: 'rgba(244, 63, 94, 0.12)',
+                  color: '#f43f5e',
+                  fontWeight: '900',
+                  border: '1px solid rgba(244, 63, 94, 0.25)',
+                  cursor: isCancelling || isProcessing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  opacity: isCancelling || isProcessing ? 0.65 : 1,
+                }}
+              >
+                <XCircle size={20} />
+                {isCancelling ? 'ĐANG HỦY...' : 'HỦY ĐẶT SÂN'}
+              </motion.button>
+            )}
           </motion.div>
         ) : (
           <motion.div

@@ -245,7 +245,7 @@ const options = {
             booking_id: { type: 'string', format: 'uuid' },
             amount: { type: 'number', example: 500000 },
             provider: { type: 'string', example: 'vnpay' },
-            status: { type: 'string', enum: ['PENDING', 'COMPLETED', 'FAILED'] },
+            status: { type: 'string', enum: ['PENDING', 'COMPLETED', 'FAILED', 'EXPIRED'] },
             provider_ref: { type: 'string', nullable: true },
             created_at: { type: 'string', format: 'date-time' },
             updated_at: { type: 'string', format: 'date-time' },

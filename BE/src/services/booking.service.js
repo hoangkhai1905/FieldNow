@@ -3,6 +3,7 @@ const bookingRepository = require('../repositories/booking.repository');
 const fieldRepository = require('../repositories/field.repository');
 const slotRepository = require('../repositories/slot.repository');
 const bookingEvents = require('../events/booking.events');
+const bookingSideEffects = require('./booking-side-effect.service');
 const { redisClient } = require('../infrastructure/redis');
 const { errors } = require('../utils/errors');
 const Pipeline = require('../utils/pipeline');
@@ -76,6 +77,7 @@ const createBooking = async (userId, { fieldId, date, startTime, endTime }) => {
     fieldRepository,
     slotRepository,
     bookingEvents,
+    bookingSideEffects,
     errors,
     acquireBookingLock,
     releaseBookingLock,
@@ -135,9 +137,46 @@ const cancelBooking = async (bookingId, userId) => {
   return updatedBooking;
 };
 
+const rejectOwnerBooking = async (bookingId, ownerId) => {
+  const booking = await bookingRepository.findById(bookingId);
+  if (!booking) {
+    throw errors.notFound('Booking');
+  }
+  if (booking.field?.owner_id !== ownerId) {
+    throw errors.forbidden('You do not own this booking');
+  }
+  if (booking.status === 'CANCELLED') {
+    throw errors.conflict('Booking is already cancelled');
+  }
+  if (booking.payments?.some((payment) => payment.status === 'COMPLETED')) {
+    throw errors.conflict('Cannot reject a booking with completed payment');
+  }
+
+  const updatedBooking = await prisma.$transaction(async (tx) => {
+    const updated = await bookingRepository.updateStatus(bookingId, 'CANCELLED', tx);
+    await tx.payment.updateMany({
+      where: {
+        booking_id: bookingId,
+        status: 'PENDING',
+      },
+      data: { status: 'FAILED' },
+    });
+    return updated;
+  });
+
+  await bookingSideEffects.removeBookingExpirationJob(bookingId);
+  await bookingSideEffects.scheduleBookingCancelledSideEffects({
+    bookingId,
+    userId: booking.user_id,
+  });
+
+  return updatedBooking;
+};
+
 module.exports = {
   createBooking,
   getUserBookings,
   getBookingById,
   cancelBooking,
+  rejectOwnerBooking,
 };

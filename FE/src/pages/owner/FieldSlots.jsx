@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Clock,
   Trash2,
-  Check,
-  AlertCircle,
   ArrowLeft,
   Zap,
   Loader2,
@@ -26,6 +24,7 @@ import {
   deleteOwnerSlot,
   updateOwnerSlot,
 } from '../../api/endpoints';
+import Toast from '../../components/ui/Toast';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -369,19 +368,7 @@ const FieldSlots = () => {
 
   return (
     <div style={{ color: '#fff', paddingBottom: '100px' }}>
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 20 }}
-            exit={{ opacity: 0, y: -50 }}
-            style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, padding: '16px 32px', background: toast.type === 'success' ? '#10b981' : '#f43f5e', color: '#fff', borderRadius: '100px', fontWeight: '800', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}
-          >
-            {toast.type === 'success' ? <Check size={20} /> : <AlertCircle size={20} />}
-            {toast.text}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       <header style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '24px' }}>
         <button

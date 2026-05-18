@@ -25,7 +25,9 @@ class CreateBookingStep {
         // Calculate duration in hours
         const durationMs = ctx.reqEnd.getTime() - ctx.reqStart.getTime();
         const durationHours = durationMs / (1000 * 60 * 60);
-        const totalPrice = Math.round(durationHours * Number(field.price_per_hour));
+        const totalPrice = slot?.price_override != null
+          ? Number(slot.price_override)
+          : Math.round(durationHours * Number(field.price_per_hour));
 
         const newBooking = await ctx.bookingRepository.createBooking({
           userId: ctx.userId,

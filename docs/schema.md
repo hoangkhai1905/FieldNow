@@ -133,6 +133,9 @@ Business invariant:
 - `PENDING` and `CONFIRMED` bookings block the time interval.
 - `CANCELLED` bookings do not block the time interval.
 - The exclusion constraint is the final source of truth against double booking.
+- When a booking matches an owner-created `FieldSlot`, `total_price` uses
+  `FieldSlot.price_override` when present; otherwise it falls back to
+  `durationHours * Field.price_per_hour`.
 
 ### Payment
 
@@ -140,7 +143,7 @@ Business invariant:
 - `booking_id`: UUID, foreign key to `Booking.id`
 - `amount`: decimal, required
 - `provider`: text, required
-- `status`: enum `PENDING | COMPLETED | FAILED`, default `PENDING`
+- `status`: enum `PENDING | COMPLETED | FAILED | EXPIRED`, default `PENDING`
 - `created_at`: timestamptz, default `now()`
 - `updated_at`: timestamp, auto-updated
 
@@ -187,7 +190,8 @@ Main transitions:
 
 - Create booking: starts as `PENDING`.
 - Online payment success: `PENDING -> CONFIRMED`.
-- Online payment timeout: `PENDING -> CANCELLED`.
+- Online payment timeout: booking `PENDING -> CANCELLED`, pending payment
+  attempt `PENDING -> EXPIRED`.
 - User cancellation: `PENDING -> CANCELLED`.
 - Cash payment selection: `PENDING -> CONFIRMED`; payment is collected at the venue.
 
@@ -203,12 +207,14 @@ Allowed states:
 - `PENDING`
 - `COMPLETED`
 - `FAILED`
+- `EXPIRED`
 
 Main transitions:
 
 - Payment attempt creation: starts as `PENDING`.
 - Payment callback success: `PENDING -> COMPLETED`.
 - Payment callback failure: `PENDING -> FAILED`.
+- Booking timeout: latest pending payment `PENDING -> EXPIRED`.
 - Retry after failed online payment: create a new `PENDING` payment row.
 
 Idempotency rule:
@@ -263,7 +269,7 @@ Job:
 
 - Name: `booking.expire`
 - Delay: 15 minutes from booking creation
-- `jobId`: `booking-expire:{bookingId}`
+- `jobId`: `booking-expire-{bookingId}`
 - Payload:
   - `bookingId`
   - `slotId`
@@ -273,7 +279,7 @@ Worker behavior:
 
 - Load booking by id.
 - If status is still `PENDING` and `expires_at <= now`, set booking to
-  `CANCELLED`.
+  `CANCELLED` and set pending payments for that booking to `EXPIRED`.
 - If booking is `CONFIRMED` or `CANCELLED`, no-op.
 - Cash-confirmed bookings are already `CONFIRMED`, so expiration no-ops.
 
@@ -281,15 +287,13 @@ Worker behavior:
 
 Jobs:
 
-- `email.booking_created`
 - `email.booking_confirmed`
 - `email.booking_cancelled`
 
 Job ids:
 
-- `email-booking-created:{bookingId}`
-- `email-booking-confirmed:{bookingId}`
-- `email-booking-cancelled:{bookingId}`
+- `email-booking-confirmed-{bookingId}`
+- `email-booking-cancelled-{bookingId}`
 
 Payload:
 

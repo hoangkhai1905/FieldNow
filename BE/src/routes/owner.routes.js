@@ -137,6 +137,10 @@ router.patch('/fields/:id/toggle-status', ownerController.toggleFieldStatus);
  *         description: Forbidden
  */
 router.get('/bookings', ownerController.getOwnerBookings);
+router.patch('/bookings/:bookingId/reject', ownerController.rejectOwnerBooking);
+
+router.get('/payments/cash', ownerController.getOwnerCashPayments);
+router.patch('/payments/:bookingId/confirm-cash', ownerController.confirmOwnerCashPayment);
 
 /**
  * @swagger

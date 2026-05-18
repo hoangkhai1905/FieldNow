@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Layout, 
   Trophy, 
@@ -8,11 +8,22 @@ import {
   Zap,
   Calendar,
   ShieldCheck,
-  Users
+  Users,
+  Banknote,
+  Home,
+  LogOut
 } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
 
-const Sidebar = ({ title, description, links = [] }) => {
+const Sidebar = ({ title, description, links = [], badgeLabel = 'OWNER PORTAL', badgeIcon = <Zap size={14} color="#F59E0B" fill="#F59E0B" /> }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const iconMap = {
     Layout: <Layout size={18} />,
@@ -20,7 +31,8 @@ const Sidebar = ({ title, description, links = [] }) => {
     Settings: <Settings size={18} />,
     Calendar: <Calendar size={18} />,
     ShieldCheck: <ShieldCheck size={18} />,
-    Users: <Users size={18} />
+    Users: <Users size={18} />,
+    Banknote: <Banknote size={18} />
   };
 
   const glassStyle = {
@@ -29,17 +41,24 @@ const Sidebar = ({ title, description, links = [] }) => {
     WebkitBackdropFilter: 'blur(20px)',
     borderRight: '1px solid rgba(255, 255, 255, 0.1)',
     width: '320px',
+    height: '100vh',
+    position: 'sticky',
+    top: 0,
+    alignSelf: 'flex-start',
+    flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    padding: '40px 24px'
+    padding: '40px 24px',
+    boxSizing: 'border-box',
+    overflowY: 'auto'
   };
 
   return (
     <aside style={glassStyle}>
       <div style={{ marginBottom: '48px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(245, 158, 11, 0.2)', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '20px' }}>
-           <Zap size={14} color="#F59E0B" fill="#F59E0B" />
-           <span style={{ color: '#F59E0B', fontSize: '10px', fontWeight: '900', letterSpacing: '1px' }}>OWNER PORTAL</span>
+           {badgeIcon}
+           <span style={{ color: '#F59E0B', fontSize: '10px', fontWeight: '900', letterSpacing: '1px' }}>{badgeLabel}</span>
         </div>
         <h2 style={{ fontSize: '28px', fontWeight: '950', textTransform: 'uppercase', margin: '0 0 12px 0', lineHeight: 1.1 }}>{title}</h2>
         <p style={{ color: '#a7f3d0', fontSize: '14px', opacity: 0.7, margin: 0, lineHeight: 1.5 }}>{description}</p>
@@ -78,7 +97,51 @@ const Sidebar = ({ title, description, links = [] }) => {
         })}
       </nav>
 
-      <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
+      <div style={{ marginTop: 'auto', paddingTop: '40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+         <Link
+           to="/"
+           style={{
+             display: 'flex',
+             alignItems: 'center',
+             gap: '12px',
+             padding: '14px 16px',
+             borderRadius: '14px',
+             textDecoration: 'none',
+             background: 'rgba(255,255,255,0.04)',
+             border: '1px solid rgba(255,255,255,0.08)',
+             color: '#fff',
+             fontSize: '13px',
+             fontWeight: '900',
+             textTransform: 'uppercase'
+           }}
+         >
+            <Home size={18} color="#10b981" />
+            Trang chủ
+         </Link>
+
+         <button
+           type="button"
+           onClick={handleLogout}
+           style={{
+             display: 'flex',
+             alignItems: 'center',
+             gap: '12px',
+             padding: '14px 16px',
+             borderRadius: '14px',
+             background: 'rgba(244, 63, 94, 0.1)',
+             border: '1px solid rgba(244, 63, 94, 0.22)',
+             color: '#f43f5e',
+             fontSize: '13px',
+             fontWeight: '900',
+             textTransform: 'uppercase',
+             cursor: 'pointer',
+             textAlign: 'left'
+           }}
+         >
+            <LogOut size={18} />
+            Đăng xuất
+         </button>
+
          <div style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <p style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: '#10b981' }}>Trạng thái hệ thống</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

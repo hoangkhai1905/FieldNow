@@ -1,6 +1,9 @@
 const bookingRepository = require('../repositories/booking.repository');
+const paymentRepository = require('../repositories/payment.repository');
+const bookingService = require('../services/booking.service');
 const fieldService = require('../services/field.service');
 const ownerService = require('../services/owner.service');
+const paymentService = require('../services/payment.service');
 const { parsePagination } = require('../utils/pagination');
 
 const getOwnerBookings = async (req, res, next) => {
@@ -38,8 +41,41 @@ const toggleFieldStatus = async (req, res, next) => {
   }
 };
 
+const getOwnerCashPayments = async (req, res, next) => {
+  try {
+    const result = await paymentRepository.findCashPaymentsByOwner(req.user.userId, {
+      ...parsePagination(req.query, { limit: 10, maxLimit: 100 }),
+      status: req.query.status,
+    });
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const confirmOwnerCashPayment = async (req, res, next) => {
+  try {
+    const payment = await paymentService.confirmCashPayment(req.params.bookingId, req.user.userId, { scope: 'owner' });
+    res.status(200).json({ success: true, data: payment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const rejectOwnerBooking = async (req, res, next) => {
+  try {
+    const booking = await bookingService.rejectOwnerBooking(req.params.bookingId, req.user.userId);
+    res.status(200).json({ success: true, data: booking });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getOwnerBookings,
   getOwnerStats,
   toggleFieldStatus,
+  getOwnerCashPayments,
+  confirmOwnerCashPayment,
+  rejectOwnerBooking,
 };

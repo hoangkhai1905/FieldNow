@@ -1,5 +1,5 @@
 const bookingEvents = require('../events/booking.events');
-const { bookingExpirationQueue, emailQueue } = require('../infrastructure/queue');
+const bookingSideEffects = require('../services/booking-side-effect.service');
 const { logger } = require('../infrastructure/logger');
 
 const registerBookingListeners = () => {
@@ -9,21 +9,7 @@ const registerBookingListeners = () => {
 
   bookingEvents.on('BOOKING_CREATED', async ({ bookingId, slotId, userId }) => {
     try {
-      await bookingExpirationQueue.add('booking.expire', {
-        bookingId,
-        slotId,
-        expectedStatus: 'PENDING',
-      }, {
-        delay: 15 * 60 * 1000,
-        jobId: `booking-expire:${bookingId}`,
-      });
-
-      await emailQueue.add('email.booking_created', {
-        userId,
-        bookingId,
-      }, {
-        jobId: `email-booking-created:${bookingId}`,
-      });
+      await bookingSideEffects.scheduleBookingCreatedSideEffects({ bookingId, slotId, userId });
     } catch (error) {
       logger.error({ err: error, bookingId }, '[BookingEvents] Failed to handle BOOKING_CREATED');
     }
@@ -31,12 +17,7 @@ const registerBookingListeners = () => {
 
   bookingEvents.on('BOOKING_CANCELLED', async ({ bookingId, userId }) => {
     try {
-      await emailQueue.add('email.booking_cancelled', {
-        userId,
-        bookingId,
-      }, {
-        jobId: `email-booking-cancelled:${bookingId}`,
-      });
+      await bookingSideEffects.scheduleBookingCancelledSideEffects({ bookingId, userId });
     } catch (error) {
       logger.error({ err: error, bookingId }, '[BookingEvents] Failed to handle BOOKING_CANCELLED');
     }

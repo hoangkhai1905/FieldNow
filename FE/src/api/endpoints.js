@@ -44,14 +44,19 @@ export const apiPaths = {
 		slotsByField: (fieldId) => `/owner/fields/${fieldId}/slots`,
 		toggleStatus: (fieldId) => `/owner/fields/${fieldId}/toggle-status`,
 		bookings: '/owner/bookings',
+		cashPayments: '/owner/payments/cash',
+		confirmCashPayment: (bookingId) => `/owner/payments/${bookingId}/confirm-cash`,
+		rejectBooking: (bookingId) => `/owner/bookings/${bookingId}/reject`,
 		stats: '/owner/stats',
 	},
 	admin: {
+		stats: '/admin/stats',
 		fields: '/admin/fields',
 		approveField: (fieldId) => `/admin/fields/${fieldId}/approve`,
 		rejectField: (fieldId) => `/admin/fields/${fieldId}/reject`,
 		users: '/admin/users',
 		userRole: (userId) => `/admin/users/${userId}/role`,
+		userStatus: (userId) => `/admin/users/${userId}/status`,
 	},
 };
 
@@ -135,6 +140,10 @@ export const normalizeBooking = (booking) => ({
 				email: booking.user.email ?? '',
 			}
 		: null,
+	payments: Array.isArray(booking.payments) ? booking.payments.map(normalizePayment) : [],
+	payment: booking.payment ? normalizePayment(booking.payment) : (
+		Array.isArray(booking.payments) && booking.payments.length ? normalizePayment(booking.payments[0]) : null
+	),
 	slot: booking.slot
 		? {
 				...normalizeSlot(booking.slot),
@@ -153,12 +162,21 @@ export const normalizePayment = (payment) => ({
 	updatedAt: payment.updated_at ?? payment.updatedAt ?? null,
 });
 
+export const normalizeCashPayment = (payment) => ({
+	...normalizePayment(payment),
+	booking: payment.booking ? normalizeBooking(payment.booking) : null,
+	user: payment.booking?.user ?? null,
+	field: payment.booking?.field ? normalizeFieldBrief(payment.booking.field) : null,
+});
+
 export const normalizeUser = (user) => ({
 	id: user.id,
 	email: user.email,
 	fullName: user.full_name ?? user.fullName ?? '',
 	phoneNumber: user.phone_number ?? user.phone ?? '',
 	role: user.role,
+	isActive: user.is_active ?? user.isActive ?? true,
+	deactivatedAt: user.deactivated_at ?? user.deactivatedAt ?? null,
 	createdAt: user.created_at ?? user.createdAt ?? null,
 });
 
@@ -344,6 +362,25 @@ export const getOwnerBookings = async (params = {}) => {
 	};
 };
 
+export const rejectOwnerBooking = async (bookingId) => {
+	const data = await apiRequest({ method: 'PATCH', url: apiPaths.owner.rejectBooking(bookingId) });
+	return normalizeBooking(data);
+};
+
+export const getOwnerCashPayments = async (params = {}) => {
+	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.cashPayments, params });
+	const rawPayments = Array.isArray(data) ? data : data.payments ?? [];
+	return {
+		payments: rawPayments.map(normalizeCashPayment),
+		pagination: data.pagination ?? null,
+	};
+};
+
+export const confirmOwnerCashPayment = async (bookingId) => {
+	const data = await apiRequest({ method: 'PATCH', url: apiPaths.owner.confirmCashPayment(bookingId) });
+	return normalizePayment(data);
+};
+
 export const getOwnerStats = async () => {
 	const data = await apiRequest({ method: 'GET', url: apiPaths.owner.stats });
 	return data;
@@ -373,6 +410,8 @@ export const approveField = async (fieldId) => apiRequest({ method: 'PATCH', url
 
 export const rejectField = async (fieldId) => apiRequest({ method: 'PATCH', url: apiPaths.admin.rejectField(fieldId) });
 
+export const getAdminStats = async () => apiRequest({ method: 'GET', url: apiPaths.admin.stats });
+
 export const getAdminFields = async (params = {}) => {
 	const data = await apiRequest({ method: 'GET', url: apiPaths.admin.fields, params });
 	const rawFields = Array.isArray(data) ? data : data.fields ?? [];
@@ -394,6 +433,11 @@ export const getAdminUsers = async (params = {}) => {
 
 export const updateUserRole = async (userId, role) =>
 	apiRequest({ method: 'PATCH', url: apiPaths.admin.userRole(userId), data: { role } });
+
+export const updateUserStatus = async (userId, isActive) => {
+	const data = await apiRequest({ method: 'PATCH', url: apiPaths.admin.userStatus(userId), data: { isActive } });
+	return normalizeUser(data);
+};
 
 export const deleteOwnerSlot = async (slotId) =>
 	apiRequest({ method: 'DELETE', url: apiPaths.owner.slot(slotId) });

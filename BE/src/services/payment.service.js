@@ -6,6 +6,7 @@ const { getPaymentProvider } = require('../providers/payment-factory');
 const { errors } = require('../utils/errors');
 const { logger } = require('../infrastructure/logger');
 const { emailQueue } = require('../infrastructure/queue');
+const bookingSideEffects = require('./booking-side-effect.service');
 
 const initiatePayment = async (bookingId, userId, providerName = 'sepay') => {
   // 1. Get booking
@@ -47,11 +48,12 @@ const initiatePayment = async (bookingId, userId, providerName = 'sepay') => {
   // 5. Cash bookings are confirmed immediately; payment is collected at the venue.
   if (targetProvider === 'cash') {
     await bookingRepository.updateStatus(bookingId, 'CONFIRMED');
+    await bookingSideEffects.removeBookingExpirationJob(bookingId);
     await emailQueue.add('email.booking_confirmed', {
       userId: booking.user_id,
       bookingId,
     }, {
-      jobId: `email-booking-confirmed:${bookingId}`,
+      jobId: `email-booking-confirmed-${bookingId}`,
     });
 
     return {
@@ -166,7 +168,7 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
     const payment = await paymentRepository.findLatestPendingByBookingId(bookingId, provider, tx);
     if (!payment) {
       const latestPayment = await paymentRepository.findByBookingId(bookingId, tx);
-      if (latestPayment?.status === 'COMPLETED' || latestPayment?.status === 'FAILED') {
+      if (['COMPLETED', 'FAILED', 'EXPIRED'].includes(latestPayment?.status)) {
         throw errors.conflict(`Payment is already ${latestPayment.status}`);
       }
       throw errors.notFound('Pending payment');
@@ -182,7 +184,7 @@ const processPaymentCallback = async (bookingId, isSuccess, provider) => {
         userId: booking.user_id,
         bookingId: bookingId,
       }, {
-        jobId: `email-booking-confirmed:${bookingId}`,
+        jobId: `email-booking-confirmed-${bookingId}`,
       });
     } else {
       // Keep booking PENDING so user can retry until expiration
@@ -209,8 +211,40 @@ const getPaymentByBookingId = async (bookingId, userId) => {
   return payment;
 };
 
+const confirmCashPayment = async (bookingId, actorId, { scope = 'admin' } = {}) => {
+  return prisma.$transaction(async (tx) => {
+    const booking = await bookingRepository.findById(bookingId, tx);
+    if (!booking) {
+      throw errors.notFound('Booking');
+    }
+
+    if (scope === 'owner' && booking.field?.owner_id !== actorId) {
+      throw errors.forbidden('You do not own this booking');
+    }
+
+    const payment = await paymentRepository.findLatestPendingByBookingId(bookingId, 'cash', tx);
+    if (!payment) {
+      const latestPayment = await paymentRepository.findByBookingId(bookingId, tx);
+      if (latestPayment?.provider?.toLowerCase() === 'cash' && latestPayment.status === 'COMPLETED') {
+        return latestPayment;
+      }
+      throw errors.notFound('Pending cash payment');
+    }
+
+    const updatedPayment = await paymentRepository.updateStatus(payment.id, 'COMPLETED', tx);
+    logger.info({
+      action: scope === 'owner' ? 'OWNER_CONFIRM_CASH_PAYMENT' : 'ADMIN_CONFIRM_CASH_PAYMENT',
+      actorId,
+      bookingId,
+      paymentId: payment.id,
+    }, '[Payment] Cash payment confirmed');
+    return updatedPayment;
+  });
+};
+
 module.exports = {
   initiatePayment,
   handleSepayIpn,
   getPaymentByBookingId,
+  confirmCashPayment,
 };

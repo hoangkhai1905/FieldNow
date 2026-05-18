@@ -10,9 +10,13 @@ import {
   XCircle, 
   Clock4,
   LayoutList,
-  MoreVertical
+  Ban,
+  Eye,
+  MoreVertical,
+  X
 } from 'lucide-react';
-import { getOwnerBookings } from '../../api/endpoints';
+import { getOwnerBookings, rejectOwnerBooking } from '../../api/endpoints';
+import Toast from '../../components/ui/Toast';
 
 const BookingManagement = () => {
   const [bookings, setBookings] = useState([]);
@@ -22,30 +26,47 @@ const BookingManagement = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [processingId, setProcessingId] = useState('');
+  const [openMenuId, setOpenMenuId] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState(null);
+
+  const loadBookings = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit: 10,
+        ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
+        ...(dateFilter ? { date: dateFilter } : {}),
+      };
+      const data = await getOwnerBookings(params);
+      setBookings(Array.isArray(data) ? data : data.bookings ?? []);
+      setPagination(data.pagination ?? null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page,
-          limit: 10,
-          ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
-          ...(dateFilter ? { date: dateFilter } : {}),
-        };
-        const data = await getOwnerBookings(params);
-        if (mounted) {
-          setBookings(Array.isArray(data) ? data : data.bookings ?? []);
-          setPagination(data.pagination ?? null);
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    load();
-    return () => { mounted = false; };
+    void loadBookings();
   }, [page, statusFilter, dateFilter]);
+
+  const handleRejectBooking = async (bookingId) => {
+    if (!window.confirm('Từ chối booking này? Booking sẽ chuyển sang trạng thái đã hủy.')) return;
+    setOpenMenuId('');
+    setProcessingId(bookingId);
+    setToast(null);
+    try {
+      await rejectOwnerBooking(bookingId);
+      setToast({ type: 'success', text: 'Đã từ chối booking' });
+      await loadBookings();
+    } catch (error) {
+      setToast({ type: 'error', text: error.message || 'Không thể từ chối booking' });
+    } finally {
+      setProcessingId('');
+    }
+  };
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
@@ -70,6 +91,23 @@ const BookingManagement = () => {
       case 'PENDING': return <Clock4 size={16} />;
       case 'CANCELLED': return <XCircle size={16} />;
       default: return <LayoutList size={16} />;
+    }
+  };
+
+  const getPaymentProviderLabel = (provider) => {
+    if (!provider) return 'Chưa chọn';
+    if (provider.toLowerCase() === 'cash') return 'Tiền mặt tại sân';
+    if (provider.toLowerCase() === 'sepay') return 'Chuyển khoản SePay';
+    return provider.toUpperCase();
+  };
+
+  const getPaymentStatusLabel = (status) => {
+    switch (status) {
+      case 'PENDING': return 'Chờ thanh toán';
+      case 'COMPLETED': return 'Đã thanh toán';
+      case 'FAILED': return 'Thanh toán thất bại';
+      case 'EXPIRED': return 'Đã hết hạn';
+      default: return 'Chưa có thanh toán';
     }
   };
 
@@ -144,6 +182,8 @@ const BookingManagement = () => {
         </div>
       </header>
 
+      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
+
       {/* Booking List */}
       <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
         <div style={{ minWidth: '1100px' }}>
@@ -168,7 +208,7 @@ const BookingManagement = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   whileHover={{ x: 10, background: 'rgba(255,255,255,0.08)' }}
-                  style={{ ...glassStyle, padding: '20px 24px', display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1fr 1fr 1fr 0.3fr', alignItems: 'center', gap: '20px', transition: 'all 0.3s' }}
+                  style={{ ...glassStyle, position: 'relative', zIndex: openMenuId === booking.id ? 50 : 1, padding: '20px 24px', display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1fr 1fr 1fr 0.3fr', alignItems: 'center', gap: '20px', transition: 'all 0.3s' }}
                 >
                   {/* Field Info */}
                   <div>
@@ -233,10 +273,39 @@ const BookingManagement = () => {
                   </div>
 
                   {/* Actions */}
-                  <div style={{ textAlign: 'right' }}>
-                    <button style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '8px' }}>
-                      <MoreVertical size={20} />
+                  <div style={{ textAlign: 'right', position: 'relative' }}>
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === booking.id ? '' : booking.id)}
+                      title="Thao tác booking"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8', cursor: 'pointer', padding: '10px', borderRadius: '12px' }}
+                    >
+                      <MoreVertical size={18} />
                     </button>
+
+                    {openMenuId === booking.id && (
+                      <div style={{ position: 'absolute', right: 0, top: '46px', zIndex: 20, width: '190px', padding: '8px', borderRadius: '14px', background: '#052e24', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 18px 40px rgba(0,0,0,0.35)', display: 'grid', gap: '6px', textAlign: 'left' }}>
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setOpenMenuId('');
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', fontWeight: '800', textAlign: 'left' }}
+                        >
+                          <Eye size={16} />
+                          Xem chi tiết
+                        </button>
+                        {booking.status !== 'CANCELLED' && (
+                          <button
+                            onClick={() => handleRejectBooking(booking.id)}
+                            disabled={processingId === booking.id}
+                            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 12px', borderRadius: '10px', border: 'none', background: 'rgba(244,63,94,0.12)', color: '#f43f5e', cursor: processingId === booking.id ? 'not-allowed' : 'pointer', fontWeight: '900', textAlign: 'left', opacity: processingId === booking.id ? 0.65 : 1 }}
+                          >
+                            <Ban size={16} />
+                            Từ chối booking
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))
@@ -270,6 +339,67 @@ const BookingManagement = () => {
           )}
         </div>
       </div>
+
+      {selectedBooking && (
+        <div
+          onClick={() => setSelectedBooking(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+        >
+          <section
+            onClick={(event) => event.stopPropagation()}
+            style={{ width: 'min(620px, 100%)', borderRadius: '22px', background: '#052e24', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 24px 70px rgba(0,0,0,0.45)', color: '#fff', padding: '26px' }}
+          >
+            <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', marginBottom: '24px' }}>
+              <div>
+                <p style={{ margin: '0 0 8px 0', color: '#F59E0B', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase' }}>Chi tiết booking</p>
+                <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '950' }}>{selectedBooking.field?.name || 'Sân'}</h2>
+                <p style={{ margin: '8px 0 0 0', color: '#94a3b8', fontSize: '13px', fontFamily: 'monospace' }}>#{selectedBooking.id}</p>
+              </div>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                style={{ width: '40px', height: '40px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              {[
+                ['Khách hàng', selectedBooking.user?.fullName || selectedBooking.user?.email || 'N/A'],
+                ['Email', selectedBooking.user?.email || 'N/A'],
+                ['Số điện thoại', selectedBooking.user?.phoneNumber || 'N/A'],
+                ['Ngày chơi', selectedBooking.date ? new Date(selectedBooking.date).toLocaleDateString('vi-VN') : 'N/A'],
+                ['Khung giờ', `${selectedBooking.startTime?.slice(0, 5) || '--:--'} - ${selectedBooking.endTime?.slice(0, 5) || '--:--'}`],
+                ['Trạng thái', selectedBooking.status],
+                ['Phương thức thanh toán', getPaymentProviderLabel(selectedBooking.payment?.provider)],
+                ['Trạng thái thanh toán', getPaymentStatusLabel(selectedBooking.payment?.status)],
+                ['Tổng tiền', `${new Intl.NumberFormat('vi-VN').format(selectedBooking.totalPrice || 0)}đ`],
+                ['Thời điểm đặt', selectedBooking.createdAt ? new Date(selectedBooking.createdAt).toLocaleString('vi-VN') : 'N/A'],
+              ].map(([label, value]) => (
+                <div key={label} style={{ padding: '14px', borderRadius: '14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div style={{ color: '#64748b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '7px' }}>{label}</div>
+                  <div style={{ color: '#fff', fontSize: '14px', fontWeight: '850', overflowWrap: 'anywhere' }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {selectedBooking.status !== 'CANCELLED' && (
+              <button
+                onClick={() => {
+                  const bookingId = selectedBooking.id;
+                  setSelectedBooking(null);
+                  void handleRejectBooking(bookingId);
+                }}
+                disabled={processingId === selectedBooking.id}
+                style={{ marginTop: '20px', width: '100%', padding: '14px 18px', borderRadius: '14px', border: '1px solid rgba(244,63,94,0.25)', background: 'rgba(244,63,94,0.12)', color: '#f43f5e', fontWeight: '950', cursor: processingId === selectedBooking.id ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Ban size={17} />
+                TỪ CHỐI BOOKING
+              </button>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 };
