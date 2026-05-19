@@ -11,7 +11,7 @@ jest.spyOn(sepayProvider, 'createCheckoutFields').mockImplementation(() => ({
   formFields: { signed: 'yes' },
 }));
 jest.spyOn(sepayProvider, 'verifyIpn').mockImplementation(() => true);
-jest.spyOn(sepayProvider, 'isSuccess').mockImplementation((body) => body?.order?.order_status === 'CAPTURED');
+jest.spyOn(sepayProvider, 'isSuccess').mockImplementation((body) => body?.order?.order_status === 'CAPTURED' || body?.transferType === 'in');
 jest.spyOn(sepayProvider, 'extractBookingId').mockImplementation((body) => body?.order?.order_invoice_number);
 
 describe('Payment E2E Flow', () => {
@@ -165,6 +165,42 @@ describe('Payment E2E Flow', () => {
       id: payment.id,
       status: 'COMPLETED',
     }));
+  });
+
+  it('completes payment from SePay bank webhook without booking UUID by matching a unique pending amount', async () => {
+    const bookingId = await createBooking('21:00', '22:00');
+    emailQueue.add.mockClear();
+
+    const initRes = await request(app)
+      .post('/api/v1/payments/initiate')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ bookingId, provider: 'sepay' });
+
+    expect(initRes.status).toBe(200);
+
+    const ipnRes = await request(app)
+      .post('/api/v1/payments/sepay-ipn')
+      .send({
+        gateway: 'MBBank',
+        transactionDate: '2026-05-19 09:59:00',
+        accountNumber: '0862321584',
+        code: 'PAY25416A0BD1FA84B73',
+        content: '129808847704 0862321584 PAY25416A0BD1FA84B73 Ma giao dich',
+        transferType: 'in',
+        transferAmount: 500000,
+        referenceCode: 'FT26139147178934',
+        id: 59418915,
+      });
+
+    expect(ipnRes.status).toBe(200);
+    expect(ipnRes.body.success).toBe(true);
+    expect(ipnRes.body.matched_by).toBe('amount_fallback');
+
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    expect(booking.status).toBe('CONFIRMED');
+
+    const payment = await prisma.payment.findFirst({ where: { booking_id: bookingId }, orderBy: { created_at: 'desc' } });
+    expect(payment.status).toBe('COMPLETED');
   });
 
   it('allows owner to reject an unpaid booking from their field', async () => {

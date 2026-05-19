@@ -99,7 +99,11 @@ const handleSepayIpn = async (headers, body) => {
   logger.info(`[SePay IPN] Extracted bookingId: ${bookingId}`);
 
   if (!bookingId) {
-    logger.warn('[SePay IPN] Missing booking ID in IPN payload');
+    logger.warn('[SePay IPN] Missing booking ID in IPN payload. Attempting bank webhook fallback...');
+    const fallbackResult = await confirmSepayBankWebhookByAmount(body, provider);
+    if (fallbackResult) {
+      return fallbackResult;
+    }
     return { success: true };
   }
 
@@ -107,37 +111,12 @@ const handleSepayIpn = async (headers, body) => {
   const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
   if (!uuidRegex.test(bookingId)) {
     logger.warn(`[SePay IPN] bookingId '${bookingId}' is not a valid UUID. Attempting fallback matching...`);
-    
-    // FALLBACK FOR DEVELOPMENT: If no UUID found, try matching by amount
-    if (process.env.NODE_ENV === 'development') {
-      const amount = body?.transferAmount || body?.order?.order_amount;
-      if (amount) {
-        logger.info(`[SePay IPN] Attempting fallback matching for amount: ${amount}`);
-        try {
-          const pendingPayments = await prisma.payment.findMany({
-            where: { 
-              status: 'PENDING',
-              amount: Number(amount)
-            },
-            include: { booking: true },
-            orderBy: { created_at: 'desc' },
-            take: 1 // Just take the most recent one for dev purposes
-          });
 
-          if (pendingPayments.length > 0 && pendingPayments[0].booking.status === 'PENDING') {
-            const fallbackId = pendingPayments[0].booking_id;
-            logger.info(`[SePay IPN] Fallback MATCH FOUND: ${fallbackId}. Confirming...`);
-            await processPaymentCallback(fallbackId, provider.isSuccess(body), config.paymentProvider);
-            return { success: true, matched_by: 'amount_fallback' };
-          } else {
-            logger.warn(`[SePay IPN] Fallback failed: found 0 pending payments for amount ${amount}`);
-          }
-        } catch (dbError) {
-          logger.error(`[SePay IPN] Prisma query error in fallback: ${dbError.message}`);
-        }
-      }
+    const fallbackResult = await confirmSepayBankWebhookByAmount(body, provider);
+    if (fallbackResult) {
+      return fallbackResult;
     }
-    
+
     return { success: true };
   }
 
@@ -155,6 +134,47 @@ const handleSepayIpn = async (headers, body) => {
     }
     logger.error(`[SePay IPN] Error processing bookingId=${bookingId}: ${error.message}`);
     throw error;
+  }
+};
+
+const confirmSepayBankWebhookByAmount = async (body, provider) => {
+  const amount = body?.transferAmount || body?.order?.order_amount;
+  const isIncomingBankTransfer = body?.transferType === 'in' || body?.notification_type === 'ORDER_PAID';
+
+  if (!amount || !isIncomingBankTransfer) {
+    logger.warn('[SePay IPN] Fallback skipped: missing amount or unsupported transfer type');
+    return null;
+  }
+
+  logger.info(`[SePay IPN] Attempting amount fallback for amount: ${amount}`);
+
+  try {
+    const recentThreshold = new Date(Date.now() - 30 * 60 * 1000);
+    const pendingPayments = await prisma.payment.findMany({
+      where: {
+        status: 'PENDING',
+        provider: { equals: 'sepay', mode: 'insensitive' },
+        amount: Number(amount),
+        created_at: { gte: recentThreshold },
+        booking: { status: 'PENDING' },
+      },
+      include: { booking: true },
+      orderBy: { created_at: 'desc' },
+      take: 2,
+    });
+
+    if (pendingPayments.length !== 1) {
+      logger.warn(`[SePay IPN] Amount fallback skipped: found ${pendingPayments.length} pending payments for amount ${amount}`);
+      return null;
+    }
+
+    const fallbackId = pendingPayments[0].booking_id;
+    logger.info(`[SePay IPN] Amount fallback matched booking ${fallbackId}. Confirming...`);
+    await processPaymentCallback(fallbackId, provider.isSuccess(body), 'sepay');
+    return { success: true, matched_by: 'amount_fallback' };
+  } catch (error) {
+    logger.error(`[SePay IPN] Amount fallback error: ${error.message}`);
+    return null;
   }
 };
 
