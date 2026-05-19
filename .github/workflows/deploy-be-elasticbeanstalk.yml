@@ -44,6 +44,13 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: npx prisma validate
 
+      - name: Apply database migrations
+        working-directory: BE
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npx prisma migrate deploy
+
       - name: Run backend tests
         working-directory: BE
         env:
@@ -56,18 +63,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_STORAGE_BUCKET: field-images
           PAYMENT_PROVIDER: sepay
+          SEPAY_MERCHANT_ID: ci_merchant
+          SEPAY_SECRET_KEY: ci_secret
           EMAIL_PROVIDER: ethereal
-        run: npx jest --verbose --runInBand
+        run: npx jest --verbose --runInBand --testTimeout=30000
 
       - name: Build Docker image
         run: docker build -t fieldnow-be:${{ github.sha }} BE
-
-      - name: Apply database migrations
-        working-directory: BE
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-        run: npx prisma migrate deploy
 
       - name: Create Elastic Beanstalk source bundle
         run: |
