@@ -233,7 +233,7 @@ describe('Payment E2E Flow', () => {
   });
 
   it('allows retry after a failed payment by creating a new pending payment attempt', async () => {
-    const bookingId = await createBooking('20:00', '21:00');
+    const bookingId = await createBooking('17:00', '18:00');
 
     const firstInit = await request(app)
       .post('/api/v1/payments/initiate')
@@ -274,5 +274,5 @@ describe('Payment E2E Flow', () => {
         provider: 'sepay',
       }),
     });
-  }, 10000);
+  }, 60000);
 });

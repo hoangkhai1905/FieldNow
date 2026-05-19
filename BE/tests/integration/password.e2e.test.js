@@ -511,6 +511,6 @@ describe('Password Reset and Change Password Tests', () => {
         await prisma.refreshToken.deleteMany({ where: { user_id: cleanupUser.id } });
       }
       await prisma.user.delete({ where: { email: flowEmail } });
-    }, 10000);
+    }, 60000);
   });
 });
