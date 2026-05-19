@@ -1,15 +1,9 @@
 const { Queue } = require('bullmq');
-const { redisOptions } = require('./redis');
-const config = require('../config');
+const { buildRedisConnectionOptions } = require('./redis');
 
 // Default queue options including connection and retries
 const defaultQueueOptions = {
-  connection: {
-    host: new URL(config.redisUrl).hostname,
-    port: new URL(config.redisUrl).port || 6379,
-    password: new URL(config.redisUrl).password,
-    ...redisOptions,
-  },
+  connection: buildRedisConnectionOptions(),
   defaultJobOptions: {
     attempts: 3,
     backoff: {
