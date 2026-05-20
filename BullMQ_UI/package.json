@@ -1,0 +1,24 @@
+{
+  "name": "fieldnow-bullmq-ui",
+  "version": "1.0.0",
+  "description": "BullMQ Dashboard for FieldNow queue monitoring",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["bullmq", "dashboard", "queue"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@bull-board/express": "^5.20.0",
+    "@bull-board/ui": "^5.20.0",
+    "bullmq": "^5.7.1",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "redis": "^4.6.10"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
