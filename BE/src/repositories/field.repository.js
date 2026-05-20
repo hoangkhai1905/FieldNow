@@ -43,7 +43,7 @@ const findByOwner = async (ownerId, { page = 1, limit = 8, skip = 0 } = {}) => {
   };
 };
 
-const findPublicWithFilters = async ({ location, type, minPrice, maxPrice, page = 1, limit = 10 }) => {
+const findPublicWithFilters = async ({ location, type, minPrice, maxPrice, sortBy, sortOrder, page = 1, limit = 10 }) => {
   let whereSql = Prisma.sql`"Field"."is_active" = true`;
 
   if (location) {
@@ -59,9 +59,25 @@ const findPublicWithFilters = async ({ location, type, minPrice, maxPrice, page 
     whereSql = Prisma.sql`${whereSql} AND "Field"."type" = ${type}::"FieldType"`;
   }
   const skip = (page - 1) * limit;
-  const orderBySql = location
-    ? Prisma.sql`ORDER BY ts_rank("Field"."search_vector", plainto_tsquery('simple', ${location})) DESC`
-    : Prisma.sql`ORDER BY "Field"."created_at" DESC`;
+
+  let orderBySql;
+  if (sortBy === 'price') {
+    orderBySql = sortOrder === 'asc'
+      ? Prisma.sql`ORDER BY "Field"."price_per_hour" ASC`
+      : Prisma.sql`ORDER BY "Field"."price_per_hour" DESC`;
+  } else if (sortBy === 'name') {
+    orderBySql = sortOrder === 'asc'
+      ? Prisma.sql`ORDER BY "Field"."name" ASC`
+      : Prisma.sql`ORDER BY "Field"."name" DESC`;
+  } else if (sortBy === 'created_at') {
+    orderBySql = sortOrder === 'asc'
+      ? Prisma.sql`ORDER BY "Field"."created_at" ASC`
+      : Prisma.sql`ORDER BY "Field"."created_at" DESC`;
+  } else {
+    orderBySql = location
+      ? Prisma.sql`ORDER BY ts_rank("Field"."search_vector", plainto_tsquery('simple', ${location})) DESC`
+      : Prisma.sql`ORDER BY "Field"."created_at" DESC`;
+  }
 
   const [fields, countRows] = await Promise.all([
     prisma.$queryRaw(
