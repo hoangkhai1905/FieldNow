@@ -5,7 +5,6 @@ import {
   Trophy, 
   Settings, 
   ChevronRight,
-  Zap,
   Calendar,
   ShieldCheck,
   Users,
@@ -16,7 +15,7 @@ import {
 import useAuth from '../../hooks/useAuth';
 import Logo from '../common/Logo';
 
-const Sidebar = ({ title, description, links = [], badgeLabel = 'OWNER PORTAL', badgeIcon = <Zap size={14} color="#F59E0B" fill="#F59E0B" /> }) => {
+const Sidebar = ({ title, description, links = [] }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
