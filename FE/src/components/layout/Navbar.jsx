@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   CalendarDays, 
   User, 
   LayoutDashboard, 
   ShieldCheck, 
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import Logo from '../common/Logo';
@@ -15,6 +17,8 @@ import Logo from '../common/Logo';
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  
   const isOwner = user?.role === 'OWNER';
   const isAdmin = user?.role === 'ADMIN';
 
@@ -41,19 +45,18 @@ const Navbar = () => {
     maxWidth: '1200px',
     margin: '0 auto',
     display: 'flex',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '16px 32px',
+    padding: '16px 24px',
     borderRadius: '24px',
-    background: 'rgba(5, 18, 14, 0.82)',
+    background: 'rgba(5, 18, 14, 0.85)',
     backdropFilter: 'blur(24px)',
     WebkitBackdropFilter: 'blur(24px)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.05)',
     pointerEvents: 'auto',
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'visible'
   };
 
   return (
@@ -67,12 +70,12 @@ const Navbar = () => {
         <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, #F59E0B, transparent)', opacity: 0.3 }}></div>
 
         {/* Brand */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <Logo size={46} showText={true} textVariant="navbar" />
+        <Link to="/" onClick={() => setIsOpen(false)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Logo size={42} showText={true} textVariant="navbar" />
         </Link>
 
-        {/* Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Desktop Links & Auth */}
+        <div className="hidden md:flex items-center gap-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
@@ -108,7 +111,7 @@ const Navbar = () => {
             );
           })}
 
-          <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)', margin: '0 12px' }} />
+          <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)', margin: '0 8px' }} />
 
           {!isAuthenticated ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -135,6 +138,137 @@ const Navbar = () => {
             </button>
           )}
         </div>
+
+        {/* Mobile Hamburger Trigger */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden flex items-center justify-center p-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] text-white"
+          style={{ transition: 'all 0.2s' }}
+        >
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* Mobile Menu Panel */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 12px)',
+                left: 0,
+                right: 0,
+                background: 'rgba(5, 18, 14, 0.95)',
+                backdropFilter: 'blur(32px)',
+                WebkitBackdropFilter: 'blur(32px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '20px',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                zIndex: 99
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = location.pathname === link.path;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setIsOpen(false)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        background: isActive ? 'rgba(37, 211, 102, 0.12)' : 'transparent',
+                        border: isActive ? '1px solid rgba(37, 211, 102, 0.22)' : '1px solid transparent',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <Icon size={18} color={isActive ? '#F59E0B' : '#94a3b8'} />
+                      <span style={{ color: isActive ? '#fff' : '#94a3b8', fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        {link.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+
+              {!isAuthenticated ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsOpen(false)}
+                    style={{
+                      textAlign: 'center',
+                      padding: '14px',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      color: '#94a3b8',
+                      textDecoration: 'none',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}
+                  >
+                    ĐĂNG NHẬP
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsOpen(false)}
+                    style={{
+                      textAlign: 'center',
+                      padding: '14px',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '900',
+                      color: '#08140f',
+                      textDecoration: 'none',
+                      background: 'linear-gradient(135deg, #f5b21f, #ffcf61)',
+                      boxShadow: '0 8px 16px rgba(245, 158, 11, 0.2)'
+                    }}
+                  >
+                    GIA NHẬP
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '14px'
+                  }}
+                >
+                  <LogOut size={18} /> ĐĂNG XUẤT
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
     </motion.header>
   );

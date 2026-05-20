@@ -62,36 +62,26 @@ const ForgotPassword = () => {
     }
   };
 
-  const glassStyle = {
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '32px',
-    padding: '48px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-  };
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#022c22', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-      {/* Background Orbs */}
-      <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'rgba(245, 158, 11, 0.05)', filter: 'blur(100px)', borderRadius: '50%' }}></div>
-      <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '300px', height: '300px', background: 'rgba(16, 185, 129, 0.05)', filter: 'blur(80px)', borderRadius: '50%' }}></div>
+    <div className="min-h-screen flex items-center justify-center bg-emerald-950 p-4 relative overflow-hidden">
+      {/* Background Decorative Orbs */}
+      <div className="absolute top-[10%] left-[10%] w-[400px] h-[400px] bg-amber-500/5 blur-[100px] rounded-full"></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[300px] h-[300px] bg-emerald-500/5 blur-[80px] rounded-full"></div>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ width: '100%', maxWidth: '480px', position: 'relative', zIndex: 10 }}
+        className="w-full max-w-[480px] relative z-10"
       >
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginBottom: '24px' }}>
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex items-center no-underline mb-6">
             <Logo size={44} showText={true} textVariant="auth" />
           </Link>
-          <h2 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', margin: 0, letterSpacing: '-1px' }}>QUÊN MẬT KHẨU?</h2>
-          <p style={{ color: '#64748b', marginTop: '12px' }}>Đừng lo, chúng tôi sẽ giúp bạn lấy lại quyền truy cập.</p>
+          <h2 className="text-3xl font-black text-white m-0 tracking-tight">QUÊN MẬT KHẨU?</h2>
+          <p className="text-slate-500 text-sm mt-3">Đừng lo, chúng tôi sẽ giúp bạn lấy lại quyền truy cập.</p>
         </div>
 
-        <div style={glassStyle}>
+        <div className="bg-white/5 backdrop-blur-[20px] border border-white/10 rounded-[32px] p-6 md:p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.form 
@@ -99,26 +89,38 @@ const ForgotPassword = () => {
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
                 onSubmit={handleRequestOTP}
               >
-                <div style={{ marginBottom: '32px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Địa chỉ Email của bạn</label>
-                  <div style={{ position: 'relative' }}>
-                    <Mail style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} size={20} />
+                <div className="mb-6">
+                  <label className="block text-xs font-black text-emerald-200 uppercase tracking-wider mb-3">Địa chỉ Email của bạn</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-4.5 text-slate-500" size={18} />
                     <input 
                       type="email" required placeholder="name@company.com"
                       value={email} onChange={e => setEmail(e.target.value)}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '16px 16px 16px 52px', color: '#fff', fontSize: '16px', outline: 'none' }}
+                      className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
                     />
                   </div>
                 </div>
 
-                {error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginBottom: '24px', padding: '16px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', borderRadius: '14px', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px' }}><AlertCircle size={18} /> {error}</motion.div>}
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 flex items-center gap-2.5 text-sm"
+                  >
+                    <AlertCircle size={18} className="shrink-0 text-rose-500" />
+                    <span className="font-bold">{error}</span>
+                  </motion.div>
+                )}
 
-                <button 
-                  type="submit" disabled={loading}
-                  style={{ width: '100%', padding: '18px', borderRadius: '18px', background: '#F59E0B', color: '#000', fontWeight: '950', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', transition: 'all 0.3s' }}
+                <motion.button 
+                  type="submit" 
+                  disabled={loading}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 0 }}
+                  className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-black py-4.5 rounded-2xl text-base font-black cursor-pointer flex items-center justify-center gap-2.5 shadow-[0_15px_30px_rgba(245,158,11,0.2)] transition-all"
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : <>NHẬN MÃ XÁC THỰC <ArrowRight size={20} /></>}
-                </button>
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <>NHẬN MÃ XÁC THỰC <ArrowRight size={20} /></>}
+                </motion.button>
               </motion.form>
             )}
 
@@ -128,47 +130,59 @@ const ForgotPassword = () => {
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
                 onSubmit={handleResetPassword}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '32px' }}>
+                <div className="flex flex-col gap-5 mb-8">
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Mã OTP (6 chữ số)</label>
+                    <label className="block text-xs font-black text-emerald-200 uppercase tracking-wider mb-3">Mã OTP (6 chữ số)</label>
                     <input 
                       required placeholder="000000" maxLength={6}
                       value={formData.otp} onChange={e => setFormData(prev => ({ ...prev, otp: e.target.value }))}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '16px', color: '#fff', fontSize: '24px', fontWeight: '900', letterSpacing: '8px', textAlign: 'center', outline: 'none' }}
+                      className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 text-white text-2xl font-black tracking-[8px] text-center outline-none focus:border-amber-500 transition-colors"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Mật khẩu mới</label>
-                    <div style={{ position: 'relative' }}>
-                      <Lock style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} size={20} />
+                    <label className="block text-xs font-black text-emerald-200 uppercase tracking-wider mb-3">Mật khẩu mới</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-4.5 text-slate-500" size={18} />
                       <input 
                         type="password" required placeholder="••••••••"
                         value={formData.newPassword} onChange={e => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '16px 16px 16px 52px', color: '#fff', fontSize: '16px', outline: 'none' }}
+                        className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
                       />
                     </div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '900', color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Xác nhận mật khẩu</label>
-                    <div style={{ position: 'relative' }}>
-                      <ShieldCheck style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} size={20} />
+                    <label className="block text-xs font-black text-emerald-200 uppercase tracking-wider mb-3">Xác nhận mật khẩu</label>
+                    <div className="relative">
+                      <ShieldCheck className="absolute left-4 top-4.5 text-slate-500" size={18} />
                       <input 
                         type="password" required placeholder="••••••••"
                         value={formData.confirmPassword} onChange={e => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '16px 16px 16px 52px', color: '#fff', fontSize: '16px', outline: 'none' }}
+                        className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
                       />
                     </div>
                   </div>
                 </div>
 
-                {error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginBottom: '24px', padding: '16px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', borderRadius: '14px', color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px' }}><AlertCircle size={18} /> {error}</motion.div>}
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 flex items-center gap-2.5 text-sm"
+                  >
+                    <AlertCircle size={18} className="shrink-0 text-rose-500" />
+                    <span className="font-bold">{error}</span>
+                  </motion.div>
+                )}
 
-                <button 
-                  type="submit" disabled={loading}
-                  style={{ width: '100%', padding: '18px', borderRadius: '18px', background: '#10b981', color: '#fff', fontWeight: '950', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', transition: 'all 0.3s' }}
+                <motion.button 
+                  type="submit" 
+                  disabled={loading}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 0 }}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white py-4.5 rounded-2xl text-base font-black cursor-pointer flex items-center justify-center gap-2.5 shadow-[0_15px_30px_rgba(16,185,129,0.2)] transition-all"
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : <>ĐẶT LẠI MẬT KHẨU <CheckCircle2 size={20} /></>}
-                </button>
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <>ĐẶT LẠI MẬT KHẨU <CheckCircle2 size={20} /></>}
+                </motion.button>
               </motion.form>
             )}
 
@@ -176,26 +190,28 @@ const ForgotPassword = () => {
               <motion.div 
                 key="step3"
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                style={{ textAlign: 'center' }}
+                className="text-center"
               >
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                  <CheckCircle2 size={48} color="#10b981" />
+                <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
+                  <CheckCircle2 size={48} className="text-emerald-500" />
                 </div>
-                <h3 style={{ fontSize: '24px', fontWeight: '950', color: '#fff', marginBottom: '12px' }}>THÀNH CÔNG!</h3>
-                <p style={{ color: '#64748b', marginBottom: '32px' }}>Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập ngay bây giờ.</p>
-                <button 
+                <h3 className="text-2xl font-black text-white mb-3 tracking-tight">THÀNH CÔNG!</h3>
+                <p className="text-slate-500 mb-8 text-sm">Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập ngay bây giờ.</p>
+                <motion.button 
                   onClick={() => navigate('/login')}
-                  style={{ width: '100%', padding: '18px', borderRadius: '18px', background: '#F59E0B', color: '#000', fontWeight: '950', border: 'none', cursor: 'pointer' }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ y: 0 }}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-black py-4.5 rounded-2xl text-base font-black cursor-pointer shadow-[0_15px_30px_rgba(245,158,11,0.2)] transition-all"
                 >
                   ĐĂNG NHẬP NGAY
-                </button>
+                </motion.button>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '32px' }}>
-          <Link to="/login" style={{ color: '#64748b', textDecoration: 'none', fontSize: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+        <div className="text-center mt-8">
+          <Link to="/login" className="text-slate-500 hover:text-white no-underline text-sm font-bold inline-flex items-center gap-2 transition-colors">
             <ArrowLeft size={16} /> Quay lại trang Đăng nhập
           </Link>
         </div>

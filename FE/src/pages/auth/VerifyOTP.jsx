@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, ArrowRight, CheckCircle, RefreshCcw } from 'lucide-react';
+import { ArrowRight, CheckCircle, RefreshCcw, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { verifyOTPRequest, resendOTPRequest } from '../../api/endpoints';
+import Logo from '../../components/common/Logo';
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState('');
@@ -64,95 +65,105 @@ const VerifyOTP = () => {
     }
   };
 
-  const glassStyle = {
-    background: 'rgba(2, 44, 34, 0.8)',
-    backdropFilter: 'blur(32px)',
-    WebkitBackdropFilter: 'blur(32px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '40px'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '18px',
-    padding: '16px',
-    color: '#fff',
-    fontSize: '24px',
-    fontWeight: '900',
-    letterSpacing: '8px',
-    textAlign: 'center',
-    outline: 'none',
-    transition: 'all 0.3s',
-    boxSizing: 'border-box'
-  };
-
   return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>
-      {/* Dynamic Background Elements */}
-      <div style={{ position: 'absolute', top: '5%', right: '5%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none' }}></div>
-      <div style={{ position: 'absolute', bottom: '5%', left: '5%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none' }}></div>
+    <div className="min-h-screen flex items-center justify-center bg-emerald-950 p-4 relative overflow-hidden">
+      {/* Background Decorative Orbs */}
+      <div className="absolute top-[10%] left-[10%] w-[400px] h-[400px] bg-amber-500/5 blur-[100px] rounded-full"></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[300px] h-[300px] bg-emerald-500/5 blur-[80px] rounded-full"></div>
 
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        style={{ ...glassStyle, width: '100%', maxWidth: '500px', overflow: 'hidden', boxShadow: '0 50px 100px rgba(0,0,0,0.5)' }}
+        className="w-full max-w-[480px] relative z-10"
       >
-        <div style={{ padding: '60px 40px', background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(10px)' }}>
-           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                <Mail size={32} color="#10b981" />
-              </div>
-              <h2 style={{ fontSize: '32px', fontWeight: '950', margin: '0 0 12px 0', color: '#fff', textTransform: 'uppercase', letterSpacing: '-1px' }}>Xác thực Email</h2>
-              <p style={{ color: '#94a3b8', fontSize: '15px', fontWeight: '500', lineHeight: 1.6 }}>
-                 Chúng tôi đã gửi mã xác thực gồm 6 số đến email <br/>
-                 <strong style={{ color: '#fff' }}>{email}</strong>
-              </p>
-           </div>
+        {/* Logo Section */}
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex items-center no-underline mb-6">
+            <Logo size={44} showText={true} textVariant="auth" />
+          </Link>
+          <h2 className="text-3xl font-black text-white m-0 tracking-tight uppercase">Xác thực Email</h2>
+          <p className="text-slate-500 text-sm mt-3">
+            Chúng tôi đã gửi mã xác thực gồm 6 số đến email
+          </p>
+          <p className="text-white text-sm font-bold mt-1">{email}</p>
+        </div>
 
-           {error && <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: '16px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', borderRadius: '12px', color: '#fb7185', marginBottom: '24px', fontSize: '14px', fontWeight: '800', textAlign: 'center' }}>{error}</motion.div>}
-           {successMsg && <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', color: '#34d399', marginBottom: '24px', fontSize: '14px', fontWeight: '800', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><CheckCircle size={18} /> {successMsg}</motion.div>}
+        {/* Card */}
+        <div className="bg-white/5 backdrop-blur-[20px] border border-white/10 rounded-[32px] p-6 md:p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 flex items-center gap-2.5 text-sm"
+            >
+              <AlertCircle size={18} className="shrink-0 text-rose-500" />
+              <span className="font-bold">{error}</span>
+            </motion.div>
+          )}
 
-           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div>
-                 <input 
-                    type="text" 
-                    placeholder="------" 
-                    style={inputStyle}
-                    value={otp}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                      setOtp(val);
-                    }}
-                    required
-                    maxLength={6}
-                    autoFocus
-                 />
-              </div>
+          {successMsg && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 flex items-center gap-2.5 text-sm font-bold justify-center"
+            >
+              <CheckCircle size={18} className="shrink-0" />
+              <span>{successMsg}</span>
+            </motion.div>
+          )}
 
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div>
+              <input 
+                type="text" 
+                placeholder="------" 
+                className="w-full bg-black/30 border border-white/10 rounded-2xl py-4 text-white text-2xl font-black tracking-[8px] text-center outline-none focus:border-amber-500 transition-colors"
+                value={otp}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setOtp(val);
+                }}
+                required
+                maxLength={6}
+                autoFocus
+              />
+            </div>
+
+            <motion.button 
+              type="submit" 
+              disabled={loading || otp.length < 6}
+              whileHover={!(loading || otp.length < 6) ? { y: -2 } : {}}
+              whileTap={!(loading || otp.length < 6) ? { y: 0 } : {}}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white py-4.5 rounded-2xl text-base font-black cursor-pointer flex items-center justify-center gap-2.5 shadow-[0_15px_30px_rgba(16,185,129,0.2)] transition-all"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <>XÁC NHẬN <ArrowRight size={20} /></>
+              )}
+            </motion.button>
+          </form>
+
+          <div className="text-center mt-8">
+            <p className="text-slate-500 text-sm flex items-center justify-center gap-2 m-0">
+              Chưa nhận được mã?{' '}
               <button 
-                type="submit" 
-                disabled={loading || otp.length < 6}
-                style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '20px', borderRadius: '18px', fontSize: '16px', fontWeight: '950', cursor: (loading || otp.length < 6) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 20px 40px rgba(16, 185, 129, 0.2)', transition: 'all 0.3s', opacity: (loading || otp.length < 6) ? 0.7 : 1 }}
+                type="button"
+                onClick={handleResend}
+                disabled={countdown > 0 || resending}
+                className="bg-none border-none text-emerald-400 disabled:text-slate-600 font-extrabold cursor-pointer hover:underline disabled:no-underline flex items-center gap-1.5 transition-colors"
               >
-                {loading ? 'ĐANG KIỂM TRA...' : 'XÁC NHẬN'} <ArrowRight size={22} strokeWidth={3} />
+                <RefreshCcw size={14} className={resending ? "animate-spin" : ""} />
+                {resending ? 'Đang gửi...' : countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại ngay'}
               </button>
-           </form>
+            </p>
+          </div>
+        </div>
 
-           <div style={{ textAlign: 'center', marginTop: '32px' }}>
-              <p style={{ color: '#64748b', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                 Chưa nhận được mã? 
-                 <button 
-                   onClick={handleResend}
-                   disabled={countdown > 0 || resending}
-                   style={{ background: 'none', border: 'none', color: countdown > 0 ? '#475569' : '#10b981', fontWeight: '900', padding: 0, cursor: countdown > 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '15px', transition: 'color 0.3s' }}
-                 >
-                   <RefreshCcw size={16} />
-                   {resending ? 'Đang gửi...' : countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại ngay'}
-                 </button>
-              </p>
-           </div>
+        <div className="text-center mt-8">
+          <Link to="/login" className="text-slate-500 hover:text-white no-underline text-sm font-bold inline-flex items-center gap-2 transition-colors">
+            <ArrowLeft size={16} /> Quay lại trang Đăng nhập
+          </Link>
         </div>
       </motion.div>
     </div>
