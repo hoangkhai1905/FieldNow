@@ -8,11 +8,11 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Loader2,
-  Zap,
   ShieldCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { forgotPassword, resetPassword } from '../../api/endpoints';
+import Logo from '../../components/common/Logo';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -50,9 +50,9 @@ const ForgotPassword = () => {
     setError('');
     try {
       await resetPassword({ 
-        email, 
-        otp: formData.otp, 
-        newPassword: formData.newPassword 
+          email, 
+          otp: formData.otp, 
+          newPassword: formData.newPassword 
       });
       setStep(3);
     } catch (err) {
@@ -84,11 +84,8 @@ const ForgotPassword = () => {
         style={{ width: '100%', maxWidth: '480px', position: 'relative', zIndex: 10 }}
       >
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', textDecoration: 'none', marginBottom: '24px' }}>
-            <div style={{ background: '#F59E0B', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Zap size={24} color="#000" fill="#000" />
-            </div>
-            <span style={{ color: '#fff', fontSize: '24px', fontWeight: '950', letterSpacing: '-1px' }}>FIELDNOW</span>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginBottom: '24px' }}>
+            <Logo size={44} showText={true} textVariant="auth" />
           </Link>
           <h2 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', margin: 0, letterSpacing: '-1px' }}>QUÊN MẬT KHẨU?</h2>
           <p style={{ color: '#64748b', marginTop: '12px' }}>Đừng lo, chúng tôi sẽ giúp bạn lấy lại quyền truy cập.</p>

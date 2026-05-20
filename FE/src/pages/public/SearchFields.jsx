@@ -24,7 +24,7 @@ const SearchFields = () => {
 
   const fieldTypes = [
     { value: '', label: 'Tất cả loại sân' },
-    { value: 'FUTSAL', label: 'Sân Bóng đá' },
+    { value: 'FUTSAL', label: 'Sân bóng đá' },
     { value: 'BADMINTON', label: 'Cầu lông' },
     { value: 'BASKETBALL', label: 'Bóng rổ' },
     { value: 'VOLLEYBALL', label: 'Bóng chuyền' },
@@ -32,7 +32,7 @@ const SearchFields = () => {
   ];
 
   const getFieldTypeLabel = (type) => {
-    return fieldTypes.find(t => t.value === type)?.label || type || 'Sân bóng đá';
+    return fieldTypes.find(t => t.value === type)?.label || type || 'Sân thể thao';
   };
 
   const loadFields = async (page = 1) => {
@@ -97,7 +97,7 @@ const SearchFields = () => {
       >
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: '100px', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '24px' }}>
           <Zap size={14} color="#F59E0B" fill="#F59E0B" />
-          <span style={{ color: '#F59E0B', fontSize: '11px', fontWeight: '900', letterSpacing: '1px' }}>TÌM KIẾM ĐẤU TRƯỜNG</span>
+          <span style={{ color: '#F59E0B', fontSize: '11px', fontWeight: '900', letterSpacing: '1px' }}>TÌM KIẾM SÂN THỂ THAO</span>
         </div>
         <h1 style={{ fontSize: '64px', fontWeight: '950', textTransform: 'uppercase', margin: 0, letterSpacing: '-3px', lineHeight: 1 }}>
           Sẵn sàng <span style={{ color: '#F59E0B' }}>Ra sân?</span>

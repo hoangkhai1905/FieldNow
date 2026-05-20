@@ -29,8 +29,30 @@ const createBooking = async ({
       expires_at: expiresAt,
     },
     include: {
-      field: true,
-      slot: true,
+      field: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              phone_number: true,
+            },
+          },
+        },
+      },
+      slot: {
+        include: {
+          field: {
+            include: {
+              owner: {
+                select: {
+                  id: true,
+                  phone_number: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 };
@@ -39,8 +61,30 @@ const findById = async (bookingId, tx = prisma) => {
   return tx.booking.findUnique({
     where: { id: bookingId },
     include: {
-      field: true,
-      slot: true,
+      field: {
+        include: {
+          owner: {
+            select: {
+              id: true,
+              phone_number: true,
+            },
+          },
+        },
+      },
+      slot: {
+        include: {
+          field: {
+            include: {
+              owner: {
+                select: {
+                  id: true,
+                  phone_number: true,
+                },
+              },
+            },
+          },
+        },
+      },
       user: true,
       payments: true,
     },
@@ -102,7 +146,14 @@ const findUserBookings = async (userId, { page = 1, limit = 6, skip = 0, status 
       where,
       include: {
         field: {
-          select: { name: true, location: true },
+          include: {
+            owner: {
+              select: {
+                id: true,
+                phone_number: true,
+              },
+            },
+          },
         },
         slot: true,
       },
@@ -170,7 +221,14 @@ const findByOwnerFields = async (
       where,
       include: {
         field: {
-          select: { name: true, location: true },
+          include: {
+          owner: {
+            select: {
+              id: true,
+              phone_number: true,
+            },
+          },
+        },
         },
         user: {
           select: { full_name: true, phone_number: true, email: true },

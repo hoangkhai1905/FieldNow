@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, AlertCircle, Loader2, Zap, ArrowRight } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { sendOTPRequest } from '../../api/endpoints';
+import Logo from '../../components/common/Logo';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -99,11 +100,8 @@ const Login = () => {
       >
         {/* Logo Section */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', textDecoration: 'none', marginBottom: '24px' }}>
-            <div style={{ background: '#F59E0B', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Zap size={24} color="#000" fill="#000" />
-            </div>
-            <span style={{ color: '#fff', fontSize: '24px', fontWeight: '950', letterSpacing: '-1px' }}>FIELDNOW</span>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginBottom: '24px' }}>
+            <Logo size={44} showText={true} textVariant="auth" />
           </Link>
           <h2 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', margin: 0, letterSpacing: '-1px' }}>CHÀO MỪNG TRỞ LẠI</h2>
           <p style={{ color: '#64748b', marginTop: '12px' }}>Vào sân ngay để tiếp tục hành trình của bạn.</p>

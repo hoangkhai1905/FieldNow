@@ -19,11 +19,13 @@ const Footer = () => {
   };
 
   const footerStyle = {
-    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-    background: 'rgba(15, 23, 42, 0.95)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+    background: 'linear-gradient(180deg, rgba(5, 18, 14, 0.9), rgba(4, 12, 10, 0.98))',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    color: '#94a3b8'
+    color: '#9cb3a8',
+    position: 'relative',
+    overflow: 'hidden'
   };
 
   const containerStyle = {
@@ -49,6 +51,8 @@ const Footer = () => {
 
   return (
     <footer style={footerStyle}>
+      <div style={{ position: 'absolute', inset: 'auto 0 0 0', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(37, 211, 102, 0.7), transparent)' }} />
+      <div style={{ position: 'absolute', top: '-120px', right: '-80px', width: '280px', height: '280px', borderRadius: '50%', background: 'rgba(37, 211, 102, 0.12)', filter: 'blur(80px)', pointerEvents: 'none' }} />
       <div style={containerStyle}>
         <div style={gridStyle}>
           {/* Brand Info */}
@@ -62,12 +66,12 @@ const Footer = () => {
               </h2>
             </Link>
             <p style={{ fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-              Nền tảng đặt sân bóng đá hàng đầu Việt Nam. Mang công nghệ vào từng trận đấu, giúp bạn giữ chỗ nhanh chóng.
+              Nền tảng thuê sân thể thao hàng đầu Việt Nam. Mang công nghệ vào từng trận đấu, giúp bạn giữ chỗ nhanh chóng.
             </p>
             <div style={{ display: 'flex', gap: '16px' }}>
-              <a href="#" style={{ color: '#64748b', textDecoration: 'none' }}><SocialIcons.Facebook /></a>
-              <a href="#" style={{ color: '#64748b', textDecoration: 'none' }}><SocialIcons.Instagram /></a>
-              <a href="#" style={{ color: '#64748b', textDecoration: 'none' }}><SocialIcons.Twitter /></a>
+              <a href="#" style={{ color: '#64748b', textDecoration: 'none', transition: 'transform 0.2s ease, color 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.color = '#25D366'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.transform = 'translateY(0)'; }}><SocialIcons.Facebook /></a>
+              <a href="#" style={{ color: '#64748b', textDecoration: 'none', transition: 'transform 0.2s ease, color 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.color = '#25D366'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.transform = 'translateY(0)'; }}><SocialIcons.Instagram /></a>
+              <a href="#" style={{ color: '#64748b', textDecoration: 'none', transition: 'transform 0.2s ease, color 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.color = '#25D366'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.transform = 'translateY(0)'; }}><SocialIcons.Twitter /></a>
             </div>
           </div>
 
@@ -78,10 +82,10 @@ const Footer = () => {
               {[
                 { label: 'Tìm sân gần đây', path: '/tim-san' },
                 { label: 'Giải đấu sắp tới', path: '#' },
-                { label: 'Cộng đồng bóng đá', path: '#' },
+                { label: 'Cộng đồng thể thao', path: '#' },
                 { label: 'Trở thành chủ sân', path: '/register' }
               ].map((link, idx) => (
-                <Link key={idx} to={link.path} style={{ color: '#94a3b8', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Link key={idx} to={link.path} style={{ color: '#9cb3a8', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', transition: 'transform 0.2s ease, color 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#9cb3a8'; e.currentTarget.style.transform = 'translateX(0)'; }}>
                   <ArrowRight size={14} color="#F59E0B" /> {link.label}
                 </Link>
               ))}
@@ -93,7 +97,7 @@ const Footer = () => {
             <h3 style={sectionHeadingStyle}>Hỗ trợ</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {['Trung tâm trợ giúp', 'Quy định sử dụng', 'Chính sách bảo mật', 'Câu hỏi thường gặp'].map((item, idx) => (
-                <a key={idx} href="#" style={{ color: '#94a3b8', fontSize: '14px', textDecoration: 'none' }}>{item}</a>
+                <a key={idx} href="#" style={{ color: '#9cb3a8', fontSize: '14px', textDecoration: 'none', transition: 'color 0.2s ease, transform 0.2s ease' }} onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#9cb3a8'; e.currentTarget.style.transform = 'translateX(0)'; }}>{item}</a>
               ))}
             </div>
           </div>
@@ -118,7 +122,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div style={{ marginTop: '64px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+        <div style={{ marginTop: '64px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', flexWrap: 'wrap', gap: '12px' }}>
           <p>© {currentYear} FieldNow Platform. All rights reserved.</p>
           <div style={{ display: 'flex', gap: '24px' }}>
             <span>Tiếng Việt</span>

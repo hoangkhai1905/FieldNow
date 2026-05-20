@@ -17,6 +17,7 @@ const registerBookingListeners = () => {
 
   bookingEvents.on('BOOKING_CANCELLED', async ({ bookingId, userId }) => {
     try {
+      await bookingSideEffects.removeBookingExpirationJob(bookingId);
       await bookingSideEffects.scheduleBookingCancelledSideEffects({ bookingId, userId });
     } catch (error) {
       logger.error({ err: error, bookingId }, '[BookingEvents] Failed to handle BOOKING_CANCELLED');

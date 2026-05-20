@@ -69,7 +69,7 @@ const searchFields = async (filters) => {
 };
 
 const getFieldWithSlots = async (fieldId, date) => {
-  const cacheKey = `fields:detail:${fieldId}:date:${date || 'all'}`;
+  const cacheKey = `fields:detail:v2:${fieldId}:date:${date || 'all'}`;
   let field = await cacheService.get(cacheKey);
   const cacheHit = !!field;
 
