@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
-const { createBullBoard } = require('@bull-board/express');
+const { createBullBoard } = require('@bull-board/api');
+const { ExpressAdapter } = require('@bull-board/express');
 const { BullAdapter } = require('@bull-board/api/bullAdapter');
 const { Queue } = require('bullmq');
 
@@ -41,22 +42,25 @@ const emailQueue = new Queue('notification-email', queueConfig);
 console.log(`🔌 Redis connection: ${process.env.REDIS_URL || `${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`}`);
 
 /**
- * Setup BullBoard UI
+ * Setup BullBoard UI (current API: createBullBoard + ExpressAdapter)
  */
-const { router: bullBoardRouter } = createBullBoard({
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/admin/queues');
+
+createBullBoard({
   queues: [
     new BullAdapter(bookingEventsQueue),
     new BullAdapter(bookingExpirationQueue),
     new BullAdapter(emailQueue),
   ],
+  serverAdapter,
   uiConfig: {
     defaultLanguage: 'en',
     title: '📊 FieldNow - BullMQ Dashboard',
-    baseUrl: '/admin/queues',
   },
 });
 
-app.use('/admin/queues', bullBoardRouter);
+app.use('/admin/queues', serverAdapter.getRouter());
 
 /**
  * Health check endpoint
