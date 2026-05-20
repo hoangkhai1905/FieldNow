@@ -14,6 +14,7 @@ import {
   LogOut
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import Logo from '../common/Logo';
 
 const Sidebar = ({ title, description, links = [], badgeLabel = 'OWNER PORTAL', badgeIcon = <Zap size={14} color="#F59E0B" fill="#F59E0B" /> }) => {
   const location = useLocation();
@@ -56,9 +57,10 @@ const Sidebar = ({ title, description, links = [], badgeLabel = 'OWNER PORTAL', 
   return (
     <aside style={glassStyle}>
       <div style={{ marginBottom: '48px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(245, 158, 11, 0.2)', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '20px' }}>
-           {badgeIcon}
-           <span style={{ color: '#F59E0B', fontSize: '10px', fontWeight: '900', letterSpacing: '1px' }}>{badgeLabel}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <Logo size={42} showText={true} textVariant="sidebar" />
+          </Link>
         </div>
         <h2 style={{ fontSize: '28px', fontWeight: '950', textTransform: 'uppercase', margin: '0 0 12px 0', lineHeight: 1.1 }}>{title}</h2>
         <p style={{ color: '#a7f3d0', fontSize: '14px', opacity: 0.7, margin: 0, lineHeight: 1.5 }}>{description}</p>

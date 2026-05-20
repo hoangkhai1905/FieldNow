@@ -132,6 +132,12 @@ const findForAdmin = async ({ status = 'pending', page = 1, limit = 10, skip = 0
 
 const findByIdWithSlots = async (id, dateFilter) => {
   const include = {
+    owner: {
+      select: {
+        id: true,
+        phone_number: true,
+      },
+    },
     slots: {
       orderBy: [{ date: 'asc' }, { start_time: 'asc' }],
     },

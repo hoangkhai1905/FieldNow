@@ -7,10 +7,10 @@ import {
   User, 
   LayoutDashboard, 
   ShieldCheck, 
-  LogOut,
-  Trophy
+  LogOut
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import Logo from '../common/Logo';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -41,15 +41,16 @@ const Navbar = () => {
     maxWidth: '1200px',
     margin: '0 auto',
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '16px 32px',
     borderRadius: '24px',
-    background: 'rgba(10, 15, 25, 0.9)',
+    background: 'rgba(5, 18, 14, 0.82)',
     backdropFilter: 'blur(24px)',
     WebkitBackdropFilter: 'blur(24px)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.05)',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.05)',
     pointerEvents: 'auto',
     position: 'relative',
     overflow: 'hidden'
@@ -66,16 +67,8 @@ const Navbar = () => {
         <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, #F59E0B, transparent)', opacity: 0.3 }}></div>
 
         {/* Brand */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '16px', textDecoration: 'none' }}>
-          <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #F59E0B, #D97706)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)' }}>
-            <Trophy size={28} color="#000" strokeWidth={2.5} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <h1 style={{ margin: 0, color: '#fff', fontSize: '24px', fontWeight: '950', letterSpacing: '-1px', textTransform: 'uppercase', lineHeight: 1 }}>
-              Field<span style={{ color: '#F59E0B' }}>Now</span>
-            </h1>
-            <span style={{ fontSize: '11px', color: '#F59E0B', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', opacity: 0.8 }}>PLATFORM</span>
-          </div>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Logo size={46} showText={true} textVariant="navbar" />
         </Link>
 
         {/* Links */}
@@ -90,14 +83,21 @@ const Navbar = () => {
                 style={{ 
                   position: 'relative', 
                   padding: '10px 16px', 
-                  borderRadius: '12px', 
+                  borderRadius: '999px', 
                   textDecoration: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  background: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
-                  border: isActive ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-                  transition: 'all 0.2s'
+                  background: isActive ? 'rgba(37, 211, 102, 0.12)' : 'transparent',
+                  border: isActive ? '1px solid rgba(37, 211, 102, 0.22)' : '1px solid transparent',
+                  transition: 'all 0.2s ease',
+                  transform: 'translateZ(0)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.background = 'transparent';
                 }}
               >
                 <Icon size={18} color={isActive ? '#F59E0B' : '#94a3b8'} />
@@ -114,8 +114,8 @@ const Navbar = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <Link to="/login" style={{ fontSize: '13px', fontWeight: 'bold', color: '#94a3b8', textDecoration: 'none' }}>ĐĂNG NHẬP</Link>
               <Link to="/register" style={{ 
-                background: '#F59E0B', 
-                color: '#000', 
+                background: 'linear-gradient(135deg, #f5b21f, #ffcf61)', 
+                color: '#08140f', 
                 padding: '10px 20px', 
                 borderRadius: '12px', 
                 fontWeight: '900', 
@@ -127,7 +127,9 @@ const Navbar = () => {
           ) : (
             <button 
               onClick={logout}
-              style={{ padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
+              style={{ padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'transform 0.2s ease, background 0.2s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               <LogOut size={20} />
             </button>

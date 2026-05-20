@@ -80,6 +80,16 @@ const formatTimeValue = (value) => {
 
 export const formatCurrency = (value) => `${new Intl.NumberFormat('vi-VN').format(toNumber(value))}đ`;
 
+const normalizePhoneForZalo = (phoneNumber) => {
+	if (!phoneNumber) return '';
+	return String(phoneNumber).replace(/\D/g, '');
+};
+
+export const buildZaloUrlFromPhoneNumber = (phoneNumber) => {
+	const normalizedPhone = normalizePhoneForZalo(phoneNumber);
+	return normalizedPhone ? `https://zalo.me/${normalizedPhone}` : '';
+};
+
 export const normalizeFieldBrief = (field) => ({
 	id: field.id,
 	name: field.name,
@@ -89,6 +99,8 @@ export const normalizeFieldBrief = (field) => ({
 	isActive: field.is_active ?? field.isActive ?? false,
 	images: Array.isArray(field.images) ? field.images : [],
 	image: Array.isArray(field.images) && field.images.length ? field.images[0] : fallbackFieldImage,
+	ownerId: field.owner_id ?? field.ownerId ?? field.owner?.id ?? null,
+	ownerPhoneNumber: field.owner?.phone_number ?? field.owner?.phoneNumber ?? field.owner_phone_number ?? field.ownerPhoneNumber ?? '',
 });
 
 export const normalizeSlot = (slot) => ({
@@ -105,7 +117,6 @@ export const normalizeSlot = (slot) => ({
 
 export const normalizeField = (field) => ({
 	...normalizeFieldBrief(field),
-	ownerId: field.owner_id ?? field.ownerId ?? null,
 	description: field.description ?? '',
 	openTime: formatTimeValue(field.open_time ?? field.openTime),
 	closeTime: formatTimeValue(field.close_time ?? field.closeTime),

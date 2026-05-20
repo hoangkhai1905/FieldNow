@@ -13,9 +13,10 @@ import {
   Zap,
   Info,
   Banknote,
-  XCircle
+  XCircle,
+  MessageCircle
 } from 'lucide-react';
-import { cancelBooking, formatCurrency, getBookingDetail, getPaymentStatus, initiatePayment } from '../../api/endpoints';
+import { cancelBooking, formatCurrency, getBookingDetail, getPaymentStatus, initiatePayment, buildZaloUrlFromPhoneNumber } from '../../api/endpoints';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -29,6 +30,9 @@ const BookingConfirmation = () => {
   const { state } = useLocation();
   const [booking, setBooking] = React.useState(state?.booking || null);
   const [payment, setPayment] = React.useState(null);
+  const bookingField = booking?.field || booking?.slot?.field || null;
+  const ownerPhoneNumber = bookingField?.ownerPhoneNumber || bookingField?.owner?.phone_number || bookingField?.owner?.phoneNumber || '';
+  const ownerZaloUrl = buildZaloUrlFromPhoneNumber(ownerPhoneNumber);
   const [paymentMethod, setPaymentMethod] = React.useState('sepay'); // 'sepay' or 'cash'
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isCancelling, setIsCancelling] = React.useState(false);
@@ -137,6 +141,15 @@ const BookingConfirmation = () => {
     } finally {
       setIsCancelling(false);
     }
+  };
+
+  const handleContactOwner = () => {
+    if (!ownerZaloUrl) {
+      window.alert('Chủ sân chưa để lại số Zalo hợp lệ');
+      return;
+    }
+
+    window.open(ownerZaloUrl, '_blank', 'noopener,noreferrer');
   };
 
   const glassStyle = {
@@ -440,6 +453,28 @@ const BookingConfirmation = () => {
                   style={{ padding: '20px', borderRadius: '100px', background: 'transparent', color: '#64748b', fontWeight: '800', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: '16px' }}
                 >
                   QUAY LẠI TRANG CHỦ
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleContactOwner}
+                  disabled={!ownerZaloUrl}
+                  style={{
+                    padding: '20px',
+                    borderRadius: '100px',
+                    background: ownerZaloUrl ? 'rgba(37, 211, 102, 0.12)' : 'rgba(255,255,255,0.04)',
+                    color: ownerZaloUrl ? '#25D366' : '#64748b',
+                    fontWeight: '900',
+                    border: `1px solid ${ownerZaloUrl ? 'rgba(37, 211, 102, 0.25)' : 'rgba(255,255,255,0.05)'}`,
+                    cursor: ownerZaloUrl ? 'pointer' : 'not-allowed',
+                    fontSize: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <MessageCircle size={18} /> TRAO ĐỔI VỚI CHỦ SÂN QUA ZALO
                 </motion.button>
               </div>
             </motion.div>
