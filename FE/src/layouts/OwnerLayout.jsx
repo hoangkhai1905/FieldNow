@@ -4,12 +4,8 @@ import Sidebar from '../components/layout/Sidebar';
 
 const OwnerLayout = () => {
 	return (
-		<div className="owner-shell" style={{ 
-			background: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)',
-			minHeight: '100vh',
-			display: 'flex',
-			color: '#fff'
-		}}>
+		<div className="owner-shell fn-shell" style={{ minHeight: '100vh', display: 'flex', color: '#fff' }}>
+			<div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 20%, rgba(37, 211, 102, 0.1), transparent 26%), radial-gradient(circle at 85% 15%, rgba(245, 178, 31, 0.09), transparent 24%)', pointerEvents: 'none' }} />
 			<Sidebar
 				title="Owner Studio"
 				description="Bảng điều khiển tích hợp: Quản lý kinh doanh và quản trị hệ thống."
@@ -21,7 +17,7 @@ const OwnerLayout = () => {
 				]}
 			/>
 
-			<section style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+			<section className="fn-page" style={{ flex: 1, padding: '40px', overflowY: 'auto', position: 'relative', zIndex: 1 }}>
 				<Outlet />
 			</section>
 		</div>

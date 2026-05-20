@@ -142,7 +142,7 @@ const MyBookings = () => {
       <section style={{ marginBottom: '48px', textAlign: 'center', marginTop: '40px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: '100px', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '24px' }}>
           <Zap size={14} color="#F59E0B" fill="#F59E0B" />
-          <span style={{ color: '#F59E0B', fontSize: '11px', fontWeight: '900', letterSpacing: '1px' }}>LỊCH SỬ ĐẤU TRƯỜNG</span>
+          <span style={{ color: '#F59E0B', fontSize: '11px', fontWeight: '900', letterSpacing: '1px' }}>LỊCH SỬ THUÊ SÂN</span>
         </div>
         <h1 style={{ fontSize: '48px', fontWeight: '950', textTransform: 'uppercase', margin: 0, letterSpacing: '-2px' }}>Đơn đặt sân <span style={{ color: '#F59E0B' }}>của tôi</span></h1>
         <p style={{ color: '#a7f3d0', fontSize: '18px', marginTop: '12px', opacity: 0.8 }}>Theo dõi trạng thái và quản lý các lượt đặt sân của bạn.</p>

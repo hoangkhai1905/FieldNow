@@ -10,9 +10,10 @@ import {
   Calendar, 
   MapPin, 
   CreditCard,
-  Zap
+  Zap,
+  MessageCircle
 } from 'lucide-react';
-import { getBookingDetail, getPaymentStatus, formatCurrency, initiatePayment } from '../../api/endpoints';
+import { getBookingDetail, getPaymentStatus, formatCurrency, initiatePayment, buildZaloUrlFromPhoneNumber } from '../../api/endpoints';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -57,6 +58,9 @@ const PaymentResult = () => {
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
   const [pollCount, setPollCount] = useState(0);
+  const bookingField = booking?.field || booking?.slot?.field || null;
+  const ownerPhoneNumber = bookingField?.ownerPhoneNumber || bookingField?.owner?.phone_number || bookingField?.owner?.phoneNumber || '';
+  const ownerZaloUrl = buildZaloUrlFromPhoneNumber(ownerPhoneNumber);
 
   useEffect(() => {
     const params = Object.fromEntries(new URLSearchParams(location.search));
@@ -161,6 +165,11 @@ const PaymentResult = () => {
     }
   };
 
+  const handleContactOwner = () => {
+    if (!ownerZaloUrl) return;
+    window.open(ownerZaloUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', position: 'relative', overflow: 'hidden' }}>
       {/* Decorative Glows */}
@@ -234,6 +243,16 @@ const PaymentResult = () => {
           >
             XEM LỊCH ĐẶT CỦA TÔI <ChevronRight size={20} />
           </button>
+
+          {booking && (
+            <button
+              onClick={handleContactOwner}
+              disabled={!ownerZaloUrl}
+              style={{ width: '100%', background: ownerZaloUrl ? 'rgba(37, 211, 102, 0.12)' : 'rgba(255,255,255,0.04)', color: ownerZaloUrl ? '#25D366' : '#64748b', border: `1px solid ${ownerZaloUrl ? 'rgba(37, 211, 102, 0.25)' : 'rgba(255,255,255,0.05)'}`, padding: '18px', borderRadius: '16px', fontSize: '16px', fontWeight: '900', cursor: ownerZaloUrl ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: ownerZaloUrl ? '0 15px 30px rgba(37, 211, 102, 0.08)' : 'none', transition: 'all 0.3s' }}
+            >
+              <MessageCircle size={18} /> TRAO ĐỔI VỚI CHỦ SÂN QUA ZALO
+            </button>
+          )}
           
           {(status === 'error' || status === 'cancel') && (
             <button

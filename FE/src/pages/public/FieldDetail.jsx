@@ -12,9 +12,10 @@ import {
   Info,
   CheckCircle2,
   AlertCircle,
-  ChevronLeft
+  ChevronLeft,
+  MessageCircle
 } from 'lucide-react';
-import { getFieldDetail, createBooking, formatCurrency } from '../../api/endpoints';
+import { getFieldDetail, createBooking, formatCurrency, buildZaloUrlFromPhoneNumber } from '../../api/endpoints';
 
 const FieldDetail = () => {
   const fieldTypes = [
@@ -37,7 +38,10 @@ const FieldDetail = () => {
   const [startTime, setStartTime] = useState('06:00');
   const [endTime, setEndTime] = useState('13:00');
   const [isBooking, setIsBooking] = useState(false);
+  const [isResolvingOwnerContact, setIsResolvingOwnerContact] = useState(false);
   const [toast, setToast] = useState(null);
+  const ownerPhoneNumber = field?.ownerPhoneNumber || field?.owner?.phone_number || field?.owner?.phoneNumber || '';
+  const ownerZaloUrl = buildZaloUrlFromPhoneNumber(ownerPhoneNumber);
 
   // New: Price calculation
   const estimatedPrice = useMemo(() => {
@@ -182,6 +186,38 @@ const FieldDetail = () => {
     } finally {
       setIsBooking(false);
     }
+  };
+
+  const handleContactOwner = () => {
+    if (ownerZaloUrl) {
+      window.open(ownerZaloUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (!id || isResolvingOwnerContact) return;
+
+    setIsResolvingOwnerContact(true);
+    setToast({ type: 'success', text: 'Đang tải lại thông tin chủ sân...' });
+
+    getFieldDetail(id, selectedDate)
+      .then((latestField) => {
+        setField(latestField);
+        const latestPhoneNumber = latestField?.ownerPhoneNumber || latestField?.owner?.phone_number || latestField?.owner?.phoneNumber || '';
+        const latestZaloUrl = buildZaloUrlFromPhoneNumber(latestPhoneNumber);
+
+        if (latestZaloUrl) {
+          window.open(latestZaloUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+
+        setToast({ type: 'error', text: 'Chủ sân chưa để lại số Zalo hợp lệ' });
+      })
+      .catch(() => {
+        setToast({ type: 'error', text: 'Không tải được thông tin chủ sân' });
+      })
+      .finally(() => {
+        setIsResolvingOwnerContact(false);
+      });
   };
 
   const glassStyle = {
@@ -496,6 +532,31 @@ const FieldDetail = () => {
             </div>
 
             <button
+              type="button"
+              onClick={handleContactOwner}
+              style={{
+                width: '100%',
+                background: 'rgba(37, 211, 102, 0.12)',
+                color: '#25D366',
+                border: '1px solid rgba(37, 211, 102, 0.25)',
+                padding: '18px',
+                borderRadius: '18px',
+                fontSize: '15px',
+                fontWeight: '900',
+                cursor: isResolvingOwnerContact ? 'progress' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                marginBottom: '16px',
+                opacity: isResolvingOwnerContact ? 0.75 : 1
+              }}
+            >
+              <MessageCircle size={18} /> {isResolvingOwnerContact ? 'ĐANG TẢI THÔNG TIN CHỦ SÂN...' : 'TRAO ĐỔI VỚI CHỦ SÂN QUA ZALO'}
+            </button>
+
+            <button
+              type="button"
               onClick={handleBooking}
               disabled={isBooking}
               style={{

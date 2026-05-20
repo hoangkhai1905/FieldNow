@@ -103,7 +103,7 @@ const Home = () => {
       overflowX: 'hidden', 
       position: 'relative' 
     }}>
-      {/* Soccer Pitch Pattern Overlay */}
+      {/* Sports Court Pattern Overlay */}
       <div style={{ 
         position: 'absolute', 
         inset: 0, 
@@ -130,11 +130,12 @@ const Home = () => {
               <Zap size={18} color="#F59E0B" fill="#F59E0B" />
               <span style={{ color: '#F59E0B', fontSize: '13px', fontWeight: '900', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Sẵn sàng cho trận đấu</span>
             </div>
-            <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: '950', lineHeight: 0.9, letterSpacing: '-3px', marginBottom: '32px', textTransform: 'uppercase', textShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
-              Nâng tầm <br /><span style={{ color: '#F59E0B' }}>trải nghiệm</span> <br />đặt sân cỏ.
+            
+            <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: '950', lineHeight: 0.9, letterSpacing: '-3px', marginBottom: '32px', textTransform: 'uppercase', textShadow: '0 10px 30px rgba(0,0,0,0.4)', }}>
+              Nâng tầm <br /><span style={{ color: '#F59E0B' }}>trải nghiệm</span> <br />thuê sân <br></br><span style={{ color: '#F59E0B' }}>thể thao.</span>
             </h1>
             <p style={{ fontSize: '20px', color: '#d1fae5', lineHeight: 1.6, maxWidth: '540px', marginBottom: '32px', fontWeight: '500', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-              Hệ thống quản lý và đặt sân bóng đá hiện đại nhất. <br />Tìm sân nhanh, chốt lịch dễ dàng, thanh toán an toàn.
+              Hệ thống quản lý thuê sân thể thao hiện đại. <br />Tìm sân nhanh, chốt lịch dễ dàng, thanh toán an toàn.
             </p>
 
             {/* Live Search Bar */}
@@ -277,7 +278,7 @@ const Home = () => {
                 </div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>Chất lượng hàng đầu</h4>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: '#a7f3d0' }}>Sân cỏ tiêu chuẩn FIFA</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: '#a7f3d0' }}>Sân tiêu chuẩn, đa dạng bộ môn</p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
@@ -353,18 +354,18 @@ const Home = () => {
         <section style={{ ...glassStyle, padding: '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), transparent)', pointerEvents: 'none' }}></div>
            <motion.div variants={itemVariants} style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-              <h2 style={{ fontSize: '56px', fontWeight: '950', marginBottom: '28px', textTransform: 'uppercase', lineHeight: 1, letterSpacing: '-1px', textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>Sẵn sàng tỏa sáng <br />trên sân cỏ?</h2>
+              <h2 style={{ fontSize: '56px', fontWeight: '950', marginBottom: '28px', textTransform: 'uppercase', lineHeight: 1, letterSpacing: '-1px', textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>Sẵn sàng tỏa sáng <br />trên mọi sân thể thao?</h2>
               <p style={{ color: '#d1fae5', fontSize: '20px', marginBottom: '56px', lineHeight: 1.6 }}>
-                Đừng để việc tìm sân làm gián đoạn niềm đam mê. <br />Gia nhập cộng đồng cầu thủ đã tin dùng FieldNow.
+                Đừng để việc tìm sân làm gián đoạn niềm đam mê. <br />Gia nhập cộng đồng yêu thể thao đã tin dùng FieldNow.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', marginBottom: '64px' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#F59E0B', fontSize: '40px', fontWeight: '950' }}>10K+</div>
-                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Cầu thủ</div>
+                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Người dùng</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#F59E0B', fontSize: '40px', fontWeight: '950' }}>500+</div>
-                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Sân bóng</div>
+                  <div style={{ color: '#a7f3d0', fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Sân thể thao</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#F59E0B', fontSize: '40px', fontWeight: '950' }}>24/7</div>

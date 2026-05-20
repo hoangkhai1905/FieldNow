@@ -84,12 +84,14 @@ const Register = () => {
               <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '900', letterSpacing: '1.5px' }}>START YOUR LEGACY</span>
            </div>
            
-           <h1 style={{ fontSize: '64px', fontWeight: '950', lineHeight: 0.95, textTransform: 'uppercase', margin: '0 0 32px 0', letterSpacing: '-3px', color: '#fff' }}>
-              Join the <br /><span style={{ color: '#F59E0B' }}>Arena.</span>
-           </h1>
+            <h1 style={{ fontSize: '64px', fontWeight: '950', lineHeight: 0.95, textTransform: 'uppercase', margin: '0 0 32px 0', letterSpacing: '-3px', color: '#fff' }}>
+              NÂNG TẦM <br />
+              <span style={{ color: '#F59E0B' }}>TRẢI NGHIỆM</span> <br />
+              THUÊ SÂN <span style={{ color: '#F59E0B' }}>THỂ THAO.</span>
+            </h1>
            
            <p style={{ color: '#a7f3d0', fontSize: '20px', lineHeight: 1.6, marginBottom: '48px', opacity: 0.8, fontWeight: '500' }}>
-             Gia nhập cộng đồng thể thao lớn nhất. Đặt sân nhanh, kết nối đội hình và bùng nổ đam mê.
+             Gia nhập cộng đồng thể thao lớn nhất. Thuê sân nhanh, kết nối đồng đội và bùng nổ đam mê.
            </p>
 
            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -122,7 +124,7 @@ const Register = () => {
                  <User size={20} style={{ position: 'absolute', left: '18px', top: '16px', color: '#64748b' }} />
                  <input 
                     type="text" 
-                    placeholder="Họ và tên cầu thủ" 
+                    placeholder="Họ và tên" 
                     style={inputStyle}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
