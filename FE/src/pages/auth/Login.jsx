@@ -109,11 +109,12 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="relative mb-5">
-              <Mail size={18} className="absolute left-4 top-4.5 text-slate-500" />
+              <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" />
               <input
                 type="text"
                 placeholder="Email hoặc số điện thoại"
-                className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
+                className="w-full bg-black/20 border border-white/10 rounded-2xl text-white text-base outline-none focus:border-amber-500 transition-colors"
+                style={{ minHeight: '58px', padding: '16px 18px 16px 54px' }}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -121,11 +122,12 @@ const Login = () => {
             </div>
 
             <div className="relative mb-5">
-              <Lock size={18} className="absolute left-4 top-4.5 text-slate-500" />
+              <Lock size={18} className="absolute left-5 top-[29px] -translate-y-1/2 text-slate-500 pointer-events-none z-10" />
               <input
                 type="password"
                 placeholder="Mật khẩu"
-                className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
+                className="w-full bg-black/20 border border-white/10 rounded-2xl text-white text-base outline-none focus:border-amber-500 transition-colors"
+                style={{ minHeight: '58px', padding: '16px 18px 16px 54px' }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

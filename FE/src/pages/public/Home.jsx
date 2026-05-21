@@ -123,8 +123,8 @@ const Home = () => {
         style={{ maxWidth: '1200px', margin: '0 auto', padding: '28px 24px 40px', position: 'relative', zIndex: 1 }}
       >
         {/* HERO SECTION */}
-        <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 items-start min-h-[380px] mb-8 lg:mb-12">
-          <motion.div variants={itemVariants} className="pt-2 lg:pt-6 flex flex-col items-start">
+        <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center min-h-[380px] mb-8 lg:mb-12">
+          <motion.div variants={itemVariants} className="pt-2 lg:pt-0 flex flex-col items-start">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'rgba(245, 158, 11, 0.2)', borderRadius: '100px', border: '1px solid rgba(245, 158, 11, 0.4)', marginBottom: '24px' }}>
               <Zap size={18} color="#F59E0B" fill="#F59E0B" />
               <span style={{ color: '#F59E0B', fontSize: '13px', fontWeight: '900', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Sẵn sàng cho trận đấu</span>
@@ -260,9 +260,9 @@ const Home = () => {
           </motion.div>
 
           {/* Quick Stats Panel */}
-          <motion.div variants={itemVariants} className="w-full flex flex-col items-center lg:items-stretch" style={{ gap: '5px' }}>
-            <div className="w-full p-4 md:p-8 lg:mt-0" style={{ ...glassStyle, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(14px)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+          <motion.div variants={itemVariants} className="w-full flex flex-col items-center lg:items-stretch" style={{ gap: '28px' }}>
+            <div className="w-full p-5 md:p-8 lg:mt-0" style={{ ...glassStyle, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(14px)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                   <ShieldCheck size={32} />
@@ -293,13 +293,13 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="hidden lg:flex w-full justify-center pt-38">
+            <div className="hidden lg:flex w-full justify-center pt-4">
               {isAuthenticated ? (
-                <Link to="/nguoi-dung/dat-san-cua-toi" className="inline-flex w-fit text-center bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] text-white py-4 px-8 md:py-[22px] md:px-12 rounded-[20px] font-extrabold border border-[rgba(255,255,255,0.2)] text-[15px] backdrop-blur-[10px] transition-all">
+                <Link to="/nguoi-dung/dat-san-cua-toi" className="inline-flex min-w-[236px] justify-center text-center bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] text-white py-4 px-8 md:py-[22px] md:px-12 rounded-[20px] font-extrabold border border-[rgba(255,255,255,0.2)] text-[15px] backdrop-blur-[10px] transition-all">
                   LỊCH ĐẶT CỦA TÔI
                 </Link>
               ) : (
-                <Link to="/register" className="inline-flex w-fit text-center bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] text-white py-4 px-8 md:py-[22px] md:px-12 rounded-[20px] font-extrabold border border-[rgba(255,255,255,0.2)] text-[15px] backdrop-blur-[10px] transition-all">
+                <Link to="/register" className="inline-flex min-w-[236px] justify-center text-center bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] text-white py-4 px-8 md:py-[22px] md:px-12 rounded-[20px] font-extrabold border border-[rgba(255,255,255,0.2)] text-[15px] backdrop-blur-[10px] transition-all">
                   TẠO TÀI KHOẢN
                 </Link>
               )}
@@ -395,11 +395,19 @@ const Home = () => {
                 </div>
               </div>
               {!isAuthenticated ? (
-                <Link to="/register" className="inline-block bg-white hover:bg-gray-100 text-teal-900 py-4 px-10 md:py-5 md:px-16 rounded-[22px] font-black text-decoration-none shadow-2xl text-[15px] md:text-[16px] transition-all">
+                <Link
+                  to="/register"
+                  className="inline-flex items-center justify-center bg-white hover:bg-gray-100 py-4 px-10 md:py-5 md:px-16 rounded-[22px] font-black shadow-2xl text-[15px] md:text-[16px] transition-all"
+                  style={{ color: '#064e3b', minWidth: '266px', textDecoration: 'none' }}
+                >
                   ĐĂNG KÝ NGAY
                 </Link>
               ) : (
-                <Link to="/nguoi-dung/ho-so" className="inline-block bg-white hover:bg-gray-100 text-teal-900 py-4 px-10 md:py-5 md:px-16 rounded-[22px] font-black text-decoration-none shadow-2xl text-[15px] md:text-[16px] transition-all">
+                <Link
+                  to="/nguoi-dung/ho-so"
+                  className="inline-flex items-center justify-center bg-white hover:bg-gray-100 py-4 px-10 md:py-5 md:px-16 rounded-[22px] font-black shadow-2xl text-[15px] md:text-[16px] transition-all"
+                  style={{ color: '#064e3b', minWidth: '266px', textDecoration: 'none' }}
+                >
                   TRANG CÁ NHÂN
                 </Link>
               )}

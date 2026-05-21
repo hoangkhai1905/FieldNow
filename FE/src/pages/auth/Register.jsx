@@ -100,11 +100,12 @@ const Register = () => {
 
            <form onSubmit={handleSubmit} className="flex flex-col gap-4.5">
               <div className="relative">
-                 <User size={20} className="absolute left-4.5 top-4 text-slate-500" />
+                 <User size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" />
                  <input 
                     type="text" 
                     placeholder="Họ và tên" 
-                    className="w-full bg-black/30 border border-white/10 rounded-[18px] py-4 pl-12 pr-4 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-black/30 border border-white/10 rounded-[18px] text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    style={{ minHeight: '50px', padding: '14px 18px 14px 54px' }}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
@@ -112,11 +113,12 @@ const Register = () => {
               </div>
 
               <div className="relative">
-                 <Mail size={20} className="absolute left-4.5 top-4 text-slate-500" />
+                 <Mail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" />
                  <input 
                     type="email" 
                     placeholder="Email liên lạc" 
-                    className="w-full bg-black/30 border border-white/10 rounded-[18px] py-4 pl-12 pr-4 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-black/30 border border-white/10 rounded-[18px] text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    style={{ minHeight: '50px', padding: '14px 18px 14px 54px' }}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -124,11 +126,12 @@ const Register = () => {
               </div>
 
               <div className="relative">
-                 <Phone size={20} className="absolute left-4.5 top-4 text-slate-500" />
+                 <Phone size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" />
                  <input 
                     type="text" 
                     placeholder="Số điện thoại liên lạc" 
-                    className="w-full bg-black/30 border border-white/10 rounded-[18px] py-4 pl-12 pr-4 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-black/30 border border-white/10 rounded-[18px] text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    style={{ minHeight: '50px', padding: '14px 18px 14px 54px' }}
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     required
@@ -136,11 +139,12 @@ const Register = () => {
               </div>
 
               <div className="relative">
-                 <Lock size={20} className="absolute left-4.5 top-4 text-slate-500" />
+                 <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none z-10" />
                  <input 
                     type="password" 
                     placeholder="Mật khẩu bảo mật" 
-                    className="w-full bg-black/30 border border-white/10 rounded-[18px] py-4 pl-12 pr-4 text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-black/30 border border-white/10 rounded-[18px] text-white text-sm outline-none focus:border-amber-500 transition-colors"
+                    style={{ minHeight: '50px', padding: '14px 18px 14px 54px' }}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
