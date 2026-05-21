@@ -38,3 +38,6 @@ docs/system_design_architecture.md
 docs/deploy_backend_aws_elastic_beanstalk.md
 docs/deploy_frontend_netlify.md
 docs/flow_architecture_design.md
+docs/benchmark/prod/backend-aws-eb-k6-2026-05-21.md
+docs/benchmark/prod/frontend-lighthouse-2026-05-21.md
+docs/c4-architecture.md
