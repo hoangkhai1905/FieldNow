@@ -273,7 +273,7 @@ const FieldDetail = () => {
         {/* Left: Content */}
         <div>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ ...glassStyle, height: '500px', overflow: 'hidden', marginBottom: '32px' }}>
-            <img src={primaryImage} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={primaryImage} alt={field.name} loading="eager" fetchPriority="high" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </motion.div>
 
           <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '48px' }}>
@@ -311,7 +311,7 @@ const FieldDetail = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {field.images?.map((img, i) => (
                 <motion.div key={i} whileHover={{ scale: 1.05 }} style={{ borderRadius: '16px', overflow: 'hidden', height: '160px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <img src={img} alt="Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={img} alt={`${field.name} ${i + 1}`} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </motion.div>
               ))}
             </div>
@@ -390,7 +390,6 @@ const FieldDetail = () => {
                           disabled={isUnavailable}
                           onClick={(e) => {
                             e.preventDefault();
-                            console.log('[Owner Slot] Selected slot:', slot.startTime, '-', slot.endTime);
                             setStartTime(slot.startTime);
                             setEndTime(slot.endTime);
                           }}
@@ -448,7 +447,6 @@ const FieldDetail = () => {
                         disabled={isBooked}
                         onClick={(e) => {
                           e.preventDefault();
-                          console.log('[Suggested Slot] Selected slot:', slot.startTime, '-', slot.endTime);
                           setStartTime(slot.startTime);
                           setEndTime(slot.endTime);
                         }}

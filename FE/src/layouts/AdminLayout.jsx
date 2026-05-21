@@ -5,6 +5,7 @@ import Sidebar from '../components/layout/Sidebar';
 const AdminLayout = () => {
 	return (
 		<div
+			className="admin-shell"
 			style={{
 				background: 'linear-gradient(135deg, #031b16 0%, #073b2f 52%, #102a43 100%)',
 				minHeight: '100vh',

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import Logo from '../common/Logo';
+import { prefetchRoute } from '../../routes/routeLoaders';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -50,8 +51,8 @@ const Navbar = () => {
     padding: '16px 24px',
     borderRadius: '24px',
     background: 'rgba(5, 18, 14, 0.85)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.05)',
     pointerEvents: 'auto',
@@ -97,8 +98,10 @@ const Navbar = () => {
                   transform: 'translateZ(0)'
                 }}
                 onMouseEnter={(e) => {
+                  prefetchRoute(link.path);
                   if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
                 }}
+                onFocus={() => prefetchRoute(link.path)}
                 onMouseLeave={(e) => {
                   if (!isActive) e.currentTarget.style.background = 'transparent';
                 }}
@@ -115,7 +118,7 @@ const Navbar = () => {
 
           {!isAuthenticated ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <Link to="/login" style={{ fontSize: '13px', fontWeight: 'bold', color: '#94a3b8', textDecoration: 'none' }}>ĐĂNG NHẬP</Link>
+              <Link to="/login" onMouseEnter={() => prefetchRoute('/login')} onFocus={() => prefetchRoute('/login')} style={{ fontSize: '13px', fontWeight: 'bold', color: '#94a3b8', textDecoration: 'none' }}>ĐĂNG NHẬP</Link>
               <Link to="/register" style={{ 
                 background: 'linear-gradient(135deg, #f5b21f, #ffcf61)', 
                 color: '#08140f', 
@@ -125,7 +128,7 @@ const Navbar = () => {
                 fontSize: '13px',
                 textDecoration: 'none',
                 boxShadow: '0 8px 16px rgba(245, 158, 11, 0.2)' 
-              }}>GIA NHẬP</Link>
+              }} onMouseEnter={() => prefetchRoute('/register')} onFocus={() => prefetchRoute('/register')}>GIA NHẬP</Link>
             </div>
           ) : (
             <button 
@@ -143,7 +146,7 @@ const Navbar = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden flex items-center justify-center p-2 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] text-white"
-          style={{ transition: 'all 0.2s' }}
+          style={{ transition: 'all 0.2s', width: '44px', height: '44px', flexShrink: 0 }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -162,8 +165,8 @@ const Navbar = () => {
                 left: 0,
                 right: 0,
                 background: 'rgba(5, 18, 14, 0.95)',
-                backdropFilter: 'blur(32px)',
-                WebkitBackdropFilter: 'blur(32px)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '20px',
                 padding: '20px',
@@ -183,6 +186,8 @@ const Navbar = () => {
                       key={link.path}
                       to={link.path}
                       onClick={() => setIsOpen(false)}
+                      onMouseEnter={() => prefetchRoute(link.path)}
+                      onFocus={() => prefetchRoute(link.path)}
                       style={{
                         padding: '12px 16px',
                         borderRadius: '12px',
@@ -210,6 +215,8 @@ const Navbar = () => {
                   <Link
                     to="/login"
                     onClick={() => setIsOpen(false)}
+                    onMouseEnter={() => prefetchRoute('/login')}
+                    onFocus={() => prefetchRoute('/login')}
                     style={{
                       textAlign: 'center',
                       padding: '14px',
@@ -227,6 +234,8 @@ const Navbar = () => {
                   <Link
                     to="/register"
                     onClick={() => setIsOpen(false)}
+                    onMouseEnter={() => prefetchRoute('/register')}
+                    onFocus={() => prefetchRoute('/register')}
                     style={{
                       textAlign: 'center',
                       padding: '14px',

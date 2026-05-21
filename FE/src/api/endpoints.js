@@ -296,7 +296,6 @@ export const cancelBooking = async (bookingId) => {
 };
 
 export const initiatePayment = async (bookingId, provider = 'sepay') => {
-	console.log('[API] initiatePayment called with:', { bookingId, provider });
 	const data = await apiRequest({
 		method: 'POST',
 		url: apiPaths.payments.initiate,

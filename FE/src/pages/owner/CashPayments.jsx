@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Banknote, CheckCircle2, Loader2, ReceiptText } from 'lucide-react';
 import { confirmOwnerCashPayment, formatCurrency, getOwnerCashPayments } from '../../api/endpoints';
 import Toast from '../../components/ui/Toast';
+import Modal from '../../components/common/Modal';
 
 const CashPayments = () => {
 	const [payments, setPayments] = useState([]);
@@ -9,6 +10,7 @@ const CashPayments = () => {
 	const [loading, setLoading] = useState(true);
 	const [toast, setToast] = useState(null);
 	const [processingId, setProcessingId] = useState('');
+	const [pendingCashBookingId, setPendingCashBookingId] = useState('');
 
 	const loadPayments = async () => {
 		setLoading(true);
@@ -25,7 +27,13 @@ const CashPayments = () => {
 	}, [status]);
 
 	const handleConfirm = async (bookingId) => {
-		if (!window.confirm('Xác nhận đã thu tiền mặt cho đơn này?')) return;
+		setPendingCashBookingId(bookingId);
+	};
+
+	const confirmCashPayment = async () => {
+		const bookingId = pendingCashBookingId;
+		if (!bookingId) return;
+		setPendingCashBookingId('');
 		setProcessingId(bookingId);
 		try {
 			await confirmOwnerCashPayment(bookingId);
@@ -43,8 +51,19 @@ const CashPayments = () => {
 	};
 
 	return (
-		<div style={{ color: '#fff' }}>
-			<header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px' }}>
+		<div className="owner-cash-payments" style={{ color: '#fff' }}>
+			<Modal
+				isOpen={Boolean(pendingCashBookingId)}
+				title="Xác nhận thu tiền?"
+				description="Hệ thống sẽ đánh dấu đơn này là đã thanh toán tiền mặt tại sân."
+				icon={CheckCircle2}
+				variant="success"
+				confirmText="Đã thu tiền"
+				cancelText="Kiểm tra lại"
+				onConfirm={confirmCashPayment}
+				onClose={() => setPendingCashBookingId('')}
+			/>
+			<header className="owner-cash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '36px', gap: '24px' }}>
 				<div>
 					<div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'rgba(16,185,129,0.12)', borderRadius: '999px', color: '#10b981', fontSize: '11px', fontWeight: '900', marginBottom: '18px' }}>
 						<Banknote size={14} />
@@ -54,6 +73,7 @@ const CashPayments = () => {
 					<p style={{ color: '#94a3b8', marginTop: '8px' }}>Xác nhận các đơn đã thu tiền tại sân của bạn.</p>
 				</div>
 				<select
+					className="owner-cash-filter"
 					value={status}
 					onChange={(event) => setStatus(event.target.value)}
 					style={{ background: 'rgba(0,0,0,0.3)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 16px', outline: 'none' }}
@@ -104,7 +124,7 @@ const CashPayments = () => {
 					))}
 				</div>
 			) : (
-				<div style={{ ...glassStyle, padding: '80px', textAlign: 'center', color: '#94a3b8', fontWeight: '800' }}>
+				<div className="owner-cash-empty" style={{ ...glassStyle, padding: '80px', textAlign: 'center', color: '#94a3b8', fontWeight: '800' }}>
 					<ReceiptText size={38} style={{ marginBottom: '14px' }} />
 					<div>Không có thanh toán tiền mặt trong trạng thái này.</div>
 				</div>

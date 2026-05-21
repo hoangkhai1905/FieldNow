@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cancelBooking, formatCurrency, getMyBookings, getPaymentStatus, initiatePayment } from '../../api/endpoints';
 import Toast from '../../components/ui/Toast';
+import Modal from '../../components/common/Modal';
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
@@ -67,6 +68,7 @@ const MyBookings = () => {
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
   const [pagination, setPagination] = useState(null);
+  const [pendingCancelBookingId, setPendingCancelBookingId] = useState('');
 
   const loadBookings = async (page = 1) => {
     setLoading(true);
@@ -109,7 +111,13 @@ const MyBookings = () => {
   };
 
   const handleCancel = async (bookingId) => {
-    if (!window.confirm('Bạn có chắc muốn hủy lịch đặt sân này?')) return;
+    setPendingCancelBookingId(bookingId);
+  };
+
+  const confirmCancelBooking = async () => {
+    const bookingId = pendingCancelBookingId;
+    if (!bookingId) return;
+    setPendingCancelBookingId('');
     try {
       await cancelBooking(bookingId);
       setToast({ type: 'success', text: 'Đã hủy lịch đặt sân' });
@@ -139,6 +147,17 @@ const MyBookings = () => {
   return (
     <div style={{ color: '#fff', paddingBottom: '100px' }}>
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
+      <Modal
+        isOpen={Boolean(pendingCancelBookingId)}
+        title="Hủy lịch đặt sân?"
+        description="Lịch đặt sẽ được chuyển sang trạng thái đã hủy. Thao tác này không thể hoàn tác."
+        icon={Trash2}
+        variant="error"
+        confirmText="Hủy lịch"
+        cancelText="Giữ lại"
+        onConfirm={confirmCancelBooking}
+        onClose={() => setPendingCancelBookingId('')}
+      />
 
       <section style={{ marginBottom: '48px', textAlign: 'center', marginTop: '40px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: '100px', border: '1px solid rgba(245, 158, 11, 0.3)', marginBottom: '24px' }}>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { getOwnerBookings, rejectOwnerBooking } from '../../api/endpoints';
 import Toast from '../../components/ui/Toast';
+import Modal from '../../components/common/Modal';
 
 const BookingManagement = () => {
   const [bookings, setBookings] = useState([]);
@@ -30,6 +31,7 @@ const BookingManagement = () => {
   const [processingId, setProcessingId] = useState('');
   const [openMenuId, setOpenMenuId] = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [pendingRejectBookingId, setPendingRejectBookingId] = useState('');
 
   const loadBookings = async () => {
     setLoading(true);
@@ -53,7 +55,13 @@ const BookingManagement = () => {
   }, [page, statusFilter, dateFilter]);
 
   const handleRejectBooking = async (bookingId) => {
-    if (!window.confirm('Từ chối booking này? Booking sẽ chuyển sang trạng thái đã hủy.')) return;
+    setPendingRejectBookingId(bookingId);
+  };
+
+  const confirmRejectBooking = async () => {
+    const bookingId = pendingRejectBookingId;
+    if (!bookingId) return;
+    setPendingRejectBookingId('');
     setOpenMenuId('');
     setProcessingId(bookingId);
     setToast(null);
@@ -131,9 +139,21 @@ const BookingManagement = () => {
   };
 
   return (
-    <div style={{ color: '#fff', padding: '40px' }}>
+    <div className="owner-booking-management" style={{ color: '#fff', padding: '40px' }}>
       {/* Header */}
-      <header style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <Modal
+        isOpen={Boolean(pendingRejectBookingId)}
+        title="Từ chối booking?"
+        description="Booking sẽ chuyển sang trạng thái đã hủy và khách hàng sẽ không thể tiếp tục thanh toán đơn này."
+        icon={Ban}
+        variant="error"
+        confirmText="Từ chối"
+        cancelText="Giữ lại"
+        onConfirm={confirmRejectBooking}
+        onClose={() => setPendingRejectBookingId('')}
+      />
+
+      <header className="owner-booking-header" style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '24px' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '100px', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '24px' }}>
             <Calendar size={14} color="#3b82f6" />
@@ -144,7 +164,7 @@ const BookingManagement = () => {
           </h1>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', width: '620px' }}>
+        <div className="owner-booking-filters" style={{ display: 'flex', gap: '16px', width: '620px' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <Search size={18} style={{ position: 'absolute', left: '16px', top: '12px', color: '#64748b' }} />
             <input 
@@ -185,10 +205,10 @@ const BookingManagement = () => {
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Booking List */}
-      <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
+      <div className="owner-booking-list-wrap" style={{ overflowX: 'auto', paddingBottom: '20px' }}>
         <div style={{ minWidth: '1100px' }}>
           {/* Table Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1fr 1fr 1fr 0.3fr', gap: '20px', padding: '16px 24px', color: '#64748b', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          <div className="owner-booking-row-head" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1fr 1fr 1fr 0.3fr', gap: '20px', padding: '16px 24px', color: '#64748b', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>
             <div>Sân bóng</div>
             <div>Khách hàng</div>
             <div>Thời điểm đặt</div>
@@ -208,6 +228,7 @@ const BookingManagement = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   whileHover={{ x: 10, background: 'rgba(255,255,255,0.08)' }}
+                  className="owner-booking-row"
                   style={{ ...glassStyle, position: 'relative', zIndex: openMenuId === booking.id ? 50 : 1, padding: '20px 24px', display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1fr 1fr 1fr 0.3fr', alignItems: 'center', gap: '20px', transition: 'all 0.3s' }}
                 >
                   {/* Field Info */}

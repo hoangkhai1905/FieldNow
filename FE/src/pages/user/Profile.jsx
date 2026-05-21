@@ -402,29 +402,31 @@ const Profile = () => {
                 <motion.button
                   whileHover={{ x: 10, background: 'rgba(255,255,255,0.08)' }}
                   onClick={() => setShowPasswordModal(true)}
-                  style={{ width: '100%', padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.3s' }}
+                  className="profile-action-button"
+                  style={{ width: '100%', padding: '20px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.3s', flexWrap: 'nowrap', gap: '16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Lock size={20} color="#F59E0B" />
                     </div>
                     ĐỔI MẬT KHẨU
                   </div>
-                  <ChevronRight size={20} color="#64748b" />
+                  <ChevronRight size={20} color="#64748b" style={{ flexShrink: 0 }} />
                 </motion.button>
 
                 <motion.button
                   whileHover={{ x: 10, background: 'rgba(244, 63, 94, 0.08)' }}
                   onClick={logout}
-                  style={{ width: '100%', padding: '20px', borderRadius: '20px', background: 'rgba(244, 63, 94, 0.03)', border: '1px solid rgba(244, 63, 94, 0.1)', color: '#f43f5e', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.3s' }}
+                  className="profile-action-button"
+                  style={{ width: '100%', padding: '20px', borderRadius: '20px', background: 'rgba(244, 63, 94, 0.03)', border: '1px solid rgba(244, 63, 94, 0.1)', color: '#f43f5e', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.3s', flexWrap: 'nowrap', gap: '16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(244, 63, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <LogOut size={20} color="#f43f5e" />
                     </div>
                     ĐĂNG XUẤT
                   </div>
-                  <ChevronRight size={20} color="#64748b" />
+                  <ChevronRight size={20} color="#64748b" style={{ flexShrink: 0 }} />
                 </motion.button>
               </div>
             </div>

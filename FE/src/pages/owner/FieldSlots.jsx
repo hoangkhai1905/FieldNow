@@ -25,6 +25,7 @@ import {
   updateOwnerSlot,
 } from '../../api/endpoints';
 import Toast from '../../components/ui/Toast';
+import Modal from '../../components/common/Modal';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -100,6 +101,7 @@ const FieldSlots = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [pendingDeleteSlotId, setPendingDeleteSlotId] = useState(null);
   const [editingSlotId, setEditingSlotId] = useState(null);
   const [editingSlotForm, setEditingSlotForm] = useState({
     startTime: '',
@@ -274,7 +276,13 @@ const FieldSlots = () => {
   };
 
   const handleDelete = async (slotId) => {
-    if (!window.confirm('Bạn có chắc muốn xóa khung giờ này?')) return;
+    setPendingDeleteSlotId(slotId);
+  };
+
+  const confirmDeleteSlot = async () => {
+    const slotId = pendingDeleteSlotId;
+    if (!slotId) return;
+    setPendingDeleteSlotId(null);
     try {
       await deleteOwnerSlot(slotId);
       showToast('success', 'Đã xóa khung giờ');
@@ -367,8 +375,19 @@ const FieldSlots = () => {
   );
 
   return (
-    <div style={{ color: '#fff', paddingBottom: '100px' }}>
+    <div className="owner-field-slots" style={{ color: '#fff', paddingBottom: '100px' }}>
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
+      <Modal
+        isOpen={Boolean(pendingDeleteSlotId)}
+        title="Xóa khung giờ?"
+        description="Khung giờ này sẽ bị xóa khỏi lịch sân. Người dùng sẽ không thể chọn khung giờ này nữa."
+        icon={Trash2}
+        variant="error"
+        confirmText="Xóa khung giờ"
+        cancelText="Giữ lại"
+        onConfirm={confirmDeleteSlot}
+        onClose={() => setPendingDeleteSlotId(null)}
+      />
 
       <header style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '24px' }}>
         <button
@@ -385,11 +404,11 @@ const FieldSlots = () => {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(360px, 0.8fr)', gap: '32px' }}>
+      <div className="field-slots-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(360px, 0.8fr)', gap: '32px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <section style={{ ...glassStyle, padding: '28px' }}>
             {sectionTitle(<PlusCircle size={22} color="#F59E0B" />, 'TẠO SLOT THỦ CÔNG')}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            <div className="slot-form-grid slot-form-grid-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <input type="date" value={manualSlot.date} onChange={(e) => setManualSlot({ ...manualSlot, date: e.target.value })} style={inputStyle} />
               <input type="time" value={manualSlot.startTime} onChange={(e) => setManualSlot({ ...manualSlot, startTime: e.target.value })} style={inputStyle} />
               <input type="time" value={manualSlot.endTime} onChange={(e) => setManualSlot({ ...manualSlot, endTime: e.target.value })} style={inputStyle} />
@@ -402,11 +421,11 @@ const FieldSlots = () => {
 
           <section style={{ ...glassStyle, padding: '28px' }}>
             {sectionTitle(<Zap size={22} color="#F59E0B" fill="#F59E0B" />, 'TẠO NHANH TRONG NGÀY')}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div className="slot-form-grid slot-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <input type="date" value={quickSetup.startDate} onChange={(e) => setQuickSetup({ ...quickSetup, startDate: e.target.value })} style={inputStyle} />
               <input type="number" value={quickSetup.price} onChange={(e) => setQuickSetup({ ...quickSetup, price: e.target.value })} placeholder="Giá VNĐ" style={inputStyle} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            <div className="slot-form-grid slot-form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <input type="time" value={quickSetup.startTime} onChange={(e) => setQuickSetup({ ...quickSetup, startTime: e.target.value })} style={inputStyle} />
               <input type="time" value={quickSetup.endTime} onChange={(e) => setQuickSetup({ ...quickSetup, endTime: e.target.value })} style={inputStyle} />
               <select value={quickSetup.duration} onChange={(e) => setQuickSetup({ ...quickSetup, duration: Number(e.target.value) })} style={{ ...inputStyle, appearance: 'none' }}>
@@ -422,7 +441,7 @@ const FieldSlots = () => {
 
           <section style={{ ...glassStyle, padding: '28px' }}>
             {sectionTitle(<Settings size={22} color="#F59E0B" />, 'TẠO LỊCH LẶP NHIỀU NGÀY')}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div className="slot-form-grid slot-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <input type="date" value={recurringSetup.startDate} onChange={(e) => setRecurringSetup({ ...recurringSetup, startDate: e.target.value })} style={inputStyle} />
               <input type="date" value={recurringSetup.endDate} onChange={(e) => setRecurringSetup({ ...recurringSetup, endDate: e.target.value })} style={inputStyle} />
             </div>
@@ -438,7 +457,7 @@ const FieldSlots = () => {
                 </button>
               ))}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            <div className="slot-form-grid slot-form-grid-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <input type="time" value={recurringSetup.startTime} onChange={(e) => setRecurringSetup({ ...recurringSetup, startTime: e.target.value })} style={inputStyle} />
               <input type="time" value={recurringSetup.endTime} onChange={(e) => setRecurringSetup({ ...recurringSetup, endTime: e.target.value })} style={inputStyle} />
               <select value={recurringSetup.duration} onChange={(e) => setRecurringSetup({ ...recurringSetup, duration: Number(e.target.value) })} style={{ ...inputStyle, appearance: 'none' }}>
