@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, searchFields } from '../../api/endpoints';
 import useAuth from '../../hooks/useAuth';
+import './Home.css';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -101,7 +102,7 @@ const Home = () => {
   };
 
   return (
-    <div style={{ 
+    <div className="home-performance-page" style={{
       color: '#fff', 
       flex: 1, 
       overflowX: 'hidden', 
@@ -112,8 +113,8 @@ const Home = () => {
       <div style={heroGlowStyle}></div>
       
       {/* Decorative Lights */}
-      <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '360px', height: '360px', background: 'radial-gradient(circle, #10b981 0%, transparent 70%)', opacity: 0.1, filter: 'blur(48px)', pointerEvents: 'none', zIndex: 0 }}></div>
-      <div style={{ position: 'absolute', bottom: '10%', left: '-5%', width: '320px', height: '320px', background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)', opacity: 0.06, filter: 'blur(52px)', pointerEvents: 'none', zIndex: 0 }}></div>
+      <div className="home-static-glow home-static-glow--green"></div>
+      <div className="home-static-glow home-static-glow--amber"></div>
 
       <motion.div 
         variants={containerVariants}
@@ -212,7 +213,15 @@ const Home = () => {
                           onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
-                          <img src={field.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1400&q=80'} alt={field.name} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} />
+                          <img
+                            src={field.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=160&q=60'}
+                            alt={field.name}
+                            width="60"
+                            height="60"
+                            loading="lazy"
+                            decoding="async"
+                            style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover' }}
+                          />
                           <div>
                             <h4 style={{ margin: '0 0 4px 0', color: '#fff', fontSize: '16px', fontWeight: '800' }}>{field.name}</h4>
                             <p style={{ margin: 0, color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -326,7 +335,15 @@ const Home = () => {
                 >
                   <Link to={`/san/${field.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <div style={{ position: 'relative', height: '260px', overflow: 'hidden' }}>
-                      <img src={field.image} alt={field.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img
+                        src={field.image}
+                        alt={field.name}
+                        width="384"
+                        height="260"
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
                       <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(2, 44, 34, 0.8)', backdropFilter: 'blur(12px)', padding: '8px 16px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(255,255,255,0.15)' }}>
                         <Star size={16} fill="#F59E0B" color="#F59E0B" />
                         <span style={{ fontSize: '14px', fontWeight: '900', color: '#fff' }}>4.9</span>

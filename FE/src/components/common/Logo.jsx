@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const logoImg = '/logo.png';
+const logoImg = '/logo-96.png';
 
 const Logo = ({ 
   size = 40, 
@@ -128,7 +128,7 @@ const Logo = ({
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
         >
-          <img src={logoImg} alt="FieldNow Logo" style={imageStyle} />
+          <img src={logoImg} alt="FieldNow Logo" width={size} height={size} style={imageStyle} />
         </motion.div>
         {renderText()}
       </div>
@@ -138,7 +138,7 @@ const Logo = ({
   return (
     <div style={containerStyle}>
       <div style={imageContainerStyle}>
-        <img src={logoImg} alt="FieldNow Logo" style={imageStyle} />
+        <img src={logoImg} alt="FieldNow Logo" width={size} height={size} style={imageStyle} />
       </div>
       {renderText()}
     </div>
