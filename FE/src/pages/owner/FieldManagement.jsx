@@ -197,7 +197,7 @@ const FieldManagement = () => {
   };
 
   return (
-    <div style={{ color: '#fff', padding: '40px' }}>
+    <div className="owner-field-management" style={{ color: '#fff', padding: '40px' }}>
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px' }}>
@@ -212,7 +212,7 @@ const FieldManagement = () => {
         </motion.div>
 
         {/* Tab Switcher */}
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '6px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="owner-tab-switcher" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '6px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <button
             onClick={() => setActiveTab('list')}
             style={{
@@ -276,13 +276,14 @@ const FieldManagement = () => {
                   <motion.div
                     key={field.id}
                     whileHover={{ y: -5 }}
+                    className="owner-field-card"
                     style={{ ...glassStyle, padding: '24px', display: 'flex', gap: '24px', alignItems: 'center', background: 'rgba(2, 44, 34, 0.4)' }}
                   >
-                    <div style={{ width: '120px', height: '120px', borderRadius: '20px', overflow: 'hidden', background: '#000', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="owner-field-card-image" style={{ width: '120px', height: '120px', borderRadius: '20px', overflow: 'hidden', background: '#000', border: '1px solid rgba(255,255,255,0.1)' }}>
                       <img src={getImageUrl(field.images?.[0])} alt="field" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div className="owner-field-card-body" style={{ flex: 1, minWidth: 0 }}>
+                      <div className="owner-field-card-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', gap: '12px' }}>
                         <span style={{ fontSize: '10px', fontWeight: '900', color: field.isActive ? '#10b981' : '#f43f5e', background: field.isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', padding: '4px 10px', borderRadius: '100px' }}>
                           {field.isActive ? 'HOẠT ĐỘNG' : 'TẠM NGỪNG'}
                         </span>
@@ -290,7 +291,7 @@ const FieldManagement = () => {
                       </div>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '900' }}>{field.name}</h4>
                       <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14} /> {field.location}</p>
-                      <div style={{ display: 'flex', gap: '10px' }}>
+                      <div className="owner-field-card-actions" style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => handleEdit(field)} style={{ flex: 1, padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>SỬA</button>
                         <button 
                           onClick={() => navigate(`/owner/fields/${field.id}/slots`)} 

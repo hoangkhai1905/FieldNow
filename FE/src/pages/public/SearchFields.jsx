@@ -173,14 +173,14 @@ const SearchFields = () => {
 
         {/* Dynamic, Fluid search and filter panel */}
         <div
-          className="max-w-7xl mx-auto mt-8 md:mt-12 p-4 md:p-6"
+          className="field-filter-panel max-w-7xl mx-auto mt-8 md:mt-12 p-4 md:p-6"
           style={{
             ...glassStyle,
             marginBottom: isTypeOpen || isSortOpen ? '220px' : '0px',
             transition: 'margin-bottom 0.2s ease',
           }}
         >
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+          <div className="field-filter-grid grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
             
             {/* Keyword Search */}
             <div className="xl:col-span-3 relative min-w-0">
@@ -344,7 +344,7 @@ const SearchFields = () => {
             </div>
 
             {/* Price Filter Inputs */}
-            <div className="xl:col-span-3 grid grid-cols-2 gap-2 min-w-0">
+            <div className="price-filter-grid xl:col-span-3 grid grid-cols-2 gap-2 min-w-0">
               <input
                 style={{
                   ...inputStyle,

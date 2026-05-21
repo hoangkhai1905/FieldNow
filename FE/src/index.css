@@ -398,8 +398,8 @@ p {
 	inset: auto;
 	pointer-events: none;
 	border-radius: 50%;
-	filter: blur(90px);
-	opacity: 0.55;
+	filter: blur(64px);
+	opacity: 0.42;
 }
 
 .fn-shell::before {
@@ -408,7 +408,6 @@ p {
 	width: 320px;
 	height: 320px;
 	background: rgba(37, 211, 102, 0.14);
-	animation: slowDrift 10s ease-in-out infinite;
 }
 
 .fn-shell::after {
@@ -417,7 +416,6 @@ p {
 	width: 360px;
 	height: 360px;
 	background: rgba(245, 178, 31, 0.1);
-	animation: slowDrift 12s ease-in-out infinite reverse;
 }
 
 .fn-page {
@@ -934,3 +932,631 @@ textarea:focus {
 /* Desktop: 1024px */
 /* Large: 1280px */
 /* XL: 1536px */
+
+/* ============================================
+   APP-WIDE RESPONSIVE PATCHES
+   ============================================ */
+
+@media (max-width: 1024px) {
+	.fn-shell::before,
+	.fn-shell::after {
+		display: none;
+	}
+
+	.owner-shell,
+	.admin-shell {
+		flex-direction: column !important;
+		overflow: visible !important;
+	}
+
+	.owner-shell > aside,
+	.admin-shell > aside {
+		position: relative !important;
+		top: auto !important;
+		width: 100% !important;
+		height: auto !important;
+		max-height: none !important;
+		padding: 16px !important;
+		background: transparent !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		border-right: 0 !important;
+		border-bottom: 0 !important;
+		overflow: visible !important;
+	}
+
+	.owner-shell > aside .sidebar-mobile-bar,
+	.admin-shell > aside .sidebar-mobile-bar {
+		display: flex !important;
+	}
+
+	.owner-shell > aside .sidebar-desktop-header,
+	.admin-shell > aside .sidebar-desktop-header {
+		display: none !important;
+	}
+
+	.owner-shell > aside .sidebar-mobile-menu,
+	.admin-shell > aside .sidebar-mobile-menu {
+		display: none !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-mobile-menu,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-mobile-menu {
+		display: flex !important;
+		flex-direction: column;
+		gap: 12px;
+		position: absolute;
+		top: calc(100% + 12px);
+		left: 16px;
+		right: 16px;
+		z-index: 80;
+		padding: 18px;
+		border-radius: 22px;
+		background: rgba(5, 18, 14, 0.94);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav {
+		display: grid !important;
+		grid-template-columns: 1fr !important;
+		gap: 4px !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-tools,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-tools {
+		display: flex !important;
+		margin-top: 0 !important;
+		padding: 14px 0 0 !important;
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav a,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav a {
+		padding: 13px 8px !important;
+		border-radius: 12px !important;
+		background: transparent !important;
+		border: 0 !important;
+		color: #94a3b8 !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav a:hover,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav a:hover {
+		background: rgba(255, 255, 255, 0.05) !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav a[style*="#F59E0B"],
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav a[style*="#F59E0B"] {
+		color: #f59e0b !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav a > div,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav a > div {
+		gap: 14px !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav small,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav small {
+		display: none !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-nav span,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-nav span {
+		font-size: 14px !important;
+		text-transform: uppercase;
+		letter-spacing: 0.2px;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-tools > a,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-tools > a {
+		display: none !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-tools > button,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-tools > button {
+		width: 100%;
+		justify-content: center !important;
+		padding: 14px 18px !important;
+		border-radius: 14px !important;
+		background: rgba(244, 63, 94, 0.14) !important;
+		border: 1px solid rgba(244, 63, 94, 0.3) !important;
+	}
+
+	.owner-shell > aside.sidebar-mobile-open .sidebar-tools > div,
+	.admin-shell > aside.sidebar-mobile-open .sidebar-tools > div {
+		display: none !important;
+	}
+
+	.owner-shell > section,
+	.admin-shell > section {
+		width: 100% !important;
+		padding: 24px !important;
+		overflow: visible !important;
+	}
+
+	[style*="grid-template-columns: 1.2fr 0.8fr"],
+	[style*="grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr)"],
+	[style*="grid-template-columns: 1fr 1.2fr"] {
+		grid-template-columns: 1fr !important;
+	}
+
+	[style*="grid-template-columns: repeat(4, minmax(0, 1fr))"],
+	[style*="grid-template-columns: repeat(4, 1fr)"] {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+
+	[style*="width: 620px"] {
+		width: 100% !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.fn-page {
+		animation: none;
+	}
+
+	[style*="padding: 40px"] {
+		padding: 20px !important;
+	}
+
+	[style*="padding: 48px"] {
+		padding: 24px !important;
+	}
+
+	[style*="font-size: 48px"],
+	[style*="font-size: 42px"] {
+		font-size: clamp(2rem, 11vw, 3rem) !important;
+		letter-spacing: -1px !important;
+	}
+
+	[style*="font-size: 32px"] {
+		font-size: clamp(1.55rem, 8vw, 2rem) !important;
+	}
+
+	[style*="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr))"],
+	[style*="grid-template-columns: repeat(auto-fill, minmax(400px, 1fr))"],
+	[style*="grid-template-columns: repeat(auto-fit, minmax(350px, 1fr))"],
+	[style*="grid-template-columns: repeat(auto-fill, minmax(340px, 1fr))"],
+	[style*="grid-template-columns: repeat(3, 1fr)"],
+	[style*="grid-template-columns: 1fr 1fr"],
+	[style*="grid-template-columns: 1fr 1fr 1fr"],
+	[style*="grid-template-columns: 1fr 1fr 1fr 1fr"],
+	[style*="grid-template-columns: 1.3fr 1fr auto"] {
+		grid-template-columns: 1fr !important;
+	}
+
+	[style*="width: 170px"],
+	[style*="width: 160px"],
+	[style*="min-width: 170px"],
+	[style*="min-width: 180px"] {
+		width: 100% !important;
+		min-width: 0 !important;
+	}
+
+	[style*="position: sticky"] {
+		position: static !important;
+	}
+
+	[style*="height: 500px"] {
+		height: 280px !important;
+	}
+
+	[style*="height: 160px"] {
+		height: 120px !important;
+	}
+
+	[style*="width: 140px"][style*="height: 140px"] {
+		width: 96px !important;
+		height: 96px !important;
+	}
+
+	[style*="display: flex"][style*="align-items: center"][style*="gap: 40px"] {
+		flex-direction: column !important;
+		align-items: flex-start !important;
+		gap: 24px !important;
+	}
+
+	table {
+		min-width: 720px;
+	}
+
+	[style*="overflow: hidden"][style*="display: flex"][style*="flex-direction: column"] {
+		overflow-x: auto !important;
+	}
+}
+
+@media (max-width: 560px) {
+	[style*="grid-template-columns: 2.5fr 2fr 1.2fr 1.2fr 0.5fr"],
+	[style*="grid-template-columns: 1.2fr 1.5fr 1fr 1fr 1fr 0.3fr"] {
+		grid-template-columns: 1fr !important;
+	}
+
+	[style*="grid-template-columns: 2.5fr 2fr 1.2fr 1.2fr 0.5fr"] > span:not(:first-child),
+	[style*="grid-template-columns: 1.2fr 1.5fr 1fr 1fr 1fr 0.3fr"] > div:not(:first-child) {
+		display: none !important;
+	}
+
+	[style*="padding: 20px 32px"],
+	[style*="padding: 20px 24px"],
+	[style*="padding: 24px 32px"] {
+		padding: 18px !important;
+	}
+
+	[style*="padding: 80px"],
+	[style*="padding: 100px"] {
+		padding: 42px 18px !important;
+	}
+}
+
+.sidebar-mobile-bar {
+	display: none;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 18px;
+	border-radius: 24px;
+	background: rgba(5, 18, 14, 0.88);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-mobile-menu-button {
+	width: 44px;
+	height: 44px;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	color: #fff;
+}
+
+.sidebar-mobile-menu-button svg {
+	flex-shrink: 0;
+}
+
+.sidebar-mobile-menu {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+	.field-filter-panel {
+		margin-bottom: 0 !important;
+	}
+
+	.field-filter-grid {
+		grid-template-columns: 1fr 1fr !important;
+		text-align: left;
+	}
+
+	.owner-field-management > div:first-of-type {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 24px !important;
+	}
+
+	.field-slots-layout {
+		grid-template-columns: 1fr !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.field-filter-grid,
+	.price-filter-grid,
+	.slot-form-grid,
+	.slot-form-grid-2,
+	.slot-form-grid-3,
+	.slot-form-grid-4 {
+		grid-template-columns: 1fr !important;
+	}
+
+	.price-filter-grid {
+		grid-template-columns: 1fr 1fr !important;
+	}
+
+	.profile-action-button {
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+	}
+
+	.owner-tab-switcher {
+		width: 100%;
+		display: grid !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 6px !important;
+		border-radius: 22px !important;
+	}
+
+	.owner-tab-switcher button {
+		width: 100%;
+		justify-content: center !important;
+		flex-direction: row !important;
+		text-align: center !important;
+		padding: 12px 10px !important;
+		min-height: 58px;
+	}
+
+	.owner-field-card {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 18px !important;
+		padding: 22px !important;
+	}
+
+	.owner-field-card-image {
+		width: 100% !important;
+		height: 180px !important;
+	}
+
+	.owner-field-card-meta {
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.owner-field-card-actions {
+		display: grid !important;
+		grid-template-columns: 1fr 1.35fr 44px;
+		gap: 10px !important;
+		align-items: stretch;
+	}
+
+	.owner-field-card-actions button {
+		min-width: 0;
+		padding: 12px 10px !important;
+		min-height: 58px;
+		white-space: normal;
+	}
+
+	.owner-field-card-actions button:last-child {
+		grid-column: auto !important;
+		width: 44px;
+		height: 58px;
+	}
+
+	.owner-field-slots header {
+		flex-direction: column !important;
+		align-items: flex-start !important;
+	}
+
+	.owner-field-slots section {
+		padding: 20px !important;
+	}
+
+	.owner-booking-header {
+		flex-direction: column !important;
+		align-items: stretch !important;
+	}
+
+	.owner-booking-header h1 {
+		max-width: 8ch;
+	}
+
+	.owner-booking-filters {
+		width: 100% !important;
+		display: grid !important;
+		grid-template-columns: 1fr 1fr !important;
+		gap: 12px !important;
+	}
+
+	.owner-booking-filters > div:first-child {
+		grid-column: 1 / -1;
+	}
+
+	.owner-booking-list-wrap {
+		overflow-x: visible !important;
+	}
+
+	.owner-booking-list-wrap > div {
+		min-width: 0 !important;
+	}
+
+	.owner-booking-row-head {
+		display: none !important;
+	}
+
+	.owner-booking-row {
+		grid-template-columns: 1fr !important;
+		gap: 14px !important;
+		padding: 20px !important;
+	}
+
+	.owner-booking-row:hover {
+		transform: none !important;
+	}
+
+	.owner-cash-header {
+		flex-direction: column !important;
+		align-items: stretch !important;
+	}
+
+	.owner-cash-header h1 {
+		max-width: 10ch;
+		line-height: 1.05 !important;
+	}
+
+	.owner-cash-filter {
+		width: 100%;
+		max-width: 280px;
+	}
+
+	.owner-recent-bookings {
+		padding: 0 !important;
+		overflow: visible !important;
+		background: transparent !important;
+		border: 0 !important;
+	}
+
+	.owner-recent-bookings table,
+	.owner-recent-bookings thead,
+	.owner-recent-bookings tbody,
+	.owner-recent-bookings tr,
+	.owner-recent-bookings td {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.owner-recent-bookings thead {
+		display: none;
+	}
+
+	.owner-recent-booking-row {
+		margin-bottom: 12px;
+		padding: 16px;
+		border-radius: 20px;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	}
+
+	.owner-recent-booking-row td {
+		display: grid;
+		grid-template-columns: 92px minmax(0, 1fr);
+		gap: 12px;
+		padding: 8px 0 !important;
+	}
+
+	.owner-recent-booking-row td::before {
+		content: attr(data-label);
+		color: #64748b;
+		font-size: 11px;
+		font-weight: 900;
+		text-transform: uppercase;
+	}
+
+	.admin-dashboard-page header {
+		display: block !important;
+	}
+
+	.admin-dashboard-page h1 {
+		max-width: 12ch;
+		line-height: 1.05 !important;
+	}
+
+	.admin-stats-grid,
+	.admin-user-stats-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+
+	.admin-stat-card {
+		min-width: 0;
+	}
+
+	.admin-stat-card > div:last-child {
+		font-size: clamp(1.45rem, 7vw, 1.9rem) !important;
+		overflow-wrap: anywhere;
+	}
+
+	.admin-dashboard-panels {
+		grid-template-columns: 1fr !important;
+	}
+
+	.admin-user-filters {
+		display: grid !important;
+		grid-template-columns: 1fr 1fr;
+		align-items: stretch !important;
+	}
+
+	.admin-user-filters > div:first-child {
+		grid-column: 1 / -1;
+	}
+
+	.admin-user-list {
+		overflow: visible !important;
+		background: transparent !important;
+		border: 0 !important;
+	}
+
+	.admin-user-list-head {
+		display: none !important;
+	}
+
+	.admin-user-list > div:last-child {
+		max-height: none !important;
+		display: grid;
+		gap: 12px;
+		overflow: visible !important;
+	}
+
+	.admin-user-row {
+		grid-template-columns: 1fr !important;
+		gap: 14px;
+		padding: 18px !important;
+		border-radius: 20px;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	}
+
+	.admin-user-actions {
+		text-align: left !important;
+	}
+
+	.admin-user-actions > button {
+		width: 44px;
+		height: 44px;
+	}
+}
+
+@media (max-width: 560px) {
+	.field-filter-panel {
+		padding: 16px !important;
+		border-radius: 24px !important;
+	}
+
+	.field-filter-grid {
+		gap: 12px !important;
+	}
+
+	.owner-field-slots button {
+		min-height: 48px;
+		white-space: normal;
+	}
+
+	.owner-field-card-actions {
+		grid-template-columns: 1fr 1fr 44px !important;
+	}
+
+	.owner-booking-filters {
+		grid-template-columns: 1fr !important;
+	}
+
+	.owner-cash-header h1 {
+		max-width: 8.5ch;
+		font-size: clamp(2.35rem, 13vw, 3rem) !important;
+	}
+
+	.owner-cash-filter {
+		max-width: none;
+		min-height: 48px;
+	}
+
+	.owner-cash-empty {
+		padding: 46px 20px !important;
+	}
+
+	.owner-recent-booking-row td {
+		grid-template-columns: 1fr;
+		gap: 4px;
+	}
+
+	.admin-stats-grid,
+	.admin-user-stats-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	.admin-user-filters {
+		grid-template-columns: 1fr !important;
+	}
+
+	.admin-user-identity {
+		align-items: flex-start !important;
+	}
+}

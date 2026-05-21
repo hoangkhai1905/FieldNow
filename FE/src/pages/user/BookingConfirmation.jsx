@@ -17,6 +17,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { cancelBooking, formatCurrency, getBookingDetail, getPaymentStatus, initiatePayment, buildZaloUrlFromPhoneNumber } from '../../api/endpoints';
+import Modal from '../../components/common/Modal';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -38,6 +39,7 @@ const BookingConfirmation = () => {
   const [isCancelling, setIsCancelling] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState('');
+  const [showCancelConfirm, setShowCancelConfirm] = React.useState(false);
 
   const isExpired = booking?.status === 'CANCELLED' || payment?.status === 'EXPIRED';
 
@@ -128,8 +130,12 @@ const BookingConfirmation = () => {
 
   const handleCancelBooking = async () => {
     if (!booking || isCancelling || isExpired) return;
-    if (!window.confirm('Bạn có chắc muốn hủy đặt sân này?')) return;
+    setShowCancelConfirm(true);
+  };
 
+  const confirmCancelBooking = async () => {
+    if (!booking || isCancelling || isExpired) return;
+    setShowCancelConfirm(false);
     setIsCancelling(true);
     try {
       await cancelBooking(booking.id);
@@ -162,6 +168,17 @@ const BookingConfirmation = () => {
 
   return (
     <div style={{ color: '#fff', minHeight: '100vh', padding: '40px 24px', background: '#022c22', position: 'relative', overflow: 'hidden' }}>
+      <Modal
+        isOpen={showCancelConfirm}
+        title="Hủy đặt sân?"
+        description="Đơn đặt sân sẽ bị hủy và bạn cần tạo đơn mới nếu muốn đặt lại khung giờ này."
+        icon={XCircle}
+        variant="error"
+        confirmText="Hủy đặt sân"
+        cancelText="Giữ lại"
+        onConfirm={confirmCancelBooking}
+        onClose={() => setShowCancelConfirm(false)}
+      />
       {/* Background Glows */}
       <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'rgba(16, 185, 129, 0.1)', filter: 'blur(100px)', borderRadius: '50%' }}></div>
       <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '300px', height: '300px', background: 'rgba(245, 158, 11, 0.05)', filter: 'blur(80px)', borderRadius: '50%' }}></div>

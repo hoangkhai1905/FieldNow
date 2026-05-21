@@ -50,7 +50,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div className="owner-dashboard-page" style={{ color: '#fff' }}>
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -113,7 +113,7 @@ const Dashboard = () => {
           <Link to="/owner/bookings" style={{ color: '#F59E0B', textDecoration: 'none', fontSize: '14px', fontWeight: '800' }}>XEM TẤT CẢ</Link>
         </div>
 
-        <div style={{ ...glassStyle, padding: '12px', overflow: 'hidden' }}>
+        <div className="owner-recent-bookings" style={{ ...glassStyle, padding: '12px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ textAlign: 'left', color: '#64748b', fontSize: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -126,25 +126,25 @@ const Dashboard = () => {
             </thead>
             <tbody>
               {recentBookings.map((booking) => (
-                <tr key={booking.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                  <td style={{ padding: '16px' }}>
+                <tr key={booking.id} className="owner-recent-booking-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                  <td data-label="Sân bóng" style={{ padding: '16px' }}>
                     <div style={{ fontWeight: '800' }}>{booking.field?.name}</div>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Khách hàng" style={{ padding: '16px' }}>
                     <div style={{ fontSize: '14px' }}>{booking.user?.email}</div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>{booking.user?.fullName}</div>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Ngày đặt" style={{ padding: '16px' }}>
                     <div style={{ fontSize: '14px' }}>{new Date(booking.createdAt).toLocaleDateString('vi-VN')}</div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>{new Date(booking.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Lịch đặt" style={{ padding: '16px' }}>
                     <div style={{ fontSize: '14px', fontWeight: '600' }}>{booking.startTime?.slice(0, 5) || '--:--'} - {booking.endTime?.slice(0, 5) || '--:--'}</div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>
                       {booking.date && !isNaN(new Date(booking.date)) ? new Date(booking.date).toLocaleDateString('vi-VN') : 'N/A'}
                     </div>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td data-label="Trạng thái" style={{ padding: '16px' }}>
                     <span style={{
                       fontSize: '10px',
                       fontWeight: '900',

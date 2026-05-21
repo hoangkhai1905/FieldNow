@@ -37,7 +37,7 @@ const AdminDashboard = () => {
 	];
 
 	return (
-		<div style={{ color: '#fff' }}>
+		<div className="admin-dashboard-page" style={{ color: '#fff' }}>
 			<header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '34px' }}>
 				<div>
 					<div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'rgba(16,185,129,0.12)', borderRadius: '999px', color: '#10b981', fontSize: '11px', fontWeight: '900', marginBottom: '18px' }}>
@@ -55,11 +55,11 @@ const AdminDashboard = () => {
 				</div>
 			) : (
 				<>
-					<section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px', marginBottom: '22px' }}>
+					<section className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '16px', marginBottom: '22px' }}>
 						{cards.map((card) => {
 							const Icon = card.icon;
 							return (
-								<article key={card.label} style={{ ...glassStyle, padding: '20px' }}>
+								<article key={card.label} className="admin-stat-card" style={{ ...glassStyle, padding: '20px' }}>
 									<div style={{ width: '42px', height: '42px', borderRadius: '14px', background: `${card.color}20`, color: card.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
 										<Icon size={20} />
 									</div>
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
 						})}
 					</section>
 
-					<section style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '18px' }}>
+					<section className="admin-dashboard-panels" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '18px' }}>
 						<article style={{ ...glassStyle, padding: '22px' }}>
 							<h2 style={{ margin: '0 0 18px 0', fontSize: '20px', fontWeight: '950' }}>Trạng thái booking</h2>
 							{[

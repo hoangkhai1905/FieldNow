@@ -105,7 +105,7 @@ const UserManagement = () => {
   };
 
   return (
-    <div style={{ color: '#fff', padding: '40px' }}>
+    <div className="admin-user-management" style={{ color: '#fff', padding: '40px' }}>
       {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -117,7 +117,7 @@ const UserManagement = () => {
         </div>
 
         {/* Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
+        <div className="admin-user-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '40px' }}>
           {[
             { label: 'Tổng người dùng', value: stats.total, icon: Users, color: '#3b82f6' },
             { label: 'Cầu thủ (USER)', value: stats.USER, icon: Activity, color: '#F59E0B' },
@@ -137,7 +137,7 @@ const UserManagement = () => {
         </div>
 
         {/* Search & Actions */}
-        <div style={{ ...glassStyle, padding: '24px', marginBottom: '32px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="admin-user-filters" style={{ ...glassStyle, padding: '24px', marginBottom: '32px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
             <input 
@@ -177,8 +177,8 @@ const UserManagement = () => {
         </div>
 
         {/* User Table (Modern Card List) */}
-        <div style={{ ...glassStyle, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 1.2fr 0.5fr', color: '#64748b', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(255,255,255,0.02)' }}>
+        <div className="admin-user-list" style={{ ...glassStyle, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div className="admin-user-list-head" style={{ padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 1.2fr 0.5fr', color: '#64748b', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(255,255,255,0.02)' }}>
             <span>Người dùng</span>
             <span>Thông tin liên hệ</span>
             <span>Vai trò</span>
@@ -196,29 +196,30 @@ const UserManagement = () => {
                   initial={{ opacity: 0, y: 10 }} 
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
+                  className="admin-user-row"
                   style={{ padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '2.5fr 2fr 1.2fr 1.2fr 0.5fr', alignItems: 'center', transition: 'all 0.3s', position: 'relative', zIndex: openMenuId === user.id ? 50 : 1 }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div className="admin-user-identity" style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
                     <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'linear-gradient(135deg, #3b82f6 0%, #10b981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '18px', color: '#fff', boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }}>
                       {(user.full_name || user.fullName || user.email || 'U').charAt(0).toUpperCase()}
                     </div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <p style={{ margin: 0, fontWeight: '900', fontSize: '15px', color: '#fff' }}>{user.full_name || user.fullName || user.email}</p>
+                        <p style={{ margin: 0, fontWeight: '900', fontSize: '15px', color: '#fff', overflowWrap: 'anywhere' }}>{user.full_name || user.fullName || user.email}</p>
                         {!user.isActive && (
                           <span style={{ padding: '3px 8px', borderRadius: '100px', background: 'rgba(244, 63, 94, 0.12)', color: '#f43f5e', fontSize: '9px', fontWeight: '950' }}>
                             ĐÃ KHÓA
                           </span>
                         )}
                       </div>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>{user.id}</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b', fontFamily: 'monospace', overflowWrap: 'anywhere' }}>{user.id}</p>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '13px', fontWeight: '600' }}>
+                  <div className="admin-user-contact" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '13px', fontWeight: '600', overflowWrap: 'anywhere' }}>
                       <Mail size={14} color="#10b981" /> {user.email}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
@@ -226,7 +227,7 @@ const UserManagement = () => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="admin-user-role">
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <select 
                         value={user.role}
@@ -252,11 +253,11 @@ const UserManagement = () => {
                     </div>
                   </div>
 
-                  <div style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>
+                  <div className="admin-user-date" style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>
                     {new Date(user.created_at || user.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </div>
 
-                  <div style={{ textAlign: 'right', position: 'relative' }}>
+                  <div className="admin-user-actions" style={{ textAlign: 'right', position: 'relative' }}>
                     <button
                       type="button"
                       onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}

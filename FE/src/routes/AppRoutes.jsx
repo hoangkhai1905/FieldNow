@@ -4,27 +4,28 @@ import ProtectedRoute from './ProtectedRoute';
 import MainLayout from '../layouts/MainLayout';
 import OwnerLayout from '../layouts/OwnerLayout';
 import AdminLayout from '../layouts/AdminLayout';
+import { routeLoaders } from './routeLoaders';
 
 import ScrollToTop from '../components/layout/ScrollToTop';
 
-const Home = lazy(() => import('../pages/public/Home'));
-const SearchFields = lazy(() => import('../pages/public/SearchFields'));
-const FieldDetail = lazy(() => import('../pages/public/FieldDetail'));
-const PaymentResult = lazy(() => import('../pages/public/PaymentResult'));
-const Login = lazy(() => import('../pages/auth/Login'));
-const Register = lazy(() => import('../pages/auth/Register'));
-const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword'));
-const VerifyOTP = lazy(() => import('../pages/auth/VerifyOTP'));
-const MyBookings = lazy(() => import('../pages/user/MyBookings'));
-const Profile = lazy(() => import('../pages/user/Profile'));
-const BookingConfirmation = lazy(() => import('../pages/user/BookingConfirmation'));
-const OwnerDashboard = lazy(() => import('../pages/owner/Dashboard'));
-const FieldManagement = lazy(() => import('../pages/owner/FieldManagement'));
-const BookingManagement = lazy(() => import('../pages/owner/BookingManagement'));
-const FieldSlots = lazy(() => import('../pages/owner/FieldSlots'));
-const CashPayments = lazy(() => import('../pages/owner/CashPayments'));
-const UserManagement = lazy(() => import('../pages/admin/UserManagement'));
-const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
+const Home = lazy(routeLoaders.home);
+const SearchFields = lazy(routeLoaders.searchFields);
+const FieldDetail = lazy(routeLoaders.fieldDetail);
+const PaymentResult = lazy(routeLoaders.paymentResult);
+const Login = lazy(routeLoaders.login);
+const Register = lazy(routeLoaders.register);
+const ForgotPassword = lazy(routeLoaders.forgotPassword);
+const VerifyOTP = lazy(routeLoaders.verifyOTP);
+const MyBookings = lazy(routeLoaders.myBookings);
+const Profile = lazy(routeLoaders.profile);
+const BookingConfirmation = lazy(routeLoaders.bookingConfirmation);
+const OwnerDashboard = lazy(routeLoaders.ownerDashboard);
+const FieldManagement = lazy(routeLoaders.fieldManagement);
+const BookingManagement = lazy(routeLoaders.bookingManagement);
+const FieldSlots = lazy(routeLoaders.fieldSlots);
+const CashPayments = lazy(routeLoaders.cashPayments);
+const UserManagement = lazy(routeLoaders.userManagement);
+const AdminDashboard = lazy(routeLoaders.adminDashboard);
 
 const RouteFallback = () => (
   <div className="route-fallback" aria-label="Đang tải trang" />
