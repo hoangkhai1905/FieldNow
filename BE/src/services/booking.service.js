@@ -5,6 +5,7 @@ const slotRepository = require('../repositories/slot.repository');
 const bookingEvents = require('../events/booking.events');
 const bookingSideEffects = require('./booking-side-effect.service');
 const { redisClient } = require('../infrastructure/redis');
+const { logger } = require('../infrastructure/logger');
 const { errors } = require('../utils/errors');
 const Pipeline = require('../utils/pipeline');
 const ValidateSlotStep = require('../pipelines/booking/validate-slot.step');
@@ -78,6 +79,7 @@ const createBooking = async (userId, { fieldId, date, startTime, endTime }) => {
     slotRepository,
     bookingEvents,
     bookingSideEffects,
+    logger,
     errors,
     acquireBookingLock,
     releaseBookingLock,
