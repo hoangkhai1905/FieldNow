@@ -1,28 +1,34 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
-import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
-import ForgotPassword from '../pages/auth/ForgotPassword';
-import Home from '../pages/public/Home';
-import SearchFields from '../pages/public/SearchFields';
-import FieldDetail from '../pages/public/FieldDetail';
-import PaymentResult from '../pages/public/PaymentResult';
-import MyBookings from '../pages/user/MyBookings';
-import Profile from '../pages/user/Profile';
-import BookingConfirmation from '../pages/user/BookingConfirmation';
 import MainLayout from '../layouts/MainLayout';
 import OwnerLayout from '../layouts/OwnerLayout';
 import AdminLayout from '../layouts/AdminLayout';
-import OwnerDashboard from '../pages/owner/Dashboard';
-import FieldManagement from '../pages/owner/FieldManagement';
-import BookingManagement from '../pages/owner/BookingManagement';
-import FieldSlots from '../pages/owner/FieldSlots';
-import CashPayments from '../pages/owner/CashPayments';
-import UserManagement from '../pages/admin/UserManagement';
-import AdminDashboard from '../pages/admin/AdminDashboard';
 
-import VerifyOTP from '../pages/auth/VerifyOTP';
 import ScrollToTop from '../components/layout/ScrollToTop';
+
+const Home = lazy(() => import('../pages/public/Home'));
+const SearchFields = lazy(() => import('../pages/public/SearchFields'));
+const FieldDetail = lazy(() => import('../pages/public/FieldDetail'));
+const PaymentResult = lazy(() => import('../pages/public/PaymentResult'));
+const Login = lazy(() => import('../pages/auth/Login'));
+const Register = lazy(() => import('../pages/auth/Register'));
+const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword'));
+const VerifyOTP = lazy(() => import('../pages/auth/VerifyOTP'));
+const MyBookings = lazy(() => import('../pages/user/MyBookings'));
+const Profile = lazy(() => import('../pages/user/Profile'));
+const BookingConfirmation = lazy(() => import('../pages/user/BookingConfirmation'));
+const OwnerDashboard = lazy(() => import('../pages/owner/Dashboard'));
+const FieldManagement = lazy(() => import('../pages/owner/FieldManagement'));
+const BookingManagement = lazy(() => import('../pages/owner/BookingManagement'));
+const FieldSlots = lazy(() => import('../pages/owner/FieldSlots'));
+const CashPayments = lazy(() => import('../pages/owner/CashPayments'));
+const UserManagement = lazy(() => import('../pages/admin/UserManagement'));
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
+
+const RouteFallback = () => (
+  <div className="route-fallback" aria-label="Đang tải trang" />
+);
 
 const Unauthorized = () => (
   <div className="user-page shell-xl">
@@ -48,7 +54,8 @@ const AppRoutes = () => {
   return (
     <>
       <ScrollToTop />
-      <Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/tim-san" element={<SearchFields />} />
@@ -132,7 +139,8 @@ const AppRoutes = () => {
       />
 
         <Route path="*" element={<NotFound />} />
-    </Routes>
+        </Routes>
+      </Suspense>
     </>
   );
 };

@@ -14,6 +14,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { getBookingDetail, getPaymentStatus, formatCurrency, initiatePayment, buildZaloUrlFromPhoneNumber } from '../../api/endpoints';
+import Modal from '../../components/common/Modal';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -58,6 +59,7 @@ const PaymentResult = () => {
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
   const [pollCount, setPollCount] = useState(0);
+  const [noticeModal, setNoticeModal] = useState({ isOpen: false, title: '', description: '' });
   const bookingField = booking?.field || booking?.slot?.field || null;
   const ownerPhoneNumber = bookingField?.ownerPhoneNumber || bookingField?.owner?.phone_number || bookingField?.owner?.phoneNumber || '';
   const ownerZaloUrl = buildZaloUrlFromPhoneNumber(ownerPhoneNumber);
@@ -166,7 +168,14 @@ const PaymentResult = () => {
   };
 
   const handleContactOwner = () => {
-    if (!ownerZaloUrl) return;
+    if (!ownerZaloUrl) {
+      setNoticeModal({
+        isOpen: true,
+        title: 'Chưa có Zalo hợp lệ',
+        description: 'Chủ sân chưa để lại số Zalo hợp lệ để liên hệ.',
+      });
+      return;
+    }
     window.open(ownerZaloUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -222,12 +231,12 @@ const PaymentResult = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#a7f3d0', fontSize: '14px' }}>
                 <MapPin size={18} color="#10b981" />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{booking.slot?.field?.location}</span>
+                <span className="min-w-0 truncate">{booking.slot?.field?.location}</span>
               </div>
               {payment && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#a7f3d0', fontSize: '14px' }}>
                   <CreditCard size={18} color="#10b981" />
-                  <span>{formatCurrency(payment.amount)} • {payment.provider?.toUpperCase()}</span>
+                  <span className="break-words">{formatCurrency(payment.amount)} • {payment.provider?.toUpperCase()}</span>
                 </div>
               )}
             </div>
@@ -302,6 +311,18 @@ const PaymentResult = () => {
           </p>
         )}
       </motion.div>
+
+      <Modal
+        isOpen={noticeModal.isOpen}
+        variant="info"
+        title={noticeModal.title}
+        description={noticeModal.description}
+        icon={MessageCircle}
+        onClose={() => setNoticeModal({ isOpen: false, title: '', description: '' })}
+        onConfirm={() => setNoticeModal({ isOpen: false, title: '', description: '' })}
+        confirmText="ĐÃ HIỂU"
+        cancelText="ĐÓNG"
+      />
     </div>
   );
 };

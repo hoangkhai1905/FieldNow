@@ -35,12 +35,14 @@ const getOwnerFields = async (req, res, next) => {
 // --- Public ---
 const searchFields = async (req, res, next) => {
   try {
-    const { location, minPrice, maxPrice, page, limit, type } = req.query;
+    const { location, minPrice, maxPrice, page, limit, type, sortBy, sortOrder } = req.query;
     const { result, cacheHit } = await fieldService.searchFields({
       location,
       type,
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      sortBy,
+      sortOrder,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
     });

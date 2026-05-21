@@ -39,7 +39,6 @@ const Login = () => {
       const errorMessage = err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
       setError(errorMessage);
       
-      // If email not verified, backend usually returns 401 with a specific message
       if (errorMessage.toLowerCase().includes('verify') || errorMessage.toLowerCase().includes('xác thực')) {
         setShowResend(true);
       }
@@ -60,73 +59,46 @@ const Login = () => {
     }
   };
 
-  const glassStyle = {
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '32px',
-    padding: '48px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    background: 'rgba(0,0,0,0.2)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '16px',
-    padding: '18px 18px 18px 52px',
-    color: '#fff',
-    fontSize: '16px',
-    outline: 'none',
-    transition: 'all 0.3s'
-  };
-
-  const inputGroupStyle = {
-    position: 'relative',
-    marginBottom: '20px'
-  };
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#022c22', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen flex items-center justify-center bg-emerald-950 p-4 relative overflow-hidden">
       {/* Background Decorative Orbs */}
-      <div style={{ position: 'absolute', top: '10%', left: '10%', width: '400px', height: '400px', background: 'rgba(245, 158, 11, 0.05)', filter: 'blur(100px)', borderRadius: '50%' }}></div>
-      <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '300px', height: '300px', background: 'rgba(16, 185, 129, 0.05)', filter: 'blur(80px)', borderRadius: '50%' }}></div>
+      <div className="absolute top-[10%] left-[10%] w-[400px] h-[400px] bg-amber-500/5 blur-[100px] rounded-full"></div>
+      <div className="absolute bottom-[10%] right-[10%] w-[300px] h-[300px] bg-emerald-500/5 blur-[80px] rounded-full"></div>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ width: '100%', maxWidth: '480px', position: 'relative', zIndex: 10 }}
+        className="w-full max-w-[480px] relative z-10"
       >
         {/* Logo Section */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginBottom: '24px' }}>
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex items-center no-underline mb-6">
             <Logo size={44} showText={true} textVariant="auth" />
           </Link>
-          <h2 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', margin: 0, letterSpacing: '-1px' }}>CHÀO MỪNG TRỞ LẠI</h2>
-          <p style={{ color: '#64748b', marginTop: '12px' }}>Vào sân ngay để tiếp tục hành trình của bạn.</p>
+          <h2 className="text-3xl font-black text-white m-0 tracking-tight">CHÀO MỪNG TRỞ LẠI</h2>
+          <p className="text-slate-500 text-sm mt-3">Vào sân ngay để tiếp tục hành trình của bạn.</p>
         </div>
 
         {/* Login Form Card */}
-        <div style={glassStyle}>
+        <div className="bg-white/5 backdrop-blur-[20px] border border-white/10 rounded-[32px] p-6 md:p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]">
           {error && (
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ marginBottom: '32px', padding: '16px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.2)', borderRadius: '16px', color: '#f43f5e', display: 'flex', flexDirection: 'column', gap: '8px' }}
+              className="mb-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl color-rose-500 flex flex-col gap-2"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertCircle size={18} />
-                <span style={{ fontSize: '14px', fontWeight: '700' }}>{error}</span>
+              <div className="flex items-center gap-2.5">
+                <AlertCircle size={18} className="text-rose-500 shrink-0" />
+                <span className="text-sm font-bold text-rose-500">{error}</span>
               </div>
               
               {showResend && (
-                <div style={{ paddingLeft: '28px', marginTop: '4px' }}>
+                <div className="pl-7 mt-1">
                   <button 
                     type="button"
                     onClick={handleRequestVerify}
                     disabled={loading}
-                    style={{ background: 'none', border: 'none', color: '#F59E0B', textDecoration: 'underline', fontSize: '13px', fontWeight: '700', padding: 0, cursor: 'pointer' }}
+                    className="background-none border-none text-amber-500 underline text-xs font-bold p-0 cursor-pointer"
                   >
                     Xác thực tài khoản ngay
                   </button>
@@ -136,70 +108,53 @@ const Login = () => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={inputGroupStyle}>
-              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '18px', color: '#64748b' }} />
+            <div className="relative mb-5">
+              <Mail size={18} className="absolute left-4 top-4.5 text-slate-500" />
               <input
                 type="text"
                 placeholder="Email hoặc số điện thoại"
-                style={inputStyle}
+                className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
 
-            <div style={inputGroupStyle}>
-              <Lock size={18} style={{ position: 'absolute', left: '16px', top: '18px', color: '#64748b' }} />
+            <div className="relative mb-5">
+              <Lock size={18} className="absolute left-4 top-4.5 text-slate-500" />
               <input
                 type="password"
                 placeholder="Mật khẩu"
-                style={inputStyle}
+                className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white text-base outline-none focus:border-amber-500 transition-colors"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <div style={{ textAlign: 'right', marginTop: '12px' }}>
-                <Link to="/forgot-password" style={{ color: '#F59E0B', textDecoration: 'none', fontSize: '13px', fontWeight: '700' }}>
+              <div className="text-right mt-3">
+                <Link to="/forgot-password" className="text-amber-500 no-underline text-xs font-bold hover:text-amber-600 transition-colors">
                   Quên mật khẩu?
                 </Link>
               </div>
             </div>
 
-            <button
+            <motion.button
               type="submit"
               disabled={loading}
-              style={{ 
-                width: '100%', 
-                background: '#F59E0B', 
-                color: '#000', 
-                border: 'none', 
-                padding: '18px', 
-                borderRadius: '16px', 
-                fontSize: '16px', 
-                fontWeight: '950', 
-                cursor: 'pointer', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                gap: '10px',
-                boxShadow: '0 15px 30px rgba(245, 158, 11, 0.2)',
-                transition: 'all 0.3s',
-                marginTop: '32px'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 0 }}
+              className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-black py-4.5 rounded-2xl text-base font-black cursor-pointer flex items-center justify-center gap-2.5 shadow-[0_15px_30px_rgba(245,158,11,0.2)] transition-all mt-8"
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={20} />
               ) : (
                 <>ĐĂNG NHẬP NGAY <ArrowRight size={20} /></>
               )}
-            </button>
+            </motion.button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: '32px', color: '#64748b', fontSize: '14px' }}>
+          <div className="text-center mt-8 text-slate-500 text-sm">
             Chưa có tài khoản?{' '}
-            <Link to="/register" style={{ color: '#fff', fontWeight: '800', textDecoration: 'none' }}>
+            <Link to="/register" className="text-white font-extrabold no-underline hover:text-amber-500 transition-colors">
               Đăng ký miễn phí
             </Link>
           </div>

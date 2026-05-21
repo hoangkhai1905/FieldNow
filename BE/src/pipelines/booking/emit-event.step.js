@@ -8,7 +8,14 @@ class EmitEventStep {
     };
 
     if (ctx.bookingSideEffects?.scheduleBookingCreatedSideEffects) {
-      await ctx.bookingSideEffects.scheduleBookingCreatedSideEffects(payload);
+      try {
+        await ctx.bookingSideEffects.scheduleBookingCreatedSideEffects(payload);
+      } catch (error) {
+        ctx.logger?.warn(
+          { err: error, bookingId: ctx.booking.id },
+          '[Booking] Failed to schedule booking expiration job'
+        );
+      }
       return;
     }
 
