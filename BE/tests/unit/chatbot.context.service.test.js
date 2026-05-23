@@ -272,6 +272,7 @@ describe('Chatbot Context Service', () => {
         },
       })
     );
+    expect(prisma.booking.findMany.mock.calls[0][0].include.user).toBeUndefined();
     expect(result.bookings[0].customer).toEqual({ id: 'user-1' });
     expect(result.bookings[0].customer.fullName).toBeUndefined();
     expect(result.bookings[0].customer.phoneNumber).toBeUndefined();
