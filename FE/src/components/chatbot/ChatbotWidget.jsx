@@ -188,6 +188,7 @@ const ChatbotWidget = () => {
 							ref={inputRef}
 							value={input}
 							onChange={(event) => setInput(event.target.value)}
+							aria-label="Nhập tin nhắn cho chatbot"
 							placeholder="Hỏi về sân, lịch, booking, thanh toán..."
 							maxLength={1000}
 						/>
