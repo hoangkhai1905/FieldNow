@@ -25,6 +25,9 @@ export const apiPaths = {
 		initiate: '/payments/initiate',
 		detail: (bookingId) => `/payments/${bookingId}`,
 	},
+	chatbot: {
+		message: '/chatbot/message',
+	},
 	user: {
 		profile: '/users/profile',
 	},
@@ -308,6 +311,16 @@ export const initiatePayment = async (bookingId, provider = 'sepay') => {
 export const getPaymentStatus = async (bookingId) => {
 	const data = await apiRequest({ method: 'GET', url: apiPaths.payments.detail(bookingId) });
 	return normalizePayment(data);
+};
+
+export const sendChatbotMessage = async (message) => {
+	const data = await apiRequest({
+		method: 'POST',
+		url: apiPaths.chatbot.message,
+		data: { message },
+	});
+
+	return data;
 };
 
 export const getOwnerFields = async (params = {}) => {

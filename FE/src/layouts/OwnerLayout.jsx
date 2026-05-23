@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
+import ChatbotWidget from '../components/chatbot/ChatbotWidget';
 
 const OwnerLayout = () => {
 	return (
@@ -20,6 +21,7 @@ const OwnerLayout = () => {
 			<section className="fn-page" style={{ flex: 1, padding: '40px', overflowY: 'auto', position: 'relative', zIndex: 1 }}>
 				<Outlet />
 			</section>
+			<ChatbotWidget />
 		</div>
 	);
 };
