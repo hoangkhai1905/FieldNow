@@ -33,4 +33,29 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { authMiddleware };
+const optionalAuthMiddleware = async (req, _res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      req.user = null;
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, config.jwtSecret);
+    const user = await userRepository.findById(decoded.userId);
+
+    if (!user || !user.is_active) {
+      req.user = null;
+      return next();
+    }
+
+    req.user = decoded;
+    return next();
+  } catch (_error) {
+    req.user = null;
+    return next();
+  }
+};
+
+module.exports = { authMiddleware, optionalAuthMiddleware };

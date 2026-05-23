@@ -33,6 +33,15 @@ const config = {
     bucket: process.env.SUPABASE_STORAGE_BUCKET || 'field-images',
   },
   paymentProvider: process.env.PAYMENT_PROVIDER || 'sepay',
+  ai: {
+    groqApiKey: process.env.GROQ_API_KEY || null,
+    groqBaseUrl: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
+    modelName: process.env.AI_MODEL_NAME || 'llama-3.1-8b-instant',
+    temperature: parseFloat(process.env.AI_TEMPERATURE || '0.2'),
+    maxTokens: parseInt(process.env.AI_MAX_TOKENS, 10) || 1024,
+    timeoutMs: parseInt(process.env.GROQ_TIMEOUT_MS, 10) || 15000,
+    maxContextDocs: parseInt(process.env.CHATBOT_MAX_CONTEXT_DOCS, 10) || 5,
+  },
 };
 
 module.exports = config;

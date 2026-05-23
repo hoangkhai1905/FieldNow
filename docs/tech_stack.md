@@ -29,6 +29,7 @@ của từng công nghệ trong kiến trúc hệ thống.
 | **CORS** | `cors ^2.8.6` | Cấu hình origin theo environment. | Đã sử dụng |
 | **Compression** | `compression ^1.8.1` | Nén response HTTP. | Đã sử dụng |
 | **Express Rate Limit** | `express-rate-limit ^8.4.1` | Rate limit search, OTP, password reset/change. | Đã sử dụng |
+| **Groq API** | Native `fetch`, OpenAI-compatible chat completions | AI chatbot read-only, model cấu hình qua `AI_MODEL_NAME`. | Đã sử dụng |
 | **Jest** | `jest ^29.7.0` | Unit và integration tests. | Đã sử dụng |
 | **Supertest** | `supertest ^7.1.0` | Test HTTP API endpoints. | Đã sử dụng |
 | **ESLint** | `eslint ^10.3.0` | Static analysis/lint backend. | Đã sử dụng |
@@ -48,11 +49,13 @@ Ghi chú:
 | **React** | `react ^19.2.4`, `react-dom ^19.2.4` | Xây dựng giao diện người dùng. | Đã sử dụng |
 | **Vite** | `vite ^8.0.3` | Dev server và production build. | Đã sử dụng |
 | **React Router** | `react-router-dom ^7.14.0` | Routing, protected routes, page navigation. | Đã sử dụng |
+| **TanStack Query** | `@tanstack/react-query ^5.100.11` | Query cache và fetch state cho các public read flows như trang home/search. | Đã sử dụng |
 | **Axios** | `axios ^1.14.0` | API client, auth header interceptor, error normalization. | Đã sử dụng |
 | **Framer Motion** | `framer-motion ^12.38.0` | Animation/transitions trong UI. | Đã sử dụng |
 | **Lucide React** | `lucide-react ^1.14.0` | Icon library. | Đã sử dụng |
 | **Tailwind CSS** | `tailwindcss ^4.2.4`, `@tailwindcss/postcss ^4.2.2` | Styling utility framework / PostCSS pipeline. | Đã sử dụng |
 | **PostCSS / Autoprefixer** | `postcss`, `autoprefixer` | CSS processing. | Đã sử dụng |
+| **Chatbot Widget** | `FE/src/components/chatbot/ChatbotWidget.jsx` | Floating/mobile-friendly AI widget cho public, user, owner và admin pages. | Đã sử dụng |
 
 Frontend structure:
 
@@ -64,6 +67,9 @@ Frontend structure:
 - Owner scheduling UI supports manual slot creation, quick one-day generation,
   and recurring multi-day generation. The recurring flow is frontend
   orchestration over the existing owner batch slot API, not a background job.
+- Chatbot UI uses the same Axios auth interceptor, so authenticated requests
+  carry the current access token while guests can still ask public/general
+  questions.
 
 ## 3. Database and Storage
 
@@ -89,13 +95,30 @@ Redis/BullMQ are not responsible for generating owner schedules. Owner manual,
 quick, and recurring schedules are written synchronously through the slot API;
 queues are reserved for booking expiration, notifications, and cleanup safety.
 
-## 5. Infrastructure and DevOps
+## 5. AI Chatbot
+
+| Thành phần | Mục đích | Trạng thái |
+| :--- | :--- | :--- |
+| **`POST /api/v1/chatbot/message`** | Endpoint chatbot request/response thường, không streaming. | Đã sử dụng |
+| **`optionalAuthMiddleware`** | Cho phép guest hỏi public/general; nếu token hợp lệ thì scope theo role. | Đã sử dụng |
+| **Intent classifier** | Route câu hỏi vào `field_search`, `my_bookings`, `owner_insights`, `admin_insights`, v.v. | Đã sử dụng |
+| **Context service allowlist** | Đọc DB read-only theo role, sanitize context trước khi gửi LLM. | Đã sử dụng |
+| **Deterministic guards** | Override câu trả lời mâu thuẫn cho field results, booking/payment count, owner/admin revenue. | Đã sử dụng |
+| **Groq client** | Gọi Groq Chat Completions bằng native `fetch`, không thêm SDK. | Đã sử dụng |
+
+Default model nên để qua env. Với demo cần chất lượng trả lời tốt hơn, có thể
+dùng `llama-3.3-70b-versatile`; nếu ưu tiên latency/chi phí, dùng
+`llama-3.1-8b-instant`.
+
+## 6. Infrastructure and DevOps
 
 | Công nghệ | Mục đích | Trạng thái |
 | :--- | :--- | :--- |
 | **Docker** | Container hóa backend. | Đã sử dụng |
 | **Docker Compose** | Chạy local API + PostgreSQL + Redis. | Đã sử dụng |
 | **dotenv** | Load environment variables cho local/dev. | Đã sử dụng |
+| **GitHub Actions** | Validate Prisma, migrate, test, build Docker image, deploy BE. | Đã sử dụng |
+| **AWS Elastic Beanstalk** | Target deploy backend Docker qua workflow `deploy-be-elasticbeanstalk.yml`. | Có trong workflow |
 | **GitNexus** | Code intelligence, impact analysis, architecture review. | Đã sử dụng |
 
 Environment variables quan trọng:
@@ -111,15 +134,40 @@ Environment variables quan trọng:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_STORAGE_BUCKET`
+- `EMAIL_PROVIDER`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SENDGRID_API_KEY`
+- `FRONTEND_URL`
+- `MAIL_FROM`
 - `PAYMENT_PROVIDER`
 - `SEPAY_MERCHANT_ID`
 - `SEPAY_SECRET_KEY`
+- `SEPAY_ENV`
+- `SEPAY_SUCCESS_URL`
+- `SEPAY_ERROR_URL`
+- `SEPAY_CANCEL_URL`
 - `VNP_TMNCODE`
 - `VNP_HASHSECRET`
 - `VNP_URL`
 - `VNP_RETURN_URL`
+- `GROQ_API_KEY`
+- `GROQ_BASE_URL`
+- `AI_MODEL_NAME`
+- `AI_TEMPERATURE`
+- `AI_MAX_TOKENS`
+- `GROQ_TIMEOUT_MS`
+- `CHATBOT_MAX_CONTEXT_DOCS`
 
-## 6. Verification Commands
+Frontend environment variables:
+
+- `VITE_API_BASE_URL`
+- `VITE_API_URL`
+
+## 7. Verification Commands
 
 Backend:
 
@@ -127,6 +175,7 @@ Backend:
 cd BE
 npx prisma validate
 npx jest --verbose --runInBand
+npx jest --runInBand tests/unit/chatbot.service.test.js tests/unit/chatbot.context.service.test.js
 npm run lint
 ```
 

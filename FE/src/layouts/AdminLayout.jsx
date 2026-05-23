@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
+import ChatbotWidget from '../components/chatbot/ChatbotWidget';
 
 const AdminLayout = () => {
 	return (
@@ -28,6 +29,7 @@ const AdminLayout = () => {
 			<section style={{ flex: 1, padding: '40px', overflowY: 'auto', minWidth: 0 }}>
 				<Outlet />
 			</section>
+			<ChatbotWidget />
 		</div>
 	);
 };

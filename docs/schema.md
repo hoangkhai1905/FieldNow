@@ -253,6 +253,7 @@ Managed by `express-rate-limit` for:
 - Public search throttling.
 - OTP email requests.
 - Password reset/change requests.
+- Chatbot message requests.
 
 ## 4) Queue and Job Schema (BullMQ + Redis)
 
@@ -289,6 +290,9 @@ Jobs:
 
 - `email.booking_confirmed`
 - `email.booking_cancelled`
+- `email.otp_sent`
+- `email.password_reset_otp`
+- `email.change_password_otp`
 
 Job ids:
 
@@ -298,8 +302,9 @@ Job ids:
 Payload:
 
 - `userId`
-- `bookingId`
+- `bookingId` for booking-related emails
 - optional `reason`
+- email-specific metadata is loaded from database records when needed
 
 ### Queue: `booking-events`
 
@@ -343,16 +348,26 @@ All API routes use the `/api/v1` prefix.
 - `GET /api/v1/field-types`
 - `GET /api/v1/fields/:id`
 
+### User profile
+
+- `PATCH /api/v1/users/profile`
+- `POST /api/v1/users/deactivate`
+
 ### Owner fields and slots
 
 - `POST /api/v1/owner/fields`
 - `GET /api/v1/owner/fields`
+- `GET /api/v1/owner/fields/:id`
 - `PATCH /api/v1/owner/fields/:id`
+- `PATCH /api/v1/owner/fields/:id/toggle-status`
 - `GET /api/v1/owner/fields/:fieldId/slots`
 - `POST /api/v1/owner/fields/:fieldId/slots/batch`
 - `PATCH /api/v1/owner/slots/:slotId`
 - `DELETE /api/v1/owner/slots/:slotId`
 - `GET /api/v1/owner/bookings`
+- `PATCH /api/v1/owner/bookings/:bookingId/reject`
+- `GET /api/v1/owner/payments/cash`
+- `PATCH /api/v1/owner/payments/:bookingId/confirm-cash`
 - `GET /api/v1/owner/stats`
 
 Owner scheduling behavior:
@@ -385,13 +400,57 @@ Owner scheduling behavior:
 - `POST /api/v1/upload/images`
 - `DELETE /api/v1/upload/images`
 
+Upload routes require an authenticated `OWNER` or `ADMIN` role.
+
+### Chatbot
+
+- `POST /api/v1/chatbot/message`
+
+Request body:
+
+```json
+{
+  "message": "tổng doanh thu tháng này là bao nhiêu?"
+}
+```
+
+Response body:
+
+```json
+{
+  "success": true,
+  "data": {
+    "answer": "Doanh thu toàn hệ thống tháng này là 5.000đ, tính từ các thanh toán COMPLETED.",
+    "intent": "admin_insights",
+    "scope": "admin",
+    "requiresAuth": false,
+    "suggestedActions": [
+      { "label": "Xem dashboard admin", "path": "/admin" }
+    ],
+    "sources": []
+  }
+}
+```
+
+Auth behavior:
+
+- Route uses optional auth. Guest requests are allowed for public/general
+  questions.
+- If token is valid, context is scoped by role: `USER`, `OWNER`, or `ADMIN`.
+- Chatbot is read-only and does not create/update/delete DB records.
+- No chat history table exists in v1.
+
 ### Admin
 
+- `GET /api/v1/admin/stats`
 - `GET /api/v1/admin/fields`
 - `PATCH /api/v1/admin/fields/:id/approve`
 - `PATCH /api/v1/admin/fields/:id/reject`
+- `GET /api/v1/admin/payments/cash`
+- `PATCH /api/v1/admin/payments/:bookingId/confirm-cash`
 - `GET /api/v1/admin/users`
 - `PATCH /api/v1/admin/users/:id/role`
+- `PATCH /api/v1/admin/users/:id/status`
 
 ## 6) Error Code Schema
 
