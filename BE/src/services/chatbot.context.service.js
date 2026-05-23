@@ -153,11 +153,10 @@ const sanitizeBooking = (booking, { includeCustomer = false } = {}) => ({
   payment: Array.isArray(booking.payments) && booking.payments.length
     ? sanitizePayment(booking.payments[0])
     : null,
-  ...(includeCustomer && booking.user
+  ...(includeCustomer
     ? {
         customer: {
-          fullName: booking.user.full_name || '',
-          phoneNumber: booking.user.phone_number || '',
+          id: booking.user_id || null,
         },
       }
     : {}),
@@ -524,7 +523,6 @@ const findOwnerSchedule = async (ownerId, message) => {
     },
     include: {
       field: true,
-      user: { select: { full_name: true, phone_number: true } },
       payments: { orderBy: { created_at: 'desc' }, take: 1 },
     },
     orderBy: [{ date: 'asc' }, { start_time: 'asc' }],
@@ -564,7 +562,6 @@ const findOwnerCashPayments = async (ownerId) => {
       booking: {
         include: {
           field: true,
-          user: { select: { full_name: true, phone_number: true } },
         },
       },
     },

@@ -229,6 +229,54 @@ describe('Chatbot Context Service', () => {
     expect(result.summary.totalRevenue).toBe(5000);
   });
 
+  it('omits customer PII from owner booking context', async () => {
+    prisma.booking.findMany.mockResolvedValue([
+      {
+        id: 'booking-1',
+        user_id: 'user-1',
+        field_id: 'field-1',
+        date: new Date('2026-05-23'),
+        start_time: new Date('1970-01-01T10:00:00.000Z'),
+        end_time: new Date('1970-01-01T11:00:00.000Z'),
+        status: 'CONFIRMED',
+        total_price: 5000,
+        field: {
+          id: 'field-1',
+          name: 'FieldNow Demo Tennis 20',
+          location: 'Hải Châu, Đà Nẵng',
+          type: 'TENNIS',
+          price_per_hour: 5000,
+          open_time: new Date('1970-01-01T06:00:00.000Z'),
+          close_time: new Date('1970-01-01T22:00:00.000Z'),
+          is_active: true,
+        },
+        payments: [],
+        user: {
+          full_name: 'Sensitive Name',
+          phone_number: '0901234567',
+        },
+      },
+    ]);
+    prisma.field.findMany.mockResolvedValue([]);
+
+    const result = await chatbotContext.findOwnerSchedule('owner-1', 'lịch đặt sân');
+
+    expect(prisma.booking.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          field: { owner_id: 'owner-1' },
+        },
+        include: {
+          field: true,
+          payments: { orderBy: { created_at: 'desc' }, take: 1 },
+        },
+      })
+    );
+    expect(result.bookings[0].customer).toEqual({ id: 'user-1' });
+    expect(result.bookings[0].customer.fullName).toBeUndefined();
+    expect(result.bookings[0].customer.phoneNumber).toBeUndefined();
+  });
+
   it('returns admin system-wide read-only metrics', async () => {
     prisma.user.count
       .mockResolvedValueOnce(12)
