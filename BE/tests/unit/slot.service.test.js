@@ -1,12 +1,12 @@
-const slotService = require('../../src/services/slot.service');
-const slotRepository = require('../../src/repositories/slot.repository');
-const fieldRepository = require('../../src/repositories/field.repository');
-const bookingRepository = require('../../src/repositories/booking.repository');
-const { errors: _errors } = require('../../src/utils/errors');
+const slotService = require('../../src/modules/slots/slot.service');
+const slotRepository = require('../../src/modules/slots/slot.repository');
+const fieldRepository = require('../../src/modules/fields/field.repository');
+const bookingRepository = require('../../src/modules/bookings/booking.repository');
+const { errors: _errors } = require('../../src/common/utils/errors');
 
-jest.mock('../../src/repositories/slot.repository');
-jest.mock('../../src/repositories/field.repository');
-jest.mock('../../src/repositories/booking.repository');
+jest.mock('../../src/modules/slots/slot.repository');
+jest.mock('../../src/modules/fields/field.repository');
+jest.mock('../../src/modules/bookings/booking.repository');
 
 describe('Slot Service', () => {
   beforeEach(() => {

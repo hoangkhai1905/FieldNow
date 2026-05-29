@@ -94,26 +94,25 @@ BE/
 │   ├── config/
 │   │   ├── index.js           # Centralized config loader (env validation)
 │   │   └── swagger.js         # OpenAPI 3.0 spec configuration
-│   ├── controllers/           # Request handlers (parse → delegate → respond)
-│   │   └── auth.controller.js
-│   ├── services/              # Business logic (validation, rules, orchestration)
-│   │   └── auth.service.js
-│   ├── repositories/          # Data access layer (Prisma queries)
-│   │   └── user.repository.js
-│   ├── middlewares/
-│   │   ├── auth.middleware.js      # JWT verification
-│   │   ├── role.middleware.js      # Role-based access control
-│   │   ├── validate.middleware.js  # Zod schema validation
-│   │   └── error.middleware.js     # Global error handler
-│   ├── validators/            # Zod schemas for request payloads
-│   │   └── auth.validator.js
-│   ├── routes/                # Express route definitions (+ Swagger docs)
-│   │   └── auth.routes.js
+│   ├── common/
+│   │   ├── middlewares/       # JWT, role, validation, rate limit, errors
+│   │   ├── events/            # Shared in-process domain events
+│   │   └── utils/             # AppError, pagination, OTP, pipeline helpers
+│   ├── modules/               # Domain modules with internal layers
+│   │   ├── auth/
+│   │   │   ├── auth.routes.js
+│   │   │   ├── auth.controller.js
+│   │   │   ├── auth.service.js
+│   │   │   └── auth.validator.js
+│   │   ├── bookings/
+│   │   ├── payments/
+│   │   ├── fields/
+│   │   └── ...
+│   ├── routes/
+│   │   └── index.js           # API route registry
 │   ├── infrastructure/        # External service connections
 │   │   └── prisma.js          # Prisma client singleton
-│   ├── utils/
-│   │   └── errors.js          # AppError class + factory helpers
-│   └── jobs/                  # (Phase 3) BullMQ workers
+│   └── jobs/                  # BullMQ workers and cleanup cron
 ├── .env.example               # Environment variable template
 ├── .gitignore
 └── package.json
@@ -122,18 +121,21 @@ BE/
 ## Architecture
 
 ```
-Request → Middleware Stack → Controller → Service → Repository → Prisma → DB
-                                 ↑              ↑
-                            Validators      AppError (thrown)
-                                                ↓
-                                        Error Middleware → Response
+Request → Route Registry → Common Middleware → Domain Module
+                                      ↓
+                Route → Controller → Service → Repository → Prisma → DB
+                          ↑              ↑
+                     Validators      AppError (thrown)
+                                         ↓
+                                 Error Middleware → Response
 ```
 
-**Layer rules:**
-- **Controllers** parse `req.body`/`req.params`, delegate to services, format response.
-- **Services** contain business logic, throw `AppError` on failures.
-- **Repositories** encapsulate Prisma queries — services never call Prisma directly.
-- **Middlewares** handle cross-cutting concerns (auth, validation, errors).
+**Module rules:**
+- Each domain module owns its route/controller/service/repository/validator files.
+- Controllers parse `req.body`/`req.params`, delegate to services, format response.
+- Services contain business logic and throw `AppError` on failures.
+- Repositories encapsulate Prisma queries.
+- Common middlewares handle cross-cutting concerns such as auth, validation, rate limit, and errors.
 
 ## API Documentation
 

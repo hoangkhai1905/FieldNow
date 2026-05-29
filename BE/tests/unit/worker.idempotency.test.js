@@ -1,14 +1,14 @@
-const { processExpirationJob } = require('../../src/workers/expiration.worker');
-const bookingRepository = require('../../src/repositories/booking.repository');
-const paymentRepository = require('../../src/repositories/payment.repository');
+const { processExpirationJob } = require('../../src/jobs/workers/expiration.worker');
+const bookingRepository = require('../../src/modules/bookings/booking.repository');
+const paymentRepository = require('../../src/modules/payments/payment.repository');
 const { emailQueue } = require('../../src/infrastructure/queue');
 const _prisma = require('../../src/infrastructure/prisma');
 
 jest.mock('../../src/infrastructure/prisma', () => ({
   $transaction: jest.fn((callback) => callback('mocked-tx')),
 }));
-jest.mock('../../src/repositories/booking.repository');
-jest.mock('../../src/repositories/payment.repository');
+jest.mock('../../src/modules/bookings/booking.repository');
+jest.mock('../../src/modules/payments/payment.repository');
 jest.mock('../../src/infrastructure/queue', () => ({
   emailQueue: {
     add: jest.fn(),

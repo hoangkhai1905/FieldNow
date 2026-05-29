@@ -1,4 +1,4 @@
-const EmitEventStep = require('../../src/pipelines/booking/emit-event.step');
+const EmitEventStep = require('../../src/modules/bookings/pipeline/emit-event.step');
 
 describe('EmitEventStep', () => {
   it('awaits booking-created side effects when provided', async () => {

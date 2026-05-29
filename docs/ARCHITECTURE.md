@@ -36,24 +36,27 @@ flowchart LR
 
 ## 2. Architecture Style
 
-Kiến trúc chính của FieldNow là **modular monolith + layered architecture**.
+Kiến trúc chính của FieldNow là **module-based modular monolith**.
 Hệ thống chưa tách microservices vì scope hiện tại phù hợp hơn với một backend
-duy nhất: dễ test, dễ debug, giảm overhead deployment và vẫn giữ được module
-boundary rõ.
+duy nhất: dễ test, dễ debug, giảm overhead deployment và vẫn giữ được domain
+boundary rõ. Bên trong mỗi module vẫn giữ các layer nhỏ như route, controller,
+service, repository và validator để code dễ đọc, nhưng file được gom theo
+nghiệp vụ thay vì tách ngang toàn repo.
 
 Layer backend:
 
 | Layer | Trách nhiệm | File / folder chính |
 | --- | --- | --- |
-| Route | Khai báo HTTP paths, gắn middleware và validation | `BE/src/routes` |
-| Middleware | Auth, role, validation, rate limit, error handling | `BE/src/middlewares` |
-| Controller | Đọc request, gọi service, trả response envelope | `BE/src/controllers` |
-| Service | Điều phối business use case | `BE/src/services` |
-| Pipeline | Chia booking creation thành các step độc lập | `BE/src/pipelines/booking` |
-| Repository | Đóng gói Prisma/database access | `BE/src/repositories` |
-| Provider | Đóng gói tích hợp thanh toán/storage | `BE/src/providers`, `BE/src/infrastructure` |
-| AI context/client | Phân loại intent, gom context an toàn, gọi Groq | `BE/src/services/chatbot*.js`, `BE/src/infrastructure/groq.client.js` |
-| Worker/listener | Xử lý side effect bất đồng bộ | `BE/src/workers`, `BE/src/listeners` |
+| Route registry | Mount public API paths | `BE/src/routes/index.js` |
+| Domain module | Gom route/controller/service/repository/validator theo nghiệp vụ | `BE/src/modules/*` |
+| Middleware | Auth, role, validation, rate limit, error handling | `BE/src/common/middlewares` |
+| Controller | Đọc request, gọi service, trả response envelope | `BE/src/modules/*/*.controller.js` |
+| Service | Điều phối business use case | `BE/src/modules/*/*.service.js` |
+| Pipeline | Chia booking creation thành các step độc lập | `BE/src/modules/bookings/pipeline` |
+| Repository | Đóng gói Prisma/database access | `BE/src/modules/*/*.repository.js` |
+| Provider | Đóng gói tích hợp thanh toán/storage | `BE/src/modules/payments/providers`, `BE/src/infrastructure` |
+| AI context/client | Phân loại intent, gom context an toàn, gọi Groq | `BE/src/modules/chatbot`, `BE/src/infrastructure/groq.client.js` |
+| Worker/listener | Xử lý side effect bất đồng bộ | `BE/src/jobs`, `BE/src/modules/bookings/booking.listener.js` |
 
 ## 3. Core Runtime Flows
 
@@ -149,7 +152,7 @@ Bảng dưới đây gom các characteristics thường gặp khi review kiến 
 
 | Characteristic | Trạng thái | Hệ thống có được / không có vì đâu |
 | --- | --- | --- |
-| Maintainability | Có | Module tách theo route, controller, service, repository, pipeline, worker nên dễ đọc và dễ sửa theo từng use case. |
+| Maintainability | Có | Backend gom code theo domain module, mỗi module chứa route/controller/service/repository/validator của nghiệp vụ đó nên dễ đọc và dễ sửa theo use case. |
 | Modifiability | Có | Payment provider dùng factory/strategy, booking flow dùng pipeline nên có thể thêm step/provider mà ít ảnh hưởng phần còn lại. |
 | Simplicity | Có | Modular monolith giữ runtime đơn giản hơn microservices, phù hợp scope môn học và demo. |
 | Testability | Có | Jest/Supertest, repository/service boundaries, exported worker functions và Prisma validation giúp test unit/integration. |
@@ -179,21 +182,22 @@ Bảng dưới đây gom các characteristics thường gặp khi review kiến 
 
 | Pattern / style | Dùng ở đâu | Mục đích |
 | --- | --- | --- |
-| Layered Architecture | `BE/src/routes`, `controllers`, `services`, `repositories` | Tách HTTP, business logic và data access để dễ bảo trì. |
-| Repository Pattern | `BE/src/repositories/*` | Đóng gói Prisma query, tránh để controller/service phụ thuộc trực tiếp vào schema details. |
-| Service Layer | `BE/src/services/*` | Tập trung business use case như booking, payment, field, OTP, password. |
-| Pipeline / Chain of Responsibility | `BE/src/utils/pipeline.js`, `BE/src/pipelines/booking/*` | Chia booking creation thành các step có thứ tự: validate, lock, availability, create, emit event. |
-| Strategy Pattern | `BE/src/providers/sepay.provider.js`, `vnpay.provider.js`, `cash.provider.js` | Cho phép thay đổi cách thanh toán theo provider mà giữ payment service ổn định. |
-| Factory Method | `BE/src/providers/payment-factory.js` | Chọn provider thanh toán dựa trên input/config. |
-| Observer / Pub-Sub in process | `BE/src/events/booking.events.js`, `BE/src/listeners/booking.listener.js` | Tách side effect sau booking khỏi booking service. |
-| Work Queue / Background Worker | `BE/src/infrastructure/queue.js`, `BE/src/workers/*` | Đưa expiration và email sang async jobs, có retry/backoff. |
-| Cache-Aside | `BE/src/services/field.service.js`, `BE/src/services/cache.service.js` | Service đọc cache trước, miss thì query DB và ghi lại Redis với TTL. |
+| Module-Based Modular Monolith | `BE/src/modules/*` | Gom code theo domain như booking, payment, field, auth; mỗi module tự chứa layer nội bộ. |
+| Layered Architecture bên trong module | `*.routes.js`, `*.controller.js`, `*.service.js`, `*.repository.js` | Tách HTTP, business logic và data access trong từng domain module. |
+| Repository Pattern | `BE/src/modules/*/*.repository.js` | Đóng gói Prisma query, tránh để controller/service phụ thuộc trực tiếp vào schema details. |
+| Service Layer | `BE/src/modules/*/*.service.js` | Tập trung business use case như booking, payment, field, OTP, password. |
+| Pipeline / Chain of Responsibility | `BE/src/common/utils/pipeline.js`, `BE/src/modules/bookings/pipeline/*` | Chia booking creation thành các step có thứ tự: validate, lock, availability, create, emit event. |
+| Strategy Pattern | `BE/src/modules/payments/providers/*` | Cho phép thay đổi cách thanh toán theo provider mà giữ payment service ổn định. |
+| Factory Method | `BE/src/modules/payments/providers/payment-factory.js` | Chọn provider thanh toán dựa trên input/config. |
+| Observer / Pub-Sub in process | `BE/src/common/events/booking.events.js`, `BE/src/modules/bookings/booking.listener.js` | Tách side effect sau booking khỏi booking service. |
+| Work Queue / Background Worker | `BE/src/infrastructure/queue.js`, `BE/src/jobs/*` | Đưa expiration và email sang async jobs, có retry/backoff. |
+| Cache-Aside | `BE/src/modules/fields/field.service.js`, `BE/src/infrastructure/cache.service.js` | Service đọc cache trước, miss thì query DB và ghi lại Redis với TTL. |
 | Unit of Work / Transaction Script | Prisma `$transaction` trong booking/payment/worker flows | Đảm bảo nhiều update liên quan booking/payment cùng commit/rollback. |
-| Middleware Pattern | Express middleware trong `BE/src/middlewares` và `BE/src/app.js` | Xử lý cross-cutting concerns: auth, role, validation, rate limit, CORS, security, error. |
+| Middleware Pattern | Express middleware trong `BE/src/common/middlewares` và `BE/src/app.js` | Xử lý cross-cutting concerns: auth, role, validation, rate limit, CORS, security, error. |
 | Adapter/Gateway | Payment providers, Supabase infrastructure, Redis/queue builders | Bao bọc third-party APIs để business code không phụ thuộc trực tiếp vào chi tiết provider. |
 | Response Envelope | Controllers và error middleware | Chuẩn hóa response `{ success, data }` và `{ success, error }` cho FE. |
-| Guarded Context Builder | `chatbot.context.service.js` | Cho LLM đọc dữ liệu qua allowlist theo intent/role, sanitize context và giới hạn số document. |
-| Deterministic Answer Override | `chatbot.service.js` | Các câu hỏi số liệu như booking count, payment, revenue dùng số DB để override câu trả lời mâu thuẫn của LLM. |
+| Guarded Context Builder | `BE/src/modules/chatbot/chatbot.context.service.js` | Cho LLM đọc dữ liệu qua allowlist theo intent/role, sanitize context và giới hạn số document. |
+| Deterministic Answer Override | `BE/src/modules/chatbot/chatbot.service.js` | Các câu hỏi số liệu như booking count, payment, revenue dùng số DB để override câu trả lời mâu thuẫn của LLM. |
 
 ## 6. Sync Và Async
 
@@ -241,7 +245,7 @@ idempotency để tránh xử lý lặp.
 | Rate limiting | `rate-limit.middleware.js` | Bảo vệ public search, OTP, password reset/change khỏi spam. |
 | Security headers/CORS/compression | `app.js` | Tăng baseline security và giảm response size. |
 | JWT + refresh token rotation/revoke | Auth service + `RefreshToken` table | Tách access token ngắn hạn và refresh token có thể revoke. |
-| Zod validation | `BE/src/validators/*` | Fail fast request sai schema trước khi vào business logic. |
+| Zod validation | `BE/src/modules/*/*.validator.js` | Fail fast request sai schema trước khi vào business logic. |
 | Health/readiness checks | `/health`, `/ready` | Phân biệt process live và dependency ready: DB/Redis. |
 | Structured logging | `pino`, `pino-http`, request id | Dễ trace request và worker logs khi debug. |
 | Pagination | Repository/controller helpers | Giảm payload và DB load cho danh sách booking, fields, users. |

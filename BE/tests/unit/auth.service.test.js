@@ -1,12 +1,12 @@
-const authService = require('../../src/services/auth.service');
-const userRepository = require('../../src/repositories/user.repository');
-const refreshTokenRepository = require('../../src/repositories/refresh-token.repository');
+const authService = require('../../src/modules/auth/auth.service');
+const userRepository = require('../../src/modules/users/user.repository');
+const refreshTokenRepository = require('../../src/modules/auth/refresh-token.repository');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Mock the repository layer
-jest.mock('../../src/repositories/user.repository');
-jest.mock('../../src/repositories/refresh-token.repository');
+jest.mock('../../src/modules/users/user.repository');
+jest.mock('../../src/modules/auth/refresh-token.repository');
 
 describe('Auth Service', () => {
   beforeEach(() => {

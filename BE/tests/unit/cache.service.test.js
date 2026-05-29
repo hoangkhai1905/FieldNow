@@ -1,4 +1,4 @@
-const cacheService = require('../../src/services/cache.service');
+const cacheService = require('../../src/infrastructure/cache.service');
 const { redisClient } = require('../../src/infrastructure/redis');
 
 describe('Cache Service', () => {

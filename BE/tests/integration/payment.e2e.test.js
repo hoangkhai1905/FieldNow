@@ -2,8 +2,8 @@ const request = require('supertest');
 const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
 const jwt = require('jsonwebtoken');
-const config = require('../../src/config');
-const sepayProvider = require('../../src/providers/sepay.provider');
+const config = require('../../src/config/index');
+const sepayProvider = require('../../src/modules/payments/providers/sepay.provider');
 const { emailQueue } = require('../../src/infrastructure/queue');
 
 jest.spyOn(sepayProvider, 'createCheckoutFields').mockImplementation(() => ({

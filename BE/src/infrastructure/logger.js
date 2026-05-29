@@ -1,5 +1,5 @@
 const pino = require('pino');
-const config = require('../config');
+const config = require('../config/index');
 
 const logger = pino({
   level: config.nodeEnv === 'production' ? 'info' : 'debug',

@@ -1,5 +1,5 @@
-const config = require('../config');
-const { AppError } = require('../utils/errors');
+const config = require('../config/index');
+const { AppError } = require('../common/utils/errors');
 
 const createTimeoutSignal = (timeoutMs) => {
   const controller = new AbortController();

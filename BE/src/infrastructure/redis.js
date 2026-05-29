@@ -1,5 +1,5 @@
 const Redis = require('ioredis');
-const config = require('../config');
+const config = require('../config/index');
 
 // Shared redis options for BullMQ compatibility
 const redisOptions = {

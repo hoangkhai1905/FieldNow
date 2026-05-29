@@ -1,5 +1,5 @@
-const AcquireLockStep = require('../../src/pipelines/booking/acquire-lock.step');
-const { errors } = require('../../src/utils/errors');
+const AcquireLockStep = require('../../src/modules/bookings/pipeline/acquire-lock.step');
+const { errors } = require('../../src/common/utils/errors');
 
 describe('AcquireLockStep', () => {
   it('continues without a Redis lock when Redis is unavailable', async () => {

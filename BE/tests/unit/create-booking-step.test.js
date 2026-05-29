@@ -1,5 +1,5 @@
-const CreateBookingStep = require('../../src/pipelines/booking/create-booking.step');
-const { errors } = require('../../src/utils/errors');
+const CreateBookingStep = require('../../src/modules/bookings/pipeline/create-booking.step');
+const { errors } = require('../../src/common/utils/errors');
 
 describe('CreateBookingStep', () => {
   it('uses slot price override for booking total and initial payment amount', async () => {

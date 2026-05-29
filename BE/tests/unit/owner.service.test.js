@@ -1,4 +1,4 @@
-const ownerService = require('../../src/services/owner.service');
+const ownerService = require('../../src/modules/owners/owner.service');
 const prisma = require('../../src/infrastructure/prisma');
 
 jest.mock('../../src/infrastructure/prisma', () => ({

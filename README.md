@@ -6,29 +6,29 @@ Node.js/Express backend, PostgreSQL/Supabase, Redis, and BullMQ.
 
 ## Architecture
 
-The backend follows a layered architecture:
+The backend follows a module-based modular monolith architecture. Each domain
+module keeps its own internal route/controller/service/repository/validator
+layers:
 
 ```text
 HTTP request
-  -> routes
-  -> middlewares
-  -> controllers
-  -> services / business pipeline
-  -> repositories
+  -> route registry
+  -> common middlewares
+  -> domain module route
+  -> domain module controller
+  -> domain module service / business pipeline
+  -> domain module repository
   -> Prisma
   -> PostgreSQL
 ```
 
 Main backend folders:
 
-- `BE/src/routes`: API route definitions.
-- `BE/src/controllers`: request/response handling.
-- `BE/src/services`: business logic and orchestration.
-- `BE/src/repositories`: database access through Prisma.
-- `BE/src/validators`: Zod request validation schemas.
-- `BE/src/middlewares`: auth, role checks, validation, rate limit, error handling.
+- `BE/src/routes`: route registry that mounts public API paths.
+- `BE/src/modules`: domain modules such as auth, fields, bookings, payments.
+- `BE/src/common`: shared middlewares, events, and utilities.
 - `BE/src/infrastructure`: Prisma, Redis, Queue, Supabase clients.
-- `BE/src/workers` and `BE/src/listeners`: BullMQ jobs and domain event handlers.
+- `BE/src/jobs`: BullMQ workers and cron cleanup.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the booking flow,
 database design notes, and deployment checklist.

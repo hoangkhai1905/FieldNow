@@ -20,7 +20,7 @@ jest.mock('../../src/infrastructure/prisma', () => ({
 }));
 
 const prisma = require('../../src/infrastructure/prisma');
-const chatbotContext = require('../../src/services/chatbot.context.service');
+const chatbotContext = require('../../src/modules/chatbot/chatbot.context.service');
 
 describe('Chatbot Context Service', () => {
   beforeEach(() => {

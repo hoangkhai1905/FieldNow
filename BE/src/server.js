@@ -1,7 +1,7 @@
-const config = require('./config');
+const config = require('./config/index');
 const app = require('./app');
-const { startWorkers, expirationWorker, emailWorker } = require('./workers');
-const registerBookingListeners = require('./listeners/booking.listener');
+const { startWorkers, expirationWorker, emailWorker } = require('./jobs/index');
+const registerBookingListeners = require('./modules/bookings/booking.listener');
 const prisma = require('./infrastructure/prisma');
 const { redisClient } = require('./infrastructure/redis');
 const { logger } = require('./infrastructure/logger');

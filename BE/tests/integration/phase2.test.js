@@ -2,7 +2,7 @@ const request = require('supertest');
 const app = require('../../src/app');
 const prisma = require('../../src/infrastructure/prisma');
 const jwt = require('jsonwebtoken');
-const config = require('../../src/config');
+const config = require('../../src/config/index');
 
 describe('Phase 2 Integration Tests', () => {
   let userToken, ownerToken, _adminToken;

@@ -4,21 +4,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const pinoHttp = require('pino-http');
-const config = require('./config');
+const config = require('./config/index');
 const swaggerSpec = require('./config/swagger');
 const swaggerUi = require('swagger-ui-express');
-const authRoutes = require('./routes/auth.routes');
-const otpRoutes = require('./routes/otp.routes');
-const passwordRoutes = require('./routes/password.routes');
-const userRoutes = require('./routes/user.routes');
-const ownerRoutes = require('./routes/owner.routes');
-const publicRoutes = require('./routes/public.routes');
-const adminRoutes = require('./routes/admin.routes');
-const bookingRoutes = require('./routes/booking.routes');
-const paymentRoutes = require('./routes/payment.routes');
-const uploadRoutes = require('./routes/upload.routes');
-const chatbotRoutes = require('./routes/chatbot.routes');
-const { errorHandler } = require('./middlewares/error.middleware');
+const registerRoutes = require('./routes');
+const { errorHandler } = require('./common/middlewares/error.middleware');
 
 const app = express();
 
@@ -76,17 +66,7 @@ if (config.nodeEnv !== 'production') {
 }
 
 // --- Routes (API v1) ---
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/otp', otpRoutes);
-app.use('/api/v1/password', passwordRoutes);
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/owner', ownerRoutes);
-app.use('/api/v1', publicRoutes); // Public fields routes
-app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/bookings', bookingRoutes);
-app.use('/api/v1/payments', paymentRoutes);
-app.use('/api/v1/upload', uploadRoutes);
-app.use('/api/v1/chatbot', chatbotRoutes);
+registerRoutes(app);
 
 // --- Health check ---
 app.get('/health', (_req, res) => {

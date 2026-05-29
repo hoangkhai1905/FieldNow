@@ -15,7 +15,7 @@ jest.mock('../../src/infrastructure/logger', () => ({
 }));
 
 const { bookingExpirationQueue, emailQueue } = require('../../src/infrastructure/queue');
-const bookingSideEffects = require('../../src/services/booking-side-effect.service');
+const bookingSideEffects = require('../../src/modules/bookings/booking-side-effect.service');
 
 describe('BookingSideEffectService', () => {
   beforeEach(() => {

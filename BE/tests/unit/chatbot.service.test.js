@@ -2,7 +2,7 @@ jest.mock('../../src/infrastructure/groq.client', () => ({
   createChatCompletion: jest.fn(),
 }));
 
-jest.mock('../../src/services/chatbot.context.service', () => ({
+jest.mock('../../src/modules/chatbot/chatbot.context.service', () => ({
   findPublicFields: jest.fn(),
   findFieldTypes: jest.fn(),
   findFieldAvailability: jest.fn(),
@@ -15,8 +15,8 @@ jest.mock('../../src/services/chatbot.context.service', () => ({
 }));
 
 const groqClient = require('../../src/infrastructure/groq.client');
-const chatbotContext = require('../../src/services/chatbot.context.service');
-const chatbotService = require('../../src/services/chatbot.service');
+const chatbotContext = require('../../src/modules/chatbot/chatbot.context.service');
+const chatbotService = require('../../src/modules/chatbot/chatbot.service');
 
 describe('Chatbot Service', () => {
   beforeEach(() => {

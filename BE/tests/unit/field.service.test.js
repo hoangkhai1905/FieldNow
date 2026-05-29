@@ -1,8 +1,8 @@
-const fieldService = require('../../src/services/field.service');
-const fieldRepository = require('../../src/repositories/field.repository');
-const { errors: _errors } = require('../../src/utils/errors');
+const fieldService = require('../../src/modules/fields/field.service');
+const fieldRepository = require('../../src/modules/fields/field.repository');
+const { errors: _errors } = require('../../src/common/utils/errors');
 
-jest.mock('../../src/repositories/field.repository');
+jest.mock('../../src/modules/fields/field.repository');
 
 describe('Field Service', () => {
   beforeEach(() => {

@@ -1,12 +1,12 @@
 const jwt = require('jsonwebtoken');
-const config = require('../../src/config');
-const { authMiddleware } = require('../../src/middlewares/auth.middleware');
-const { roleMiddleware } = require('../../src/middlewares/role.middleware');
-const { validate } = require('../../src/middlewares/validate.middleware');
-const { registerSchema } = require('../../src/validators/auth.validator');
-const userRepository = require('../../src/repositories/user.repository');
+const config = require('../../src/config/index');
+const { authMiddleware } = require('../../src/common/middlewares/auth.middleware');
+const { roleMiddleware } = require('../../src/common/middlewares/role.middleware');
+const { validate } = require('../../src/common/middlewares/validate.middleware');
+const { registerSchema } = require('../../src/modules/auth/auth.validator');
+const userRepository = require('../../src/modules/users/user.repository');
 
-jest.mock('../../src/repositories/user.repository');
+jest.mock('../../src/modules/users/user.repository');
 
 // Helper to create mock req/res/next
 const mockReqResNext = (overrides = {}) => {
